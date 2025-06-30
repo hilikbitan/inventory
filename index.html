@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת ניהול מלאי - מתחם קולנוע</title>
+    <title>מערכת ניהול מלאי - סינמה סיטי חדרה</title>
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
-        /* ... שמור את כל ה־CSS שלך ללא שינוי ... */
-		.modal { display: none; }
+        /* Modal styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; }
+        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover, .close:focus { color: black; }
+        
         * {margin:0;padding:0;box-sizing:border-box;}
-        body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background-color:#f5f5f5;color:#;line-height:1.6;min-height:100vh;}
+        body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background-color:#f5f5f5;color:#333;line-height:1.6;min-height:100vh;}
         .login-container {display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);}
         .login-box {background:white;padding:40px;border-radius:12px;box-shadow:0 15px 35px rgba(0,0,0,0.2);width:90%;max-width:400px;}
         .login-box h1 {text-align:center;margin-bottom:30px;color:#333;}
@@ -63,8 +69,6 @@
         .btn-small {padding:6px 15px;font-size:14px;width:auto;}
         .btn-danger {background:#e74c3c;}
         .btn-danger:hover {background:#c0392b;}
-        .btn-edit {background:#f39c12;}
-        .btn-edit:hover {background:#e67e22;}
         .permission-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:20px;}
         .permission-item {display:flex;align-items:center;gap:10px;}
         /* Checkbox styles - better visibility */
@@ -97,56 +101,22 @@
         input[type="checkbox"]:hover {
             border-color: #3498db;
         }
+		.expiring-critical {
+			background-color: #ffcdd2 !important;
+			color: #b71c1c;
+			font-weight: bold;
+		}
+		.expiring-soon {
+			background-color: #ffe0b2 !important;
+			color: #e65100;
+		}
+		.expiring-warning {
+			background-color: #fff9c4 !important;
+			color: #f57f17;
+}
         .permission-item input[type="checkbox"] {width:20px;height:20px;cursor:pointer;}
         .toast {position:fixed;bottom:20px;right:20px;background:#333;color:white;padding:15px 25px;border-radius:4px;box-shadow:0 4px 10px rgba(0,0,0,0.3);transform:translateY(100px);opacity:0;transition:all .3s;z-index:1000;}
         .toast.show {transform:translateY(0);opacity:1;}
-        /* Modal styles */
-        .modal {
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 0;
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 600px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-        .modal-header {
-            padding: 20px;
-            background-color: #34495e;
-            color: white;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-header h2 {
-            margin: 0;
-        }
-        .close {
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            line-height: 20px;
-        }
-        .close:hover,
-        .close:focus {
-            color: #ccc;
-        }
-        .modal form {
-            padding: 20px;
-        }
         @media (max-width:768px){.container{padding:10px;}.tabs{margin-bottom:15px;}.tab{padding:10px 15px;font-size:14px;}.tab-content{padding:15px;}.stats{grid-template-columns:1fr 1fr;gap:10px;}.stat-card{padding:15px;}.stat-card .value{font-size:24px;}table{font-size:14px;}th,td{padding:8px 6px;}.nav-brand{font-size:16px;}.user-info{display:none;}.form-row{grid-template-columns:1fr;}}
         @media (max-width:480px){.stats{grid-template-columns:1fr;}.login-box{padding:30px 20px;}}
     </style>
@@ -157,11 +127,11 @@
             <h1>🎬 מערכת מלאי - סינמה סיטי חדרה 🍿</h1>
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="username">שם משתמש</label>
+                    <label>שם משתמש</label>
                     <input type="text" id="username" required autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="password">סיסמה</label>
+                    <label>סיסמה</label>
                     <input type="password" id="password" required autocomplete="current-password">
                 </div>
                 <button type="submit">כניסה למערכת</button>
@@ -206,14 +176,14 @@
                 </div>
             </div>
             
-            <div class="tabs">
-                <div class="tab active" onclick="showTab('inventory')" data-permission="view_inventory">מלאי נוכחי</div>
-                <div class="tab" onclick="showTab('movements')" data-permission="view_movements">תנועות מלאי</div>
-                <div class="tab" onclick="showTab('transaction')" data-permission="add_transaction">רישום תנועה</div>
-                <div class="tab" onclick="showTab('addItem')" data-permission="add_item">הוספת פריט</div>
-                <div class="tab" onclick="showTab('users')" data-permission="manage_users">ניהול משתמשים</div>
-                <div class="tab" onclick="showTab('reports')" data-permission="view_reports">דוחות</div>
-            </div>
+			<div class="tabs">
+				<div class="tab active" data-tab="inventory" data-permission="view_inventory" onclick="showTab(event, 'inventory')">מלאי נוכחי</div>
+				<div class="tab" data-tab="movements" data-permission="view_movements" onclick="showTab(event, 'movements')">תנועות מלאי</div>
+				<div class="tab" data-tab="transaction" data-permission="add_transaction" onclick="showTab(event, 'transaction')">רישום תנועה</div>
+				<div class="tab" data-tab="addItem" data-permission="add_item" onclick="showTab(event, 'addItem')">הוספת פריט</div>
+				<div class="tab" data-tab="users" data-permission="manage_users" onclick="showTab(event, 'users')">ניהול משתמשים</div>
+				<div class="tab" data-tab="reports" data-permission="view_reports" onclick="showTab(event, 'reports')">דוחות</div>
+			</div>
             
             <!-- טאב מלאי נוכחי -->
             <div id="inventory" class="tab-content active">
@@ -266,11 +236,11 @@
                 <form id="transactionForm">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="transProduct">בחר מוצר</label>
+                            <label>בחר מוצר</label>
                             <select id="transProduct" required></select>
                         </div>
                         <div class="form-group">
-                            <label for="transType">סוג פעולה</label>
+                            <label>סוג פעולה</label>
                             <select id="transType" required>
                                 <option value="">בחר פעולה</option>
                                 <option value="הוצאה">הוצאה מהמלאי</option>
@@ -281,11 +251,11 @@
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="transQuantity">כמות</label>
+                            <label>כמות</label>
                             <input type="number" id="transQuantity" min="1" required>
                         </div>
                         <div class="form-group">
-                            <label for="transNotes">הערות</label>
+                            <label>הערות</label>
                             <input type="text" id="transNotes" placeholder="סיבה/הערות">
                         </div>
                     </div>
@@ -296,69 +266,32 @@
             
             <!-- טאב הוספת פריט -->
             <div id="addItem" class="tab-content">
-                <h2>הוספת פריט חדש למלאי</h2>
-                <form id="addItemForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="itemName">שם מוצר</label>
-                            <input type="text" id="itemName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="itemCategory">קטגוריה</label>
-                            <select id="itemCategory" required>
-                                <option value="">בחר קטגוריה</option>
-                                <option value="מזון">מזון</option>
-                                <option value="משקאות">משקאות</option>
-                                <option value="אריזות">אריזות</option>
-                                <option value="ציוד">ציוד</option>
-                                <option value="ניקיון">חומרי ניקיון</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="itemQuantity">כמות</label>
-                            <input type="number" id="itemQuantity" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="itemMinQuantity">כמות מינימום</label>
-                            <input type="number" id="itemMinQuantity" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="itemUnit">יחידת מידה</label>
-                            <select id="itemUnit" required>
-                                <option value="">בחר יחידה</option>
-                                <option value="יחידות">יחידות</option>
-                                <option value="ק״ג">ק״ג</option>
-                                <option value="ליטר">ליטר</option>
-                                <option value="חבילות">חבילות</option>
-                                <option value="קופסאות">קופסאות</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="itemExpiry">תאריך תפוגה</label>
-                            <input type="date" id="itemExpiry">
-                        </div>
-                        <div class="form-group">
-                            <label for="itemLocation">מחסן</label>
-                            <select id="itemLocation" required>
-							    <option value="">בחר מחסן</option>
-                                <option value="מחסן שתיה">מחסן שתיה</option>
-                                <option value="מחסן אולם 1">מחסן אולם 1</option>
-                                <option value="מטבח VIP">מטבח VIP</option>
-                                <option value="מחסן מיכלים">מחסן מיכלים</option>
-                                <option value="טכני">טכני</option>
-								<option value="מחסן גלידות">מחסן גלידות</option>
-								<option value="ממד מנקים">ממד מנקים</option>
-							</select>	
-                        </div>
-                    </div>
-                    <button type="submit">הוסף פריט</button>
-                </form>
+				<h2>הוספת מוצר חדש למלאי</h2>
+				<form id="addItemForm">
+					<div class="form-row">
+						<div class="form-group">
+							<label>שם מוצר</label>
+							<input type="text" id="itemName" required>
+						</div>
+						<div class="form-group">
+							<label>קטגוריה</label>
+							<select id="itemCategory" required>
+								<option value="">בחר קטגוריה</option>
+								<option value="מזון">מזון</option>
+								<option value="משקאות">משקאות</option>
+								<option value="אריזות">אריזות</option>
+								<option value="ציוד">ציוד</option>
+								<option value="ניקיון">חומרי ניקיון</option>
+							</select>
+						</div>
+					</div>
+
+					<h3>וריאנטים (תצורות)</h3>
+					<div id="variantsContainer"></div>
+					<button type="button" onclick="addVariant()">הוסף וריאנט</button>
+
+					<button type="submit" style="margin-top: 20px;">הוסף מוצר</button>
+				</form>
             </div>
             
             <!-- טאב ניהול משתמשים -->
@@ -369,29 +302,29 @@
                 <form id="addUserForm">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="newUsername">שם משתמש</label>
+                            <label>שם משתמש</label>
                             <input type="text" id="newUsername" required>
                         </div>
                         <div class="form-group">
-                            <label for="newPassword">סיסמה</label>
+                            <label>סיסמה</label>
                             <input type="password" id="newPassword" required>
                         </div>
                         <div class="form-group">
-                            <label for="newFullName">שם מלא</label>
+                            <label>שם מלא</label>
                             <input type="text" id="newFullName" required>
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="newUserRole">תפקיד</label>
-                        <select id="newUserRole" required onchange="updatePermissionsByRole()">
-                            <option value="">בחר תפקיד</option>
-                            <option value="מנהל מערכת">מנהל מערכת</option>
-                            <option value="מנהל מתחם">מנהל מתחם</option>
-                            <option value="מנהל משמרת">מנהל משמרת</option>
-                            <option value="סופרוויזר">סופרוויזר</option>
-                            <option value="מחסנאי">מחסנאי</option>
-                        </select>
+						<div class="form-group">
+							<label>תפקיד</label>
+							<select id="newRole" required>
+								<option value="">בחר תפקיד</option>
+								<option value="מנהל מערכת">מנהל מערכת</option>
+								<option value="מנהל מתחם">מנהל מתחם</option>
+								<option value="מנהל/ת משמרת">מנהל/ת משמרת</option>
+								<option value="מחסנאי">מחסנאי</option>
+								<option value="סופרווייזר">סופרווייזר</option>
+								<option value="מזנונאי">מזנונאי</option>
+							</select>
+						</div>
                     </div>
                     
                     <h4>הרשאות</h4>
@@ -420,14 +353,6 @@
                             <input type="checkbox" id="perm_view_reports">
                             <label for="perm_view_reports">צפייה בדוחות</label>
                         </div>
-                        <div class="permission-item">
-                            <input type="checkbox" id="perm_edit_items">
-                            <label for="perm_edit_items">עריכת פריטים</label>
-                        </div>
-                        <div class="permission-item">
-                            <input type="checkbox" id="perm_edit_users">
-                            <label for="perm_edit_users">עריכת משתמשים</label>
-                        </div>
                     </div>
                     
                     <button type="submit" style="margin-top: 20px;">הוסף משתמש</button>
@@ -449,7 +374,61 @@
                 <div id="reportContent" style="margin-top: 30px;"></div>
             </div>
         </div>
-        
+        <!-- מודל עריכת וריאנט -->
+		<div id="editVariantModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>עריכת וריאנט</h2>
+					<span class="close" onclick="closeEditVariantModal()">&times;</span>
+				</div>
+				<form id="editVariantForm">
+					<input type="hidden" id="editVariantProductName">
+					<input type="hidden" id="editVariantIndex">
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label>כמות</label>
+							<input type="number" id="editVariantQuantity" min="0" required>
+						</div>
+						<div class="form-group">
+							<label>כמות מינימום</label>
+							<input type="number" id="editVariantMinQuantity" min="0" required>
+						</div>
+						<div class="form-group">
+							<label>יחידת מידה</label>
+							<select id="editVariantUnit" required>
+								<option value="">בחר יחידה</option>
+								<option value="יחידות">יחידות</option>
+								<option value="ק״ג">ק״ג</option>
+								<option value="ליטר">ליטר</option>
+								<option value="חבילות">חבילות</option>
+								<option value="קופסאות">קופסאות</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>מיקום</label>
+							<select id="editVariantLocation" required>
+								<option value="">בחר מחסן</option>
+								<option value="מחסן שתיה">מחסן שתיה</option>
+								<option value="מחסן אולם 1">מחסן אולם 1</option>
+								<option value="מטבח VIP">מטבח VIP</option>
+								<option value="מחסן מיכלים">מחסן מיכלים</option>
+								<option value="טכני">טכני</option>
+								<option value="מחסן גלידות">מחסן גלידות</option>
+								<option value="ממד מנקים">ממד מנקים</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>תאריך תפוגה</label>
+							<input type="date" id="editVariantExpiry">
+						</div>
+					</div>
+
+					<button type="submit">שמור שינויים</button>
+				</form>
+			</div>
+		</div>
+
         <!-- מודל עריכת מוצר -->
         <div id="editModal" class="modal">
             <div class="modal-content">
@@ -461,11 +440,11 @@
                     <input type="hidden" id="editItemOriginalName">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editItemName">שם מוצר</label>
+                            <label>שם מוצר</label>
                             <input type="text" id="editItemName" required>
                         </div>
                         <div class="form-group">
-                            <label for="editItemCategory">קטגוריה</label>
+                            <label>קטגוריה</label>
                             <select id="editItemCategory" required>
                                 <option value="מזון">מזון</option>
                                 <option value="משקאות">משקאות</option>
@@ -477,17 +456,17 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editItemQuantity">כמות</label>
+                            <label>כמות</label>
                             <input type="number" id="editItemQuantity" min="0" required>
                         </div>
                         <div class="form-group">
-                            <label for="editItemMinQuantity">כמות מינימום</label>
+                            <label>כמות מינימום</label>
                             <input type="number" id="editItemMinQuantity" min="0" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editItemUnit">יחידת מידה</label>
+                            <label>יחידת מידה</label>
                             <select id="editItemUnit" required>
                                 <option value="יחידות">יחידות</option>
                                 <option value="ק״ג">ק״ג</option>
@@ -497,12 +476,12 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="editItemExpiry">תאריך תפוגה</label>
+                            <label>תאריך תפוגה</label>
                             <input type="date" id="editItemExpiry">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="editItemLocation">מיקום במחסן</label>
+                        <label>מיקום במחסן</label>
                         <select id="editItemLocation" required>
                             <option value="">בחר מחסן</option>
                             <option value="מחסן שתיה">מחסן שתיה</option>
@@ -530,28 +509,29 @@
                     <input type="hidden" id="editUserOriginalUsername">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editUsername">שם משתמש</label>
+                            <label>שם משתמש</label>
                             <input type="text" id="editUsername" required readonly>
                         </div>
                         <div class="form-group">
-                            <label for="editUserPassword">סיסמה חדשה (השאר ריק אם לא רוצה לשנות)</label>
-                            <input type="password" id="editUserPassword">
+                            <label>סיסמה חדשה (השאר ריק אם לא רוצה לשנות)</label>
+                            <input type="password" id="editPassword">
                         </div>
                         <div class="form-group">
-                            <label for="editUserFullName">שם מלא</label>
-                            <input type="text" id="editUserFullName" required>
+                            <label>שם מלא</label>
+                            <input type="text" id="editFullName" required>
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editUserRole">תפקיד</label>
-                        <select id="editUserRole" required onchange="updateEditPermissionsByRole()">
-                            <option value="מנהל מערכת">מנהל מערכת</option>
-                            <option value="מנהל מתחם">מנהל מתחם</option>
-                            <option value="מנהל משמרת">מנהל משמרת</option>
-                            <option value="סופרוויזר">סופרוויזר</option>
-                            <option value="מחסנאי">מחסנאי</option>
-                        </select>
+						<div class="form-group">
+							<label>תפקיד</label>
+							<select id="newRole" required>
+								<option value="">בחר תפקיד</option>
+								<option value="מנהל מערכת">מנהל מערכת</option>
+								<option value="מנהל מתחם">מנהל מתחם</option>
+								<option value="מנהל/ת משמרת">מנהל/ת משמרת</option>
+								<option value="מחסנאי">מחסנאי</option>
+								<option value="סופרווייזר">סופרווייזר</option>
+								<option value="מזנונאי">מזנונאי</option>
+							</select>
+						</div>
                     </div>
                     
                     <h4>הרשאות</h4>
@@ -580,23 +560,17 @@
                             <input type="checkbox" id="edit_perm_view_reports">
                             <label for="edit_perm_view_reports">צפייה בדוחות</label>
                         </div>
-                        <div class="permission-item">
-                            <input type="checkbox" id="edit_perm_edit_items">
-                            <label for="edit_perm_edit_items">עריכת פריטים</label>
-                        </div>
-                        <div class="permission-item">
-                            <input type="checkbox" id="edit_perm_edit_users">
-                            <label for="edit_perm_edit_users">עריכת משתמשים</label>
-                        </div>
                     </div>
                     
-                    <button type="submit" style="margin-top: 20px;">שמור שינויים</button>
+                    <button type="submit" style="margin-top: 20px;">עדכן משתמש</button>
                 </form>
             </div>
         </div>
     </div>
     
     <div class="toast" id="toast"></div>
+	
+	
 
     <script>
         // --- הגדרת Firebase ---
@@ -618,15 +592,6 @@
         let movements = [];
         let currentUser = null;
 
-        // --- הגדרת הרשאות לפי תפקיד ---
-        const rolePermissions = {
-            'מנהל מערכת': ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'manage_users', 'view_reports', 'edit_items', 'edit_users'],
-            'מנהל מתחם': ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'manage_users', 'view_reports', 'edit_items', 'edit_users'],
-            'מנהל משמרת': ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'view_reports'],
-            'סופרוויזר': ['view_inventory', 'view_movements', 'add_transaction', 'view_reports'],
-            'מחסנאי': ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'view_reports', 'edit_items']
-        };
-
         // --- פונקציות Firebase ---
         async function loadAllData() {
             // טען משתמשים
@@ -639,22 +604,22 @@
                         username: 'admin',
                         password: '1234',
                         fullName: 'מנהל המערכת',
-                        role: 'מנהל מערכת',
-                        permissions: rolePermissions['מנהל מערכת']
+                        role: 'מנהל',
+                        permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'manage_users', 'view_reports']
                     },
                     {
                         username: 'warehouse',
                         password: '1234',
                         fullName: 'יוסי כהן',
                         role: 'מחסנאי',
-                        permissions: rolePermissions['מחסנאי']
+                        permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'view_reports']
                     },
                     {
                         username: 'staff',
                         password: '1234',
                         fullName: 'דני לוי',
-                        role: 'סופרוויזר',
-                        permissions: rolePermissions['סופרוויזר']
+                        role: 'צוות',
+                        permissions: ['view_inventory', 'view_movements', 'add_transaction']
                     }
                 ];
                 for (const u of users) {
@@ -665,14 +630,7 @@
             inventory = [];
             let invSnap = await db.collection('inventory').get();
             invSnap.forEach(doc => inventory.push(doc.data()));
-            if (inventory.length === 0) { // ברירת מחדל
-                inventory = [
-                    
-                ];
-                for (const item of inventory) {
-                    await db.collection('inventory').doc(item.name).set(item);
-                }
-            }
+            
             // טען תנועות
             movements = [];
             let movSnap = await db.collection('movements').orderBy('date', 'desc').limit(200).get();
@@ -729,6 +687,10 @@
             document.getElementById('currentUserName').textContent = currentUser.fullName;
             document.getElementById('currentUserRole').textContent = currentUser.role;
             updateTabsVisibility();
+			document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+			document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+			document.querySelector(`.tab[data-permission="view_inventory"]`).classList.add('active');
+			document.getElementById('inventory').classList.add('active');
             displayInventory();
         }
 
@@ -750,8 +712,6 @@
         function logout() {
 			const editModal = document.getElementById('editModal');
 			if (editModal) editModal.style.display = 'none';
-            const editUserModal = document.getElementById('editUserModal');
-            if (editUserModal) editUserModal.style.display = 'none';
             currentUser = null;
             localStorage.removeItem('currentUser');
             document.getElementById('loginScreen').style.display = 'flex';
@@ -778,93 +738,125 @@
         });
 
         // --- TAB HANDLERS ---
-        window.showTab = function(tabName) {
-            const tabElement = event.target;
-            const permission = tabElement.getAttribute('data-permission');
-            if (permission && !currentUser.permissions.includes(permission)) {
-                showToast('אין לך הרשאה לגשת לתפריט זה', 'error');
-                return;
-            }
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            if (tabName === 'inventory') displayInventory();
-            else if (tabName === 'movements') displayMovements();
-            else if (tabName === 'transaction') populateProductSelect();
-            else if (tabName === 'users') displayUsers();
-        };
+		window.showTab = function(e, tabName) {
+			let tabElement = null;
 
-        function displayInventory() {
-            const tbody = document.getElementById('inventoryBody');
-            const alerts = document.getElementById('alerts');
-            tbody.innerHTML = '';
-            alerts.innerHTML = '';
-            let lowStockItems = [];
-            let expiringItems = [];
-            inventory.forEach(item => {
-                const row = tbody.insertRow();
-                const isLowStock = item.quantity < item.minQuantity;
-                const daysToExpiry = item.expiry ? Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                const isExpiringSoon = daysToExpiry !== null && daysToExpiry <= 14;
-                if (isLowStock) {
-                    row.classList.add('low-stock');
-                    lowStockItems.push(item.name);
-                }
-                if (isExpiringSoon) {
-                    row.classList.add('expiring-soon');
-                    expiringItems.push({name: item.name, days: daysToExpiry});
-                }
-                
-                // בדיקה האם למשתמש יש הרשאת עריכת פריטים
-                const canEditItems = currentUser.permissions.includes('edit_items');
-                
-				row.innerHTML = `
-					<td>${item.name}</td>
-					<td>${item.category}</td>
-					<td>${item.quantity}</td>
-					<td>${item.minQuantity}</td>
-					<td>${item.unit}</td>
-					<td>${item.expiry || '-'}</td>
-					<td>${item.location}</td>
-					<td>${getStatus(item, daysToExpiry)}</td>
-					<td>
-						${
-							canEditItems
-							? `
-								<button class="btn-small btn-edit" data-name="${item.name}" onclick="editItemFromBtn(this)">ערוך</button>
-								<button class="btn-small btn-danger" data-name="${item.name}" onclick="deleteItemFromBtn(this)">מחק</button>
-							`
-							: ''
-						}
-					</td>
-				`;
+			if (typeof e === 'string') {
+				tabName = e;
+			} else {
+				e.preventDefault();
+				tabElement = e.target;
+			}
 
-            });
+			// בדיקת הרשאות
+			if (tabElement) {
+				const permission = tabElement.getAttribute('data-permission');
+				if (permission && !currentUser.permissions.includes(permission)) {
+					showToast('אין לך הרשאה לגשת לתפריט זה', 'error');
+					return;
+				}
+			}
 
-            if (lowStockItems.length > 0) {
-                alerts.innerHTML += `
-                    <div class="alert alert-danger">
-                        <span>⚠️</span>
-                        <span>מלאי נמוך: ${lowStockItems.join(', ')}</span>
-                    </div>
-                `;
-            }
-            if (expiringItems.length > 0) {
-                const expiringList = expiringItems.map(item => `${item.name} (${item.days} ימים)`).join(', ');
-                alerts.innerHTML += `
-                    <div class="alert alert-warning">
-                        <span>⏰</span>
-                        <span>תפוגה קרובה: ${expiringList}</span>
-                    </div>
-                `;
-            }
-            updateStats();
-        }
+			// ניקוי טאבים
+			document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+			document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-        function getStatus(item, daysToExpiry) {
-            if (item.quantity < item.minQuantity) return '🔴 מלאי נמוך';
-            if (daysToExpiry !== null && daysToExpiry <= 14) return '🟡 תפוגה קרובה';
+			// הפעלת טאב
+			if (tabElement) tabElement.classList.add('active');
+			else document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+
+			document.getElementById(tabName).classList.add('active');
+
+			// טעינת תוכן דינמי
+			if (tabName === 'inventory') displayInventory();
+			else if (tabName === 'movements') displayMovements();
+			else if (tabName === 'transaction') populateProductSelect();
+			else if (tabName === 'users') displayUsers();
+		};
+
+
+		function displayInventory() {
+			const tbody = document.getElementById('inventoryBody');
+			const alerts = document.getElementById('alerts');
+			tbody.innerHTML = '';
+			alerts.innerHTML = '';
+
+			let lowStockItems = [];
+			let expiringItems = [];
+
+			inventory.forEach(item => {
+				item.variants.forEach(variant => {
+
+					const row = tbody.insertRow();
+
+					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+					let expiryClass = '';
+					if (daysToExpiry !== null) {
+						if (daysToExpiry <= 7) expiryClass = 'expiring-critical';
+						else if (daysToExpiry <= 14) expiryClass = 'expiring-soon';
+						else if (daysToExpiry <= 30) expiryClass = 'expiring-warning';
+					}
+					if (expiryClass) row.classList.add(expiryClass);
+
+					const threshold = variant.minQuantity * 1.12;
+					const isLowStock = variant.quantity < threshold;
+					if (isLowStock) {
+						row.classList.add('low-stock');
+						lowStockItems.push(`${item.name} (${variant.unit}, ${variant.location})`);
+					}
+
+					if (daysToExpiry !== null && daysToExpiry <= 30) {
+						expiringItems.push({
+							name: item.name,
+							days: daysToExpiry,
+							location: variant.location,
+							unit: variant.unit
+						});
+					}
+
+					const rolesAllowedToEdit = ['מנהל מערכת', 'מנהל מתחם', 'מחסנאי'];
+
+					row.innerHTML = `
+						<td>${item.name}</td>
+						<td>${item.category}</td>
+						<td>${variant.quantity}</td>
+						<td>${variant.minQuantity}</td>
+						<td>${variant.unit}</td>
+						<td>${formatDate(variant.expiry) || '-'}</td>
+						<td>${variant.location}</td>
+						<td>${getStatus(variant, daysToExpiry, isLowStock)}</td>
+						<td>
+							${
+								(currentUser.permissions.includes('add_item') || rolesAllowedToEdit.includes(currentUser.role))
+								? `<button class="btn-small btn-edit" onclick="editVariant('${item.name}', ${item.variants.indexOf(variant)})">ערוך</button>`
+								: ''
+							}
+						</td>
+					`;
+				});
+			});
+
+			if (lowStockItems.length > 0) {
+				alerts.innerHTML += `<div class="alert alert-danger">מלאי נמוך במוצרים: ${lowStockItems.join(', ')}</div>`;
+			}
+			if (expiringItems.length > 0) {
+				const expList = expiringItems.map(e => `${e.name} (${e.unit}, ${e.location}, עוד ${e.days} ימים)`).join(', ');
+				alerts.innerHTML += `<div class="alert alert-warning">תוקף קרוב במוצרים: ${expList}</div>`;
+			}
+			updateStats();
+		}
+
+
+        function getStatus(variant, daysToExpiry, isLowStock) {
+			if (variant.quantity == 0) return '❌ אין מלאי';
+			if (variant.quantity < variant.minQuantity) return '🔴 מתחת למינימום';
+			if (variant.quantity < variant.minQuantity * 1.12) return '🟠 קרוב למינימום';
+            if (daysToExpiry !== null) {
+				if (daysToExpiry <= 7) return '🔴 תפוגה קריטית';
+				if (daysToExpiry <= 14) return '🟠 תפוגה קרובה';
+				if (daysToExpiry <= 30) return '🟡 תפוגה באופק';
+			}
             return '🟢 תקין';
         }
 
@@ -909,113 +901,83 @@
                 select.appendChild(option);
             });
         }
+		
+		function addVariant() {
+			const container = document.getElementById('variantsContainer');
+			const variantDiv = document.createElement('div');
+			variantDiv.className = 'form-row';
+			variantDiv.innerHTML = `
+				<div class="form-group">
+					<label>כמות</label>
+					<input type="number" class="variant-quantity" min="0" required>
+				</div>
+				<div class="form-group">
+					<label>כמות מינימום</label>
+					<input type="number" class="variant-minQuantity" min="0" required>
+				</div>
+				<div class="form-group">
+					<label>יחידת מידה</label>
+					<select class="variant-unit" required>
+						<option value="">בחר יחידה</option>
+						<option value="יחידות">יחידות</option>
+						<option value="ק״ג">ק״ג</option>
+						<option value="ליטר">ליטר</option>
+						<option value="חבילות">חבילות</option>
+						<option value="קופסאות">קופסאות</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>מיקום</label>
+					<select class="variant-location" required>
+						<option value="">בחר מחסן</option>
+						<option value="מחסן שתיה">מחסן שתיה</option>
+						<option value="מחסן אולם 1">מחסן אולם 1</option>
+						<option value="מטבח VIP">מטבח VIP</option>
+						<option value="מחסן מיכלים">מחסן מיכלים</option>
+						<option value="טכני">טכני</option>
+						<option value="מחסן גלידות">מחסן גלידות</option>
+						<option value="ממד מנקים">ממד מנקים</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>תאריך תפוגה</label>
+					<input type="date" class="variant-expiry">
+				</div>
+			`;
+			container.appendChild(variantDiv);
+		}
 
-        // --- פונקציות עדכון הרשאות לפי תפקיד ---
-		window.updatePermissionsByRole = function() {
-			const role = document.getElementById('newUserRole').value;
-			if (role && rolePermissions[role]) {
-				const permissions = rolePermissions[role];
-				// אפס את כל הצ'קבוקסים
-				document.querySelectorAll('#addUserForm input[type="checkbox"]').forEach(cb => {
-					cb.checked = false;
-				});
-				// סמן את ההרשאות
-				permissions.forEach(perm => {
-					const checkbox = document.getElementById('perm_' + perm);
-					if (checkbox) checkbox.checked = true;
-				});
-			}
-		};
-
-        
-        window.closeEditUserModal = function() {
-            document.getElementById('editUserModal').style.display = 'none';
-            document.getElementById('editUserForm').reset();
-        };
-        
-		document.getElementById('editUserForm').addEventListener('submit', async function(e) {
-			e.preventDefault();
-
-			const originalUsername = document.getElementById('editUserOriginalUsername').value;
-			const permissions = [];
-			document.querySelectorAll('#editUserForm input[type="checkbox"]:checked').forEach(cb => {
-				permissions.push(cb.id.replace('edit_perm_', ''));
-			});
-
-			const updatedUser = {
-				username: originalUsername, // שם משתמש לא משתנה
-				fullName: document.getElementById('editUserFullName').value,
-				role: document.getElementById('editUserRole').value,
-				permissions: permissions
-			};
-
-			// עדכן סיסמה רק אם הוזנה סיסמה חדשה
-			const newPassword = document.getElementById('editUserPassword').value;
-			if (newPassword) {
-				updatedUser.password = newPassword;
-			} else {
-				// שמור את הסיסמה הקיימת
-				const existingUser = users.find(u => u.username === originalUsername);
-				if (existingUser) {
-					updatedUser.password = existingUser.password;
-				}
-			}
-
-			// עדכן במערך המקומי
-			const index = users.findIndex(u => u.username === originalUsername);
-			if (index !== -1) {
-				users[index] = updatedUser;
-			}
-
-			// שמור ב-Firebase
-			await saveUser(updatedUser);
-			await loadAllData();
-
-			showToast('המשתמש עודכן בהצלחה!', 'success');
-			closeEditUserModal();
-			displayUsers();
-		});
-
-
-        window.updateEditPermissionsByRole = function() {
-            const role = document.getElementById('editUserRole').value;
-            if (role && rolePermissions[role]) {
-                const permissions = rolePermissions[role];
-                // אפס את כל הצ'קבוקסים
-                document.querySelectorAll('#editUserForm input[type="checkbox"]').forEach(cb => {
-                    cb.checked = false;
-                });
-                // סמן את ההרשאות המתאימות לתפקיד
-                permissions.forEach(perm => {
-                    const checkbox = document.getElementById('edit_perm_' + perm);
-                    if (checkbox) checkbox.checked = true;
-                });
-            }
-        };
 
         // --- טפסים מלאי/תנועות/משתמשים ---
-        document.getElementById('addItemForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (!currentUser.permissions.includes('add_item')) {
-                showToast('אין לך הרשאה להוסיף פריטים', 'error');
-                return;
-            }
-            const newItem = {
-                name: document.getElementById('itemName').value,
-                category: document.getElementById('itemCategory').value,
-                quantity: parseInt(document.getElementById('itemQuantity').value),
-                minQuantity: parseInt(document.getElementById('itemMinQuantity').value),
-                unit: document.getElementById('itemUnit').value,
-                expiry: document.getElementById('itemExpiry').value,
-                location: document.getElementById('itemLocation').value
-            };
-            inventory.push(newItem);
-            await saveInventoryItem(newItem);
-            await loadAllData();
-            showToast('הפריט נוסף בהצלחה!', 'success');
-            this.reset();
-            showTab('inventory');
-        });
+		document.getElementById('addItemForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const variants = [];
+			document.querySelectorAll('#variantsContainer .form-row').forEach(variantRow => {
+				variants.push({
+					quantity: parseInt(variantRow.querySelector('.variant-quantity').value),
+					minQuantity: parseInt(variantRow.querySelector('.variant-minQuantity').value),
+					unit: variantRow.querySelector('.variant-unit').value,
+					location: variantRow.querySelector('.variant-location').value,
+					expiry: variantRow.querySelector('.variant-expiry').value
+				});
+			});
+
+			const newItem = {
+				name: document.getElementById('itemName').value,
+				category: document.getElementById('itemCategory').value,
+				variants: variants
+			};
+
+			inventory.push(newItem);
+			await saveInventoryItem(newItem);
+			await loadAllData();
+			showToast('הפריט נוסף בהצלחה!', 'success');
+			this.reset();
+			document.getElementById('variantsContainer').innerHTML = '';
+			showTab('inventory');
+		});
+
 
         document.getElementById('transactionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1070,12 +1032,11 @@
             document.querySelectorAll('#addUserForm input[type="checkbox"]:checked').forEach(cb => {
                 permissions.push(cb.id.replace('perm_', ''));
             });
-            const role = document.getElementById('newUserRole').value;
             const newUser = {
                 username: document.getElementById('newUsername').value,
                 password: document.getElementById('newPassword').value,
                 fullName: document.getElementById('newFullName').value,
-                role: role,
+                role: document.getElementById('newRole').value,
                 permissions: permissions
             };
             if (users.find(u => u.username === newUser.username)) {
@@ -1094,8 +1055,7 @@
             const userList = document.getElementById('userList');
             userList.innerHTML = '';
             users.forEach((user, index) => {
-                const canDelete = user.username !== 'admin' && currentUser.permissions.includes('edit_users');
-                const canEdit = currentUser.permissions.includes('edit_users');
+                const canDelete = user.username !== 'admin';
                 const userCard = document.createElement('div');
                 userCard.className = 'user-card';
                 userCard.innerHTML = `
@@ -1109,7 +1069,7 @@
                         </div>
                     </div>
                     <div class="user-actions">
-                        ${canEdit ? `<button class="btn-small btn-edit" onclick="editUser('${user.username}')">ערוך</button>` : ''}
+                        <button class="btn-small" onclick="editUser('${user.username}')">ערוך</button>
                         ${canDelete ? `<button class="btn-small btn-danger" onclick="deleteUser('${user.username}')">מחק</button>` : ''}
                     </div>
                 `;
@@ -1124,18 +1084,12 @@
                 'add_transaction': 'רישום תנועות',
                 'add_item': 'הוספת פריטים',
                 'manage_users': 'ניהול משתמשים',
-                'view_reports': 'צפייה בדוחות',
-                'edit_items': 'עריכת פריטים',
-                'edit_users': 'עריכת משתמשים'
+                'view_reports': 'צפייה בדוחות'
             };
             return names[permission] || permission;
         }
 
         window.deleteUser = async function(username) {
-            if (!currentUser.permissions.includes('edit_users')) {
-                showToast('אין לך הרשאה למחוק משתמשים', 'error');
-                return;
-            }
             if (!confirm('האם אתה בטוח שברצונך למחוק משתמש זה?')) return;
             users = users.filter(u => u.username !== username);
             await deleteUserFromDB(username);
@@ -1159,10 +1113,6 @@
 
         // --- פונקציות עריכה ומחיקת מוצרים ---
 		window.editItem = function(itemName) {
-            if (!currentUser.permissions.includes('edit_items')) {
-                showToast('אין לך הרשאה לערוך פריטים', 'error');
-                return;
-            }
 			const item = inventory.find(i => i.name === itemName);
 			if (!item) {
 				alert("לא נמצא מוצר בשם: " + itemName);
@@ -1187,10 +1137,6 @@
 		};
         
         window.deleteItem = async function(itemName) {
-            if (!currentUser.permissions.includes('edit_items')) {
-                showToast('אין לך הרשאה למחוק פריטים', 'error');
-                return;
-            }
             if (!confirm(`האם אתה בטוח שברצונך למחוק את המוצר "${itemName}"?`)) return;
             
             inventory = inventory.filter(i => i.name !== itemName);
@@ -1199,7 +1145,7 @@
             showToast('המוצר נמחק בהצלחה', 'success');
             displayInventory();
         };
-
+        
         window.deleteItemFromBtn = function(btn) {
             const itemName = btn.getAttribute('data-name');
             window.deleteItem(itemName);
@@ -1209,6 +1155,79 @@
             document.getElementById('editModal').style.display = 'none';
             document.getElementById('editItemForm').reset();
         };
+        
+        // --- פונקציות עריכת משתמשים ---
+        window.editUser = function(username) {
+            if (!currentUser.permissions.includes('manage_users')) {
+                showToast('אין לך הרשאה לערוך משתמשים', 'error');
+                return;
+            }
+            
+            const user = users.find(u => u.username === username);
+            if (!user) {
+                showToast('משתמש לא נמצא', 'error');
+                return;
+            }
+            
+            document.getElementById('editUserOriginalUsername').value = user.username;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editFullName').value = user.fullName;
+            
+            // איפוס כל ה-checkboxes
+            document.querySelectorAll('#editUserForm input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // סימון ההרשאות הקיימות
+            user.permissions.forEach(perm => {
+                const checkbox = document.getElementById('edit_perm_' + perm);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            document.getElementById('editUserModal').style.display = 'block';
+        };
+        
+        window.closeEditUserModal = function() {
+            document.getElementById('editUserModal').style.display = 'none';
+            document.getElementById('editUserForm').reset();
+        };
+        
+        document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const originalUsername = document.getElementById('editUserOriginalUsername').value;
+            const user = users.find(u => u.username === originalUsername);
+            
+            if (!user) {
+                showToast('משתמש לא נמצא', 'error');
+                return;
+            }
+            
+            // עדכון פרטי המשתמש
+            user.fullName = document.getElementById('editFullName').value;
+            
+            // עדכון סיסמה רק אם הוזנה סיסמה חדשה
+            const newPassword = document.getElementById('editPassword').value;
+            if (newPassword) {
+                user.password = newPassword;
+            }
+            
+            // עדכון הרשאות
+            const permissions = [];
+            document.querySelectorAll('#editUserForm input[type="checkbox"]:checked').forEach(cb => {
+                permissions.push(cb.id.replace('edit_perm_', ''));
+            });
+            user.permissions = permissions;
+            
+            // שמירה ב-Firebase
+            await saveUser(user);
+            await loadAllData();
+            
+            showToast('המשתמש עודכן בהצלחה!', 'success');
+            closeEditUserModal();
+            displayUsers();
+        });
         
         document.getElementById('editItemForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1243,28 +1262,285 @@
             closeEditModal();
             displayInventory();
         });
+        
+        // סגור את המודל אם לוחצים מחוץ לו
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editModal');
+			const editVariantModal = document.getElementById('editVariantModal');
+			if (event.target === editVariantModal) {
+				closeEditVariantModal();
+			}
+            const editUserModal = document.getElementById('editUserModal');
+            if (event.target === editModal) {
+                closeEditModal();
+            } else if (event.target === editUserModal) {
+                closeEditUserModal();
+            }
+        };
 
-        // --- פונקציות עריכת משתמש ---
-        window.editUser = function(username) {
-            if (!currentUser.permissions.includes('edit_users')) {
-                showToast('אין לך הרשאה לערוך משתמשים', 'error');
-                return;
+        // --- ייצוא דוחות ---
+        window.generateReport = function(type) {
+            const reportContent = document.getElementById('reportContent');
+            let html = '';
+            
+            switch(type) {
+                case 'inventory':
+                    html = '<h3>דוח מלאי מלא</h3>';
+                    html += '<table style="width:100%; margin-top:20px;">';
+                    html += '<thead><tr><th>שם מוצר</th><th>קטגוריה</th><th>כמות</th><th>מינימום</th><th>יחידה</th><th>תפוגה</th><th>מיקום</th></tr></thead>';
+                    html += '<tbody>';
+                    inventory.forEach(item => {
+                        html += `<tr>
+                            <td>${item.name}</td>
+                            <td>${item.category}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.minQuantity}</td>
+                            <td>${item.unit}</td>
+                            <td>${item.expiry || '-'}</td>
+                            <td>${item.location}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    break;
+                    
+                case 'lowStock':
+                    html = '<h3>דוח חוסרים במלאי</h3>';
+                    const lowStockItems = inventory.filter(item => item.quantity < item.minQuantity);
+                    if (lowStockItems.length === 0) {
+                        html += '<p>אין פריטים במלאי נמוך</p>';
+                    } else {
+                        html += '<table style="width:100%; margin-top:20px;">';
+                        html += '<thead><tr><th>שם מוצר</th><th>כמות נוכחית</th><th>כמות מינימום</th><th>חוסר</th></tr></thead>';
+                        html += '<tbody>';
+                        lowStockItems.forEach(item => {
+                            const shortage = item.minQuantity - item.quantity;
+                            html += `<tr class="low-stock">
+                                <td>${item.name}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.minQuantity}</td>
+                                <td>${shortage}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    break;
+                    
+                case 'expiring':
+                    html = '<h3>דוח תפוגות קרובות</h3>';
+                    const expiringItems = inventory.filter(item => {
+                        if (!item.expiry) return false;
+                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        return days <= 30;
+                    }).sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
+                    
+                    if (expiringItems.length === 0) {
+                        html += '<p>אין פריטים עם תפוגה קרובה (30 יום)</p>';
+                    } else {
+                        html += '<table style="width:100%; margin-top:20px;">';
+                        html += '<thead><tr><th>שם מוצר</th><th>תאריך תפוגה</th><th>ימים לתפוגה</th><th>כמות</th></tr></thead>';
+                        html += '<tbody>';
+                        expiringItems.forEach(item => {
+                            const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                            const rowClass = days <= 14 ? 'expiring-soon' : '';
+                            html += `<tr class="${rowClass}">
+                                <td>${item.name}</td>
+                                <td>${new Date(item.expiry).toLocaleDateString('he-IL')}</td>
+                                <td>${days}</td>
+                                <td>${item.quantity} ${item.unit}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    break;
+                    
+                case 'movements':
+                    html = '<h3>דוח תנועות אחרונות</h3>';
+                    const last30Days = new Date();
+                    last30Days.setDate(last30Days.getDate() - 30);
+                    
+                    const recentMovements = movements.filter(m => {
+                        const parts = m.date.split('/');
+                        const moveDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        return moveDate >= last30Days;
+                    });
+                    
+                    if (recentMovements.length === 0) {
+                        html += '<p>אין תנועות ב-30 הימים האחרונים</p>';
+                    } else {
+                        html += '<table style="width:100%; margin-top:20px;">';
+                        html += '<thead><tr><th>תאריך</th><th>שעה</th><th>מוצר</th><th>פעולה</th><th>כמות</th><th>משתמש</th></tr></thead>';
+                        html += '<tbody>';
+                        recentMovements.forEach(movement => {
+                            html += `<tr>
+                                <td>${movement.date}</td>
+                                <td>${movement.time}</td>
+                                <td>${movement.product}</td>
+                                <td>${movement.type}</td>
+                                <td>${movement.quantity}</td>
+                                <td>${movement.user}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    break;
             }
-            const user = users.find(u => u.username === username);
-            if (!user) {
-                alert("לא נמצא משתמש בשם: " + username);
-                return;
+            
+            html += '<div style="margin-top:30px;">';
+            html += `<button onclick="exportReport('${type}')" class="btn-small" style="margin-right:10px;">ייצוא ל-CSV</button>`;
+            html += `<button onclick="printReport('${type}')" class="btn-small">הדפסה</button>`;
+            html += '</div>';
+            
+            reportContent.innerHTML = html;
+        };
+		
+		window.editVariant = function(productName, variantIndex) {
+			const item = inventory.find(i => i.name === productName);
+			const variant = item.variants[variantIndex];
+
+			document.getElementById('editVariantProductName').value = productName;
+			document.getElementById('editVariantIndex').value = variantIndex;
+			document.getElementById('editVariantQuantity').value = variant.quantity;
+			document.getElementById('editVariantMinQuantity').value = variant.minQuantity;
+			document.getElementById('editVariantUnit').value = variant.unit;
+			document.getElementById('editVariantLocation').value = variant.location;
+			document.getElementById('editVariantExpiry').value = variant.expiry || '';
+
+			document.getElementById('editVariantModal').style.display = 'block';
+		};
+
+		window.closeEditVariantModal = function() {
+			document.getElementById('editVariantModal').style.display = 'none';
+			document.getElementById('editVariantForm').reset();
+		};
+
+		document.getElementById('editVariantForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const productName = document.getElementById('editVariantProductName').value;
+			const variantIndex = parseInt(document.getElementById('editVariantIndex').value);
+			const item = inventory.find(i => i.name === productName);
+
+			item.variants[variantIndex] = {
+				quantity: parseInt(document.getElementById('editVariantQuantity').value),
+				minQuantity: parseInt(document.getElementById('editVariantMinQuantity').value),
+				unit: document.getElementById('editVariantUnit').value,
+				location: document.getElementById('editVariantLocation').value,
+				expiry: document.getElementById('editVariantExpiry').value
+			};
+
+			await saveInventoryItem(item);
+			await loadAllData();
+			showToast('הווריאנט עודכן בהצלחה!', 'success');
+			closeEditVariantModal();
+			displayInventory();
+		});
+
+
+        window.exportReport = function(type) {
+            let csv = '';
+            let filename = '';
+            
+            switch(type) {
+                case 'inventory':
+                    csv = 'שם מוצר,קטגוריה,כמות,מינימום,יחידה,תפוגה,מיקום\n';
+                    inventory.forEach(item => {
+                        csv += `"${item.name}","${item.category}",${item.quantity},${item.minQuantity},"${item.unit}","${item.expiry || ''}","${item.location}"\n`;
+                    });
+                    filename = 'דוח_מלאי_מלא.csv';
+                    break;
+                    
+                case 'lowStock':
+                    csv = 'שם מוצר,כמות נוכחית,כמות מינימום,חוסר\n';
+                    inventory.filter(item => item.quantity < item.minQuantity).forEach(item => {
+                        const shortage = item.minQuantity - item.quantity;
+                        csv += `"${item.name}",${item.quantity},${item.minQuantity},${shortage}\n`;
+                    });
+                    filename = 'דוח_חוסרים.csv';
+                    break;
+                    
+                case 'expiring':
+                    csv = 'שם מוצר,תאריך תפוגה,ימים לתפוגה,כמות\n';
+                    inventory.filter(item => {
+                        if (!item.expiry) return false;
+                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        return days <= 30;
+                    }).forEach(item => {
+                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        csv += `"${item.name}","${item.expiry}",${days},"${item.quantity} ${item.unit}"\n`;
+                    });
+                    filename = 'דוח_תפוגות.csv';
+                    break;
+                    
+                case 'movements':
+                    csv = 'תאריך,שעה,מוצר,פעולה,כמות,משתמש,הערות\n';
+                    movements.forEach(m => {
+                        csv += `"${m.date}","${m.time}","${m.product}","${m.type}",${m.quantity},"${m.user}","${m.notes || ''}"\n`;
+                    });
+                    filename = 'דוח_תנועות.csv';
+                    break;
             }
             
-            document.getElementById('editUserOriginalUsername').value = user.username;
-            document.getElementById('editUsername').value = user.username;
-            document.getElementById('editUserPassword').value = '';
-            document.getElementById('editUserFullName').value = user.fullName;
-            document.getElementById('editUserRole').value = user.role;
+            // יצירת קובץ CSV עם BOM לתמיכה בעברית
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (navigator.msSaveBlob) {
+                navigator.msSaveBlob(blob, filename);
+            } else {
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+            }
             
-            // אפס את כל הצ'קבוקסים
-            document.querySelectorAll('#editUserForm input[type="checkbox"]').forEach(cb => {
-                cb.checked = false;
-            });
-            
-            // סמן את ההרשאות
+            showToast('הדוח יוצא בהצלחה!', 'success');
+        };
+
+        window.printReport = function(type) {
+            const reportContent = document.getElementById('reportContent').innerHTML;
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html dir="rtl">
+                <head>
+                    <title>הדפסת דוח</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; direction: rtl; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                        th { background: #f4f4f4; }
+                        .low-stock { background-color: #ffebee; }
+                        .expiring-soon { background-color: #fff3e0; }
+                        @media print {
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${reportContent}
+                    <script>
+                        window.onload = function() { 
+                            window.print(); 
+                            window.close();
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        };
+		function formatDate(dateStr) {
+			if (!dateStr) return '';
+			const date = new Date(dateStr);
+			if (isNaN(date)) return dateStr; // אם לא מצליח לפרש כתאריך, מחזיר כפי שהוזן
+			const day = String(date.getDate()).padStart(2, '0');
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const year = date.getFullYear();
+			return `${day}/${month}/${year}`;
+		}
+    </script>
+	<footer style="text-align:center; padding:20px 0; color:#333; background:transparent; font-size:15px;">
+    © 2025 כל הזכויות שמורות לחיליק ביטאן
+	</footer>
+	
+</body>
+</html>
