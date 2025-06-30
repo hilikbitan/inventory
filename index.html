@@ -911,76 +911,71 @@
         }
 
         // --- פונקציות עדכון הרשאות לפי תפקיד ---
-        window.updatePermissionsByRole = function() {
-            const role = document.getElementById('newUserRole').value;
-            if (role && rolePermissions[role]) {
-                const permissions = rolePermissions[role];
-                // אפס את כל הצ'קבוקסים
-                document.querySelectorAll('#addUserForm input[type="checkbox"]').forEach(cb => {
-                    cb.checked = false;
-                });
-                // סמן את ההרשאות
-            user.permissions.forEach(perm => {
-                const checkbox = document.getElementById('edit_perm_' + perm);
-                if (checkbox) checkbox.checked = true;
-            });
-            
-            document.getElementById('editUserModal').style.display = 'block';
-        };
+		window.updatePermissionsByRole = function() {
+			const role = document.getElementById('newUserRole').value;
+			if (role && rolePermissions[role]) {
+				const permissions = rolePermissions[role];
+				// אפס את כל הצ'קבוקסים
+				document.querySelectorAll('#addUserForm input[type="checkbox"]').forEach(cb => {
+					cb.checked = false;
+				});
+				// סמן את ההרשאות
+				permissions.forEach(perm => {
+					const checkbox = document.getElementById('perm_' + perm);
+					if (checkbox) checkbox.checked = true;
+				});
+			}
+		};
+
         
         window.closeEditUserModal = function() {
             document.getElementById('editUserModal').style.display = 'none';
             document.getElementById('editUserForm').reset();
         };
         
-        document.getElementById('editUserForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const originalUsername = document.getElementById('editUserOriginalUsername').value;
-            const permissions = [];
-            document.querySelectorAll('#editUserForm input[type="checkbox"]:checked').forEach(cb => {
-                permissions.push(cb.id.replace('edit_perm_', ''));
-            });
-            
-            const updatedUser = {
-                username: originalUsername, // שם משתמש לא משתנה
-                fullName: document.getElementById('editUserFullName').value,
-                role: document.getElementById('editUserRole').value,
-                permissions: permissions
-            };
-            
-            // עדכן סיסמה רק אם הוזנה סיסמה חדשה
-            const newPassword = document.getElementById('editUserPassword').value;
-            if (newPassword) {
-                updatedUser.password = newPassword;
-            } else {
-                // שמור את הסיסמה הקיימת
-                const existingUser = users.find(u => u.username === originalUsername);
-                if (existingUser) {
-                    updatedUser.password = existingUser.password;
-                }
-            }
-            
-            // עדכן במערך המקומי
-            const index = users.findIndex(u => u.username === originalUsername);
-            if (index !== -1) {
-                users[index] = updatedUser;
-            }
-            
-            // שמור ב-Firebase
-            await saveUser(updatedUser);
-            await loadAllData();
-            
-            showToast('המשתמש עודכן בהצלחה!', 'success');
-            closeEditUserModal();
-            displayUsers();
-        }); המתאימות לתפקיד
-                permissions.forEach(perm => {
-                    const checkbox = document.getElementById('perm_' + perm);
-                    if (checkbox) checkbox.checked = true;
-                });
-            }
-        };
+		document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const originalUsername = document.getElementById('editUserOriginalUsername').value;
+			const permissions = [];
+			document.querySelectorAll('#editUserForm input[type="checkbox"]:checked').forEach(cb => {
+				permissions.push(cb.id.replace('edit_perm_', ''));
+			});
+
+			const updatedUser = {
+				username: originalUsername, // שם משתמש לא משתנה
+				fullName: document.getElementById('editUserFullName').value,
+				role: document.getElementById('editUserRole').value,
+				permissions: permissions
+			};
+
+			// עדכן סיסמה רק אם הוזנה סיסמה חדשה
+			const newPassword = document.getElementById('editUserPassword').value;
+			if (newPassword) {
+				updatedUser.password = newPassword;
+			} else {
+				// שמור את הסיסמה הקיימת
+				const existingUser = users.find(u => u.username === originalUsername);
+				if (existingUser) {
+					updatedUser.password = existingUser.password;
+				}
+			}
+
+			// עדכן במערך המקומי
+			const index = users.findIndex(u => u.username === originalUsername);
+			if (index !== -1) {
+				users[index] = updatedUser;
+			}
+
+			// שמור ב-Firebase
+			await saveUser(updatedUser);
+			await loadAllData();
+
+			showToast('המשתמש עודכן בהצלחה!', 'success');
+			closeEditUserModal();
+			displayUsers();
+		});
+
 
         window.updateEditPermissionsByRole = function() {
             const role = document.getElementById('editUserRole').value;
