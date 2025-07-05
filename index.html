@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול מלאי - סינמה סיטי חדרה</title>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style>
+        /* Modal styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; }
+        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover, .close:focus { color: black; }
+        
+        * {margin:0;padding:0;box-sizing:border-box;}
+        body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background-color:#f5f5f5;color:#333;line-height:1.6;min-height:100vh;}
+        .login-container {display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);}
+        .login-box {background:white;padding:40px;border-radius:12px;box-shadow:0 15px 35px rgba(0,0,0,0.2);width:90%;max-width:400px;}
+        .login-box h1 {text-align:center;margin-bottom:30px;color:#333;}
+        .main-container {display:none;min-height:100vh;}
+        .top-nav {background:#2c3e50;color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+        .nav-brand {font-size:20px;font-weight:bold;display:flex;align-items:center;gap:10px;}
+        .nav-user {display:flex;align-items:center;gap:15px;}
+        .user-info {display:flex;flex-direction:column;align-items:flex-end;font-size:14px;}
+        .user-role {font-size:12px;opacity:.8;}
+        .logout-btn {background:#e74c3c;color:white;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:14px;}
+        .logout-btn:hover {background:#c0392b;}
+        .container {max-width:1400px;margin:0 auto;padding:20px;}
+        .tabs {display:flex;gap:5px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:5px;}
+        .tab {padding:12px 20px;background:white;border:2px solid #ddd;cursor:pointer;border-radius:8px;transition:all .3s;font-weight:500;white-space:nowrap;flex-shrink:0;}
+        .tab:hover {background:#f8f9fa;}
+        .tab.active {background:#3498db;color:white;border-color:#3498db;}
+        .tab.disabled {opacity:.5;cursor:not-allowed;}
+        .tab-content {display:none;background:white;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+        .tab-content.active {display:block;}
+        .table-wrapper {overflow-x:auto;-webkit-overflow-scrolling:touch;}
+        table {width:100%;border-collapse:collapse;margin-top:20px;min-width:600px;}
+        th,td {padding:12px;text-align:right;border:1px solid #ddd;}
+        th {background:#34495e;color:white;font-weight:600;position:sticky;top:0;z-index:10;}
+        tr:nth-child(even) {background:#f8f9fa;}
+        tr:hover {background:#e8f4fd;}
+        .low-stock {background-color:#ffebee!important;color:#c62828;font-weight:bold;}
+        .expiring-soon {background-color:#fff3e0!important;color:#ef6c00;}
+        .form-group {margin-bottom:20px;}
+        label {display:block;margin-bottom:5px;font-weight:600;color:#555;}
+        input,select {width:100%;padding:12px;border:1px solid #ddd;border-radius:4px;font-size:16px;-webkit-appearance:none;}
+        input:focus,select:focus {outline:none;border-color:#3498db;box-shadow:0 0 0 2px rgba(52,152,219,0.2);}
+        button {background:#3498db;color:white;padding:12px 30px;border:none;border-radius:4px;cursor:pointer;font-size:16px;font-weight:600;transition:background .3s;width:100%;}
+        button:hover {background:#2980b9;}
+        button:disabled {background:#95a5a6;cursor:not-allowed;}
+        .stats {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:30px;}
+        .stat-card {background:white;padding:20px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;transition:transform .3s;}
+        .stat-card:hover {transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.15);}
+        .stat-card h3 {color:#7f8c8d;font-size:14px;margin-bottom:10px;}
+        .stat-card .value {font-size:28px;font-weight:bold;color:#2c3e50;}
+        .alert {padding:15px;margin-bottom:20px;border-radius:4px;display:flex;align-items:center;gap:10px;}
+        .alert-warning {background:#fff3cd;color:#856404;border:1px solid #ffeeba;}
+        .alert-danger {background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;}
+        .alert-success {background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
+        .form-row {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;}
+        .user-list {margin-top:20px;}
+        .user-card {background:#f8f9fa;padding:15px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+        .user-details {flex:1;}
+        .user-actions {display:flex;gap:10px;}
+        .btn-small {padding:6px 15px;font-size:14px;width:auto;}
+        .btn-danger {background:#e74c3c;}
+        .btn-danger:hover {background:#c0392b;}
+        .permission-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:20px;}
+        .permission-item {display:flex;align-items:center;gap:10px;}
+        /* Checkbox styles - better visibility */
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        input[type="checkbox"]:checked {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        input[type="checkbox"]:hover {
+            border-color: #3498db;
+        }
+		.expiring-critical {
+			background-color: #ffcdd2 !important;
+			color: #b71c1c;
+			font-weight: bold;
+		}
+		.expiring-soon {
+			background-color: #ffe0b2 !important;
+			color: #e65100;
+		}
+		.expiring-warning {
+			background-color: #fff9c4 !important;
+			color: #f57f17;
+}
+        .permission-item input[type="checkbox"] {width:20px;height:20px;cursor:pointer;}
+        .toast {position:fixed;bottom:20px;right:20px;background:#333;color:white;padding:15px 25px;border-radius:4px;box-shadow:0 4px 10px rgba(0,0,0,0.3);transform:translateY(100px);opacity:0;transition:all .3s;z-index:1000;}
+        .toast.show {transform:translateY(0);opacity:1;}
+        @media (max-width:768px){.container{padding:10px;}.tabs{margin-bottom:15px;}.tab{padding:10px 15px;font-size:14px;}.tab-content{padding:15px;}.stats{grid-template-columns:1fr 1fr;gap:10px;}.stat-card{padding:15px;}.stat-card .value{font-size:24px;}table{font-size:14px;}th,td{padding:8px 6px;}.nav-brand{font-size:16px;}.user-info{display:none;}.form-row{grid-template-columns:1fr;}}
+        @media (max-width:480px){.stats{grid-template-columns:1fr;}.login-box{padding:30px 20px;}}
+		.variant-row {
+            background-color: #f9f9f9;
+        }
+        .expand-btn {
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <h1>🎬 מערכת מלאי - סינמה סיטי חדרה 🍿</h1>
+			<form id="loginForm">
+				<div class="form-group">
+					<label for="username">שם משתמש</label>
+					<input type="text" id="username" required autocomplete="username">
+				</div>
+				<div class="form-group">
+					<label for="password">סיסמה</label>
+					<input type="password" id="password" required autocomplete="current-password">
+				</div>
+				<button type="submit">כניסה למערכת</button>
+			</form>
+        </div>
+    </div>
+    
+    <!-- מסך ראשי -->
+    <div class="main-container" id="mainScreen">
+        <nav class="top-nav">
+            <div class="nav-brand">
+                <span>🎬</span>
+                <span>מערכת ניהול מלאי סינמה סיטי חדרה</span>
+				<span>🍿</span>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="currentUserName"></span>
+                    <span class="user-role" id="currentUserRole"></span>
+                </div>
+                <button class="logout-btn" onclick="logout()">יציאה</button>
+            </div>
+        </nav>
+        
+        <div class="container">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>סה"כ מוצרים</h3>
+                    <div class="value" id="totalProducts">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>מוצרים במלאי נמוך</h3>
+                    <div class="value" id="lowStockCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>מוצרים לתפוגה קרובה</h3>
+                    <div class="value" id="expiringCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>תנועות היום</h3>
+                    <div class="value" id="todayMovements">0</div>
+                </div>
+            </div>
+            
+			<div class="tabs">
+				<div class="tab active" data-tab="inventory" data-permission="view_inventory" onclick="showTab(event, 'inventory')">מלאי נוכחי</div>
+				<div class="tab" data-tab="movements" data-permission="view_movements" onclick="showTab(event, 'movements')">תנועות מלאי</div>
+				<div class="tab" data-tab="transaction" data-permission="add_transaction" onclick="showTab(event, 'transaction')">רישום תנועה</div>
+				<div class="tab" data-tab="addItem" data-permission="add_item" onclick="showTab(event, 'addItem')">הוספת פריט</div>
+				<div class="tab" data-tab="users" data-permission="manage_users" onclick="showTab(event, 'users')">ניהול משתמשים</div>
+				<div class="tab" data-tab="reports" data-permission="view_reports" onclick="showTab(event, 'reports')">דוחות</div>
+			</div>
+            
+            <!-- טאב מלאי נוכחי -->
+            <div id="inventory" class="tab-content active">
+                <h2>מלאי נוכחי</h2>
+                <div id="alerts"></div>
+                <div class="table-wrapper">
+                    <table id="inventoryTable">
+                        <thead>
+                            <tr>
+								<th></th>
+                                <th>שם מוצר</th>
+                                <th>קטגוריה</th>
+                                <th>כמות זמינה</th>
+                                <th>מינימום</th>
+                                <th>תוקף קרוב</th>
+                                <th>סטטוס</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- טאב תנועות מלאי -->
+            <div id="movements" class="tab-content">
+                <h2>תנועות מלאי</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>תאריך</th>
+                                <th>שעה</th>
+                                <th>שם מוצר</th>
+                                <th>פעולה</th>
+                                <th>כמות</th>
+                                <th>מבצע</th>
+                                <th>הערות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movementsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- טאב רישום תנועה -->
+            <div id="transaction" class="tab-content">
+                <h2>רישום תנועת מלאי</h2>
+                <form id="transactionForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="transProduct">בחר מוצר</label>
+                            <select id="transProduct" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="transType">סוג פעולה</label>
+                            <select id="transType" required>
+                                <option value="">בחר פעולה</option>
+                                <option value="הוצאה">הוצאה מהמלאי</option>
+                                <option value="הכנסה">הכנסה למלאי</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="transQuantity">כמות</label>
+                            <input type="number" id="transQuantity" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="transNotes">הערות</label>
+                            <input type="text" id="transNotes" placeholder="סיבה/הערות">
+                        </div>
+                    </div>
+                    
+                    <button type="submit">רשום תנועה</button>
+                </form>
+            </div>
+            
+            <!-- טאב הוספת פריט -->
+            <div id="addItem" class="tab-content">
+				<h2>הוספת מוצר חדש למלאי</h2>
+				<form id="addItemForm">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="itemName">שם מוצר</label>
+							<input type="text" id="itemName" required>
+						</div>
+						<div class="form-group">
+							<label for="itemCategory">קטגוריה</label>
+							<select id="itemCategory" required>
+								<option value="">בחר קטגוריה</option>
+								<option value="מזון">מזון</option>
+								<option value="משקאות">משקאות</option>
+								<option value="אריזות">אריזות</option>
+								<option value="ציוד">ציוד</option>
+								<option value="ניקיון">חומרי ניקיון</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="baseUnitSingular">יחידת מידה בסיסית (יחיד)</label>
+								<select id="baseUnitSingular" required></select>
+						</div>
+						<div class="form-group">
+							<label for="baseUnitPlural">יחידת מידה בסיסית (רבים)</label>
+							<select id="baseUnitPlural" required></select>
+						</div>
+						<div class="form-group">
+							<label for="packUnitSingular">שם יחידת אריזה (יחיד)</label>
+							<select id="packUnitSingular" required></select>
+						</div>
+						<div class="form-group">
+							<label for="packUnitPlural">שם יחידת אריזה (רבים)</label>
+							<select id="packUnitPlural" required></select>
+						</div>
+						<div class="form-group">
+							<label for="unitsPerPack">כמה יחידות בכל אריזה</label>
+							<input type="number" id="unitsPerPack" min="1" required>
+						</div>
+						<div class="form-group">
+							<label for="minPacks">כמות מינימום (בחבילות)</label>
+							<input type="number" id="minPacks" min="0" required>
+						</div>
+					</div>
+					<h3>פריטים</h3>
+					<div id="variantsContainer"></div>
+					<button type="button" onclick="addVariant()">הוסף פריט</button>
+					<button type="submit" style="margin-top: 20px;">סיים</button>
+				</form>
+            </div>
+            
+            <!-- טאב ניהול משתמשים -->
+            <div id="users" class="tab-content">
+                <h2>ניהול משתמשים</h2>
+                
+                <h3>הוספת משתמש חדש</h3>
+                <form id="addUserForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newUsername">שם משתמש</label>
+                            <input type="text" id="newUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">סיסמה</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                         <div class="form-group">
+							<label for="newFullName">שם מלא</label>
+							<input type="text" id="newFullName" required>
+						</div>
+						<div class="form-group">
+							<label for="newRole">תפקיד</label>
+							<select id="newRole" required>
+								<option value="">בחר תפקיד</option>
+								<option value="מנהל מערכת">מנהל מערכת</option>
+								<option value="מנהל מתחם">מנהל מתחם</option>
+								<option value="מנהל/ת משמרת">מנהל/ת משמרת</option>
+								<option value="מחסנאי">מחסנאי</option>
+								<option value="סופרווייזר">סופרווייזר</option>
+								<option value="מזנונאי">מזנונאי</option>
+							</select>
+						</div>
+                    </div>
+                    
+                    <h4>הרשאות</h4>
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" id="perm_view_inventory" checked>
+                            <label for="perm_view_inventory">צפייה במלאי</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="perm_view_movements" checked>
+                            <label for="perm_view_movements">צפייה בתנועות</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="perm_add_transaction">
+                            <label for="perm_add_transaction">רישום תנועות</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="perm_add_item">
+                            <label for="perm_add_item">הוספת פריטים</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="perm_manage_users">
+                            <label for="perm_manage_users">ניהול משתמשים</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="perm_view_reports">
+                            <label for="perm_view_reports">צפייה בדוחות</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" style="margin-top: 20px;">הוסף משתמש</button>
+                </form>
+                
+                <h3 style="margin-top: 40px;">משתמשים קיימים</h3>
+                <div class="user-list" id="userList"></div>
+            </div>
+            
+            <!-- טאב דוחות -->
+            <div id="reports" class="tab-content">
+                <h2>דוחות</h2>
+                <div class="form-row">
+                    <button onclick="generateReport('inventory')" class="btn-small">דוח מלאי מלא</button>
+                    <button onclick="generateReport('lowStock')" class="btn-small">דוח חוסרים</button>
+                    <button onclick="generateReport('expiring')" class="btn-small">דוח תפוגות</button>
+                    <button onclick="generateReport('movements')" class="btn-small">דוח תנועות</button>
+                </div>
+                <div id="reportContent" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+        <!-- מודל עריכת וריאנט -->
+		<div id="editVariantModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>עריכת וריאנט</h2>
+					<span class="close" onclick="closeEditVariantModal()">&times;</span>
+				</div>
+				<form id="editVariantForm">
+					<input type="hidden" id="editVariantProductName">
+					<input type="hidden" id="editVariantIndex">
+					<div class="form-row">
+						<div class="form-group">
+							 <label for="editVariantQuantityPacks">כמות חבילות</label>
+							<input type="number" id="editVariantQuantityPacks" min="0" required>
+						</div>	
+						<div class="form-group">
+							<label for="editVariantQuantityUnits">יחידות בודדות</label>
+							<input type="number" id="editVariantQuantityUnits" min="0" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="editVariantUnit">יחידת מידה</label>
+							<select id="editVariantUnit" required>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="editVariantLocation">מיקום</label>
+							<select id="editVariantLocation" required>
+								<option value="">בחר מחסן</option>
+								<option value="מחסן שתיה">מחסן שתיה</option>
+								<option value="מחסן אולם 1">מחסן אולם 1</option>
+								<option value="מטבח VIP">מטבח VIP</option>
+								<option value="מחסן מיכלים">מחסן מיכלים</option>
+								<option value="טכני">טכני</option>
+								<option value="מחסן גלידות">מחסן גלידות</option>
+								<option value="ממד מנקים">ממד מנקים</option>
+							</select>
+						</div>
+						<div class="form-group">
+							 <label for="editVariantExpiry">תאריך תפוגה</label>
+							<input type="date" id="editVariantExpiry">
+						</div>
+					</div>
+
+					<button type="submit">שמור שינויים</button>
+				</form>
+			</div>
+		</div>
+
+        <!-- מודל עריכת מוצר -->
+		<div id="editModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>עריכת מוצר</h2>
+					<span class="close" onclick="closeEditModal()">&times;</span>
+				</div>
+				<form id="editItemForm">
+					<input type="hidden" id="editItemOriginalName">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editItemName">שם מוצר</label>
+							<input type="text" id="editItemName" required>
+						</div>
+						<div class="form-group">
+							<label for="editItemCategory">קטגוריה</label>
+							<select id="editItemCategory" required>
+								<option value="מזון">מזון</option>
+								<option value="משקאות">משקאות</option>
+								<option value="אריזות">אריזות</option>
+								<option value="ציוד">ציוד</option>
+								<option value="ניקיון">חומרי ניקיון</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editBaseUnitSingular">יחידת מידה בסיסית (יחיד)</label>
+							<input type="text" id="editBaseUnitSingular" required>
+						</div>
+						<div class="form-group">
+							<label for="editBaseUnitPlural">יחידת מידה בסיסית (רבים)</label>
+							<input type="text" id="editBaseUnitPlural" required>
+						</div>
+						<div class="form-group">
+							<label for="editPackUnitSingular">שם יחידת אריזה (יחיד)</label>
+							<input type="text" id="editPackUnitSingular" required>
+						</div>
+						<div class="form-group">
+							<label for="editPackUnitPlural">שם יחידת אריזה (רבים)</label>
+							<input type="text" id="editPackUnitPlural" required>
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editUnitsPerPack">מספר יחידות בכל אריזה</label>
+							<input type="number" id="editUnitsPerPack" min="1" required>
+						</div>
+						<div class="form-group">
+							<label for="editMinPacks">כמות מינימום במלאי (בחבילות)</label>
+							<input type="number" id="editMinPacks" min="0" required>
+						</div>
+					</div>
+					<button type="submit">שמור שינויים</button>
+				</form>
+			</div>
+		</div>
+
+        
+        <!-- מודל עריכת משתמש -->
+        <div id="editUserModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>עריכת משתמש</h2>
+                    <span class="close" onclick="closeEditUserModal()">&times;</span>
+                </div>
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserOriginalUsername">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editUsername">שם משתמש</label>
+                            <input type="text" id="editUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPassword">סיסמה חדשה (השאר ריק אם לא רוצה לשנות)</label>
+                            <input type="password" id="editPassword">
+                        </div>
+                        <div class="form-group">
+                            <label for="editFullName">שם מלא</label>
+                            <input type="text" id="editFullName" required>
+                        </div>
+						<div class="form-group">
+							<label for="newRole">תפקיד</label>
+							<select id="newRole" required>
+								<option value="">בחר תפקיד</option>
+								<option value="מנהל מערכת">מנהל מערכת</option>
+								<option value="מנהל מתחם">מנהל מתחם</option>
+								<option value="מנהל/ת משמרת">מנהל/ת משמרת</option>
+								<option value="מחסנאי">מחסנאי</option>
+								<option value="סופרווייזר">סופרווייזר</option>
+								<option value="מזנונאי">מזנונאי</option>
+							</select>
+						</div>
+                    </div>
+                    
+                    <h4>הרשאות</h4>
+                    <div class="permission-grid">
+                        <div class="permission-item">
+                            <input type="checkbox" id="edit_perm_view_inventory">
+                            <label for="edit_perm_view_inventory">צפייה במלאי</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="edit_perm_view_movements">
+                            <label for="edit_perm_view_movements">צפייה בתנועות</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="edit_perm_add_transaction">
+                            <label for="edit_perm_add_transaction">רישום תנועות</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="edit_perm_add_item">
+                            <label for="edit_perm_add_item">הוספת פריטים</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="edit_perm_manage_users">
+                            <label for="edit_perm_manage_users">ניהול משתמשים</label>
+                        </div>
+                        <div class="permission-item">
+                            <input type="checkbox" id="edit_perm_view_reports">
+                            <label for="edit_perm_view_reports">צפייה בדוחות</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" style="margin-top: 20px;">שמור שינויים</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+	
+	
+
+    <script>
+        // --- הגדרת Firebase ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAg4keZ42SfFHhwjhkYbl7TdJnuN0WsuUc",
+            authDomain: "inventory-57376.firebaseapp.com",
+            projectId: "inventory-57376",
+            storageBucket: "inventory-57376.appspot.com",
+            messagingSenderId: "165204980655",
+            appId: "1:165204980655:web:f7c5a78a0ae11f7191355a",
+            measurementId: "G-E8EK3N3DLE"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- משתנים גלובליים ---
+        let users = [];
+        let inventory = [];
+        let movements = [];
+        let currentUser = null;
+		let baseUnitsSingularList = [];
+		let baseUnitsPluralList = [];
+		let packUnitsSingularList = [];
+		let packUnitsPluralList = [];
+		if (localStorage.getItem('baseUnitsSingularList')) {
+			try { baseUnitsSingularList = JSON.parse(localStorage.getItem('baseUnitsSingularList')); } catch {}
+		}
+		if (localStorage.getItem('baseUnitsPluralList')) {
+			try { baseUnitsPluralList = JSON.parse(localStorage.getItem('baseUnitsPluralList')); } catch {}
+		}
+		if (localStorage.getItem('packUnitsSingularList')) {
+			try { packUnitsSingularList = JSON.parse(localStorage.getItem('packUnitsSingularList')); } catch {}
+		}
+		if (localStorage.getItem('packUnitsPluralList')) {
+			try { packUnitsPluralList = JSON.parse(localStorage.getItem('packUnitsPluralList')); } catch {}
+		}
+
+		
+        // --- פונקציות Firebase ---
+        async function loadAllData() {
+            // טען משתמשים
+            users = [];
+            let usersSnap = await db.collection('users').get();
+            usersSnap.forEach(doc => users.push(doc.data()));
+            if (users.length === 0) { // במידה ולא קיימים משתמשים – צור ברירת מחדל
+                users = [
+                    {
+                        username: 'admin',
+                        password: '1234',
+                        fullName: 'מנהל המערכת',
+                        role: 'מנהל',
+                        permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'manage_users', 'view_reports']
+                    },
+                    {
+                        username: 'warehouse',
+                        password: '1234',
+                        fullName: 'יוסי כהן',
+                        role: 'מחסנאי',
+                        permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'view_reports']
+                    },
+                    {
+                        username: 'staff',
+                        password: '1234',
+                        fullName: 'דני לוי',
+                        role: 'צוות',
+                        permissions: ['view_inventory', 'view_movements', 'add_transaction']
+                    }
+                ];
+                for (const u of users) {
+                    await db.collection('users').doc(u.username).set(u);
+                }
+            }
+            // טען מלאי
+            inventory = [];
+            let invSnap = await db.collection('inventory').get();
+            invSnap.forEach(doc => inventory.push(doc.data()));
+            
+            // טען תנועות
+            movements = [];
+            let movSnap = await db.collection('movements').orderBy('date', 'desc').limit(200).get();
+            movSnap.forEach(doc => movements.push(doc.data()));
+        }
+
+        async function saveUser(user) {
+            await db.collection('users').doc(user.username).set(user);
+        }
+
+        async function deleteUserFromDB(username) {
+            await db.collection('users').doc(username).delete();
+        }
+
+        async function saveInventoryItem(item) {
+            await db.collection('inventory').doc(item.name).set(item);
+        }
+
+        async function deleteInventoryItem(name) {
+            await db.collection('inventory').doc(name).delete();
+        }
+
+        async function saveMovement(movement) {
+            await db.collection('movements').add(movement);
+        }
+
+        // --- LOGIN & BOOT ---
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                await loadAllData();
+                const user = users.find(u => u.username === username && u.password === password);
+                if (user) {
+                    currentUser = user;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    showMainScreen();
+                    showToast(`ברוך הבא, ${user.fullName}!`, 'success');
+                } else {
+                    showToast('שם משתמש או סיסמה שגויים', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('שגיאה בהתחברות. נסה שוב.', 'error');
+            }
+        });
+
+        function showMainScreen() {
+			
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            document.getElementById('currentUserName').textContent = currentUser.fullName;
+            document.getElementById('currentUserRole').textContent = currentUser.role;
+            updateTabsVisibility();
+			document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+			document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+			document.querySelector(`.tab[data-permission="view_inventory"]`).classList.add('active');
+			document.getElementById('inventory').classList.add('active');
+            displayInventory();
+        }
+
+		function updateTabsVisibility() {
+			const tabs = document.querySelectorAll('.tab');
+			tabs.forEach(tab => {
+				// החזר לכל הטאבים תצוגה רגילה בהתחלה
+				tab.classList.remove('disabled');
+				tab.style.display = 'flex'; // או 'flex' אם זה לא עובד טוב עם רספונסיביות
+				const permission = tab.getAttribute('data-permission');
+				if (permission && !currentUser.permissions.includes(permission)) {
+					tab.classList.add('disabled');
+					tab.style.display = 'none';
+				}
+			});
+		}
+
+
+        function logout() {
+			const editModal = document.getElementById('editModal');
+			if (editModal) editModal.style.display = 'none';
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('loginForm').reset();
+        }
+
+        window.addEventListener('load', async function() {
+            try {
+                await loadAllData();
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
+                    if (users.find(u => u.username === currentUser.username)) {
+                        showMainScreen();
+                    } else {
+                        localStorage.removeItem('currentUser');
+                    }
+                }
+            } catch (error) {
+                console.error('Load error:', error);
+                showToast('שגיאה בטעינת הנתונים', 'error');
+            }
+        });
+
+        // --- TAB HANDLERS ---
+		window.showTab = function(e, tabName) {
+			let tabElement = null;
+
+			if (typeof e === 'string') {
+				tabName = e;
+			} else {
+				e.preventDefault();
+				tabElement = e.target;
+			}
+
+			// בדיקת הרשאות
+			if (tabElement) {
+				const permission = tabElement.getAttribute('data-permission');
+				if (permission && !currentUser.permissions.includes(permission)) {
+					showToast('אין לך הרשאה לגשת לתפריט זה', 'error');
+					return;
+				}
+			}
+
+			// ניקוי טאבים
+			document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+			document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+			// הפעלת טאב
+			if (tabElement) tabElement.classList.add('active');
+			else document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+
+			document.getElementById(tabName).classList.add('active');
+
+			// טעינת תוכן דינמי
+			if (tabName === 'inventory') displayInventory();
+			else if (tabName === 'movements') displayMovements();
+			else if (tabName === 'transaction') populateProductSelect();
+			else if (tabName === 'users') displayUsers();
+			else if (tabName === 'addItem') {
+				populateUnitsSelect(document.getElementById('baseUnitSingular'), baseUnitsSingularList);
+				populateUnitsSelect(document.getElementById('baseUnitPlural'), baseUnitsPluralList);
+				populateUnitsSelect(document.getElementById('packUnitSingular'), packUnitsSingularList);
+				populateUnitsSelect(document.getElementById('packUnitPlural'), packUnitsPluralList);
+			}	
+		};
+
+
+		function displayInventory() {
+			const tbody = document.getElementById('inventoryBody');
+			tbody.innerHTML = '';
+
+			inventory.forEach(item => {
+				let totalAvailable = 0;
+				let earliestExpiry = null;
+
+				(item.variants || []).forEach((variant, index) => {
+					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry === null || daysToExpiry > 0) {
+						totalAvailable += variant.quantity;
+					}
+					if (daysToExpiry !== null && daysToExpiry >= 0) {
+						const expiryDate = new Date(variant.expiry);
+						if (!earliestExpiry || expiryDate < earliestExpiry) {
+							earliestExpiry = expiryDate;
+						}
+					}
+				});
+
+				let totalPacks = 0;
+				let looseUnits = 0;
+
+				(item.variants || []).forEach(variant => {
+					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry === null || daysToExpiry > 0) {
+						totalPacks += variant.quantityPacks;
+						looseUnits += variant.quantityUnits;
+					}
+				});
+
+				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
+				looseUnits = looseUnits % item.unitsPerPack;
+				const row = tbody.insertRow();
+				row.classList.add('summary-row');
+				row.innerHTML = `
+					<td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
+					<td>${item.name}</td>
+					<td>${item.category}</td>
+					<td>
+						${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+						${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+					</td>
+					<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
+					<td>${earliestExpiry ? formatDate(earliestExpiry.toISOString()) : '-'}</td>
+					<td>${getGlobalStatus(totalPacks, item.minPacks, earliestExpiry)}</td>
+					<td>
+						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
+						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך מוצר</button>
+						<button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק מוצר</button>`
+						: ''}
+					</td>
+				`;
+
+				(item.variants || []).forEach((variant, index) => {
+					const variantRow = tbody.insertRow();
+					variantRow.classList.add('variant-row');
+					variantRow.style.display = 'none';
+
+					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					
+					let expiryStatus = '-';
+					if (daysToExpiry !== null && daysToExpiry >= 0) {
+						if (daysToExpiry <= 7) expiryStatus = '🔴';
+						else if (daysToExpiry <= 14) expiryStatus = '🟠';
+						else if (daysToExpiry <= 30) expiryStatus = '🟡';
+						else expiryStatus = '🟢';
+					}
+
+					variantRow.innerHTML = `
+						<td></td>
+						<td colspan="2">${variant.location}</td>
+						<td>
+						${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
+						${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+						</td>
+						<td>-</td>
+						<td>${formatDate(variant.expiry) || '-'}</td>
+						<td>${expiryStatus}</td>
+						<td>
+							${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
+								? `<button class="btn-small btn-edit" onclick="editVariant('${item.name}', ${index})">ערוך</button>
+								   <button class="btn-small btn-danger" onclick="deleteVariant('${item.name}', ${index})">מחק</button>`
+								: ''}
+						</td>
+					`;
+				});
+
+			});
+		}
+		
+		function populateUnitsSelect(selectElement, list, selectedValue = "") {
+			selectElement.innerHTML = "";
+			const defaultOpt = document.createElement("option");
+			defaultOpt.value = "";
+			defaultOpt.textContent = "בחר יחידה";
+			defaultOpt.disabled = true;
+			defaultOpt.selected = !selectedValue;
+			selectElement.appendChild(defaultOpt);
+
+			list.forEach(unit => {
+				const option = document.createElement("option");
+				option.value = unit;
+				option.textContent = unit;
+				option.selected = (selectedValue === unit);
+				selectElement.appendChild(option);
+			});
+			const addNew = document.createElement("option");
+			addNew.value = "__add_new__";
+			addNew.textContent = "➕ הוסף יחידה חדשה...";
+			selectElement.appendChild(addNew);
+		}
+		
+		function toggleVariants(button) {
+			const row = button.closest('tr');
+			let nextRow = row.nextElementSibling;
+			const isOpen = button.textContent === '-';
+			button.textContent = isOpen ? '+' : '-';
+
+			while (nextRow && nextRow.classList.contains('variant-row')) {
+				nextRow.style.display = isOpen ? 'none' : '';
+				nextRow = nextRow.nextElementSibling;
+			}
+		}
+
+		function getGlobalStatus(totalPacks, minPacks, earliestExpiry) {
+			if (totalPacks < minPacks) return '🔴 מתחת למינימום';
+			if (earliestExpiry) {
+				const days = Math.floor((earliestExpiry - new Date()) / (1000 * 60 * 60 * 24));
+				if (days <= 7) return '🔴 תפוגה קרובה';
+				if (days <= 14) return '🟠 תפוגה באופק';
+			}
+			return '🟢 תקין';
+		}
+
+        function getStatus(variant, daysToExpiry, isLowStock) {
+			if (variant.quantity == 0) return '❌ אין מלאי';
+			if (variant.quantity < variant.minQuantity) return '🔴 מתחת למינימום';
+			if (variant.quantity < variant.minQuantity * 1.12) return '🟠 קרוב למינימום';
+            if (daysToExpiry !== null) {
+				if (daysToExpiry <= 7) return '🔴 תפוגה קריטית';
+				if (daysToExpiry <= 14) return '🟠 תפוגה קרובה';
+				if (daysToExpiry <= 30) return '🟡 תפוגה באופק';
+			}
+            return '🟢 תקין';
+        }
+		
+		function displayInventoryReport() {
+			const tbody = document.getElementById('inventoryBody');
+			tbody.innerHTML = '';
+
+			inventory.forEach(item => {
+				// חישוב כמות כוללת, מינימום ותוקף
+				let totalPacks = 0;
+				let looseUnits = 0;
+				let earliestExpiry = null;
+				(item.variants || []).forEach(v => {
+					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry === null || daysToExpiry > 0) {
+						totalPacks += v.quantityPacks || 0;
+						looseUnits += v.quantityUnits || 0;
+					}
+					if (v.expiry && (earliestExpiry === null || new Date(v.expiry) < earliestExpiry)) {
+						earliestExpiry = new Date(v.expiry);
+					}
+				});
+				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
+				looseUnits = looseUnits % item.unitsPerPack;
+
+				// שורת מוצר מסכמת
+				const row = tbody.insertRow();
+				row.classList.add('main-row');
+				row.innerHTML = `
+					<td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
+					<td>${item.name}</td>
+					<td>${item.category}</td>
+					<td>
+						${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+						${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+					</td>
+					<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
+					<td>${earliestExpiry ? earliestExpiry.toLocaleDateString('he-IL') : '-'}</td>
+					<td></td>
+					<td>
+						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
+							? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך מוצר</button>
+							   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק מוצר</button>`
+							: ''}
+					</td>
+				`;
+
+				// שורות בן — וריאנטים (אם אתה רוצה)
+				(item.variants || []).forEach((variant, index) => {
+					const variantRow = tbody.insertRow();
+					variantRow.classList.add('variant-row');
+					variantRow.style.display = 'none';
+
+					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					
+					let expiryStatus = '-';
+					if (daysToExpiry !== null && daysToExpiry >= 0) {
+						if (daysToExpiry <= 7) expiryStatus = '🔴';
+						else if (daysToExpiry <= 14) expiryStatus = '🟠';
+						else if (daysToExpiry <= 30) expiryStatus = '🟡';
+						else expiryStatus = '🟢';
+					}
+
+					variantRow.innerHTML = `
+						<td></td>
+						<td colspan="2">${variant.location}</td>
+						<td>
+							${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
+							${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+						</td>
+						<td>-</td>
+						<td>${formatDate(variant.expiry) || '-'}</td>
+						<td>${expiryStatus}</td>
+						<td>
+							${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
+								? `<button class="btn-small btn-edit" onclick="editVariant('${item.name}', ${index})">ערוך</button>
+								   <button class="btn-small btn-danger" onclick="deleteVariant('${item.name}', ${index})">מחק</button>`
+								: ''}
+						</td>
+					`;
+				});
+			});
+		}
+
+		function displayLowStockReport() {
+			const tbody = document.getElementById('lowStockBody');
+			tbody.innerHTML = '';
+
+			inventory.forEach(item => {
+				let totalPacks = 0, looseUnits = 0;
+				(item.variants || []).forEach(v => {
+					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry === null || daysToExpiry > 0) {
+						totalPacks += v.quantityPacks || 0;
+						looseUnits += v.quantityUnits || 0;
+					}
+				});
+				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
+				looseUnits = looseUnits % item.unitsPerPack;
+
+				if (totalPacks < item.minPacks) {
+					const row = tbody.insertRow();
+					row.innerHTML = `
+						<td>${item.name}</td>
+						<td>${item.category}</td>
+						<td>
+							${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+							${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+						</td>
+						<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
+					`;
+				}
+			});
+		}
+
+		function displayExpiringReport() {
+			const tbody = document.getElementById('expiringBody');
+			tbody.innerHTML = '';
+
+			inventory.forEach(item => {
+				(item.variants || []).forEach((variant, index) => {
+					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry !== null && daysToExpiry <= 30 && daysToExpiry >= 0) {
+						let expiryStatus = '-';
+						if (daysToExpiry <= 7) {
+							expiryStatus = '🔴';
+						} else if (daysToExpiry <= 14) {
+							expiryStatus = '🟠';
+						} else if (daysToExpiry <= 30) {
+							expiryStatus = '🟡';
+						} else {
+							expiryStatus = '🟢';
+						}
+
+						const row = tbody.insertRow();
+						row.innerHTML = `
+							<td>${item.name}</td>
+							<td>${variant.location}</td>
+							<td>
+								${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
+								${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+							</td>
+							<td>${formatDate(variant.expiry) || '-'}</td>
+							<td>${expiryStatus}</td>
+						`;
+					}
+				});
+			});
+		}
+
+		function calculateTotalAvailable(item) {
+			return item.variants.reduce((sum, variant) => {
+				const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+				if (daysToExpiry === null || daysToExpiry > 0) {
+					return sum + variant.quantity;
+				}
+				return sum;
+			}, 0);
+		}
+
+		function updateStats() {
+			document.getElementById('totalProducts').textContent = inventory.length;
+			let lowStockCount = 0, expiringCount = 0;
+			inventory.forEach(item => {
+				let totalPacks = 0, looseUnits = 0;
+				(item.variants || []).forEach(v => {
+					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry === null || daysToExpiry > 0) {
+						totalPacks += v.quantityPacks || 0;
+						looseUnits += v.quantityUnits || 0;
+					}
+				});
+				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
+				if (totalPacks < item.minPacks) lowStockCount++;
+
+				// תפוגה קרובה
+				(item.variants || []).forEach(v => {
+					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+					if (daysToExpiry !== null && daysToExpiry <= 14 && daysToExpiry >= 0) expiringCount++;
+				});
+			});
+			document.getElementById('lowStockCount').textContent = lowStockCount;
+			document.getElementById('expiringCount').textContent = expiringCount;
+			const today = new Date().toLocaleDateString('he-IL');
+			const todayMovements = movements.filter(m => m.date === today).length;
+			document.getElementById('todayMovements').textContent = todayMovements;
+		}
+
+        function displayMovements() {
+            const tbody = document.getElementById('movementsBody');
+            tbody.innerHTML = '';
+            movements.forEach(movement => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${movement.date}</td>
+                    <td>${movement.time}</td>
+                    <td>${movement.product}</td>
+                    <td>${movement.type}</td>
+                    <td>${movement.quantity}</td>
+                    <td>${movement.user}</td>
+                    <td>${movement.notes || ''}</td>
+                `;
+            });
+        }
+
+		function populateProductSelect() {
+			const select = document.getElementById('transProduct');
+			select.innerHTML = '<option value="">בחר מוצר</option>';
+			inventory.forEach(item => {
+				(item.variants || []).forEach((variant, index) => {
+					const option = document.createElement('option');
+					option.value = `${item.name}||${index}`;
+					option.textContent = `${item.name} - ${variant.location} (כמות: ${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}${variant.quantityUnits > 0 ? ' + ' + variant.quantityUnits + ' ' + getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural) : ''})`;
+					select.appendChild(option);
+				});
+			});
+		}
+		
+		window.editProduct = function(productName) {
+			const item = inventory.find(i => i.name === productName);
+			populateUnitsSelect(document.getElementById('editBaseUnitSingular'), item.baseUnitSingular);
+			populateUnitsSelect(document.getElementById('editBaseUnitPlural'), item.baseUnitPlural);
+			populateUnitsSelect(document.getElementById('editPackUnitSingular'), item.packUnitSingular);
+			populateUnitsSelect(document.getElementById('editPackUnitPlural'), item.packUnitPlural);
+			document.getElementById('editItemOriginalName').value = item.name;
+			document.getElementById('editItemName').value = item.name;
+			document.getElementById('editItemCategory').value = item.category;
+			document.getElementById('editBaseUnitSingular').value = item.baseUnitSingular || '';
+			document.getElementById('editBaseUnitPlural').value = item.baseUnitPlural || '';
+			document.getElementById('editPackUnitSingular').value = item.packUnitSingular || '';
+			document.getElementById('editPackUnitPlural').value = item.packUnitPlural || '';
+			document.getElementById('editUnitsPerPack').value = item.unitsPerPack;
+			document.getElementById('editMinPacks').value = item.minPacks;
+
+			document.getElementById('editItemModal').style.display = 'block';
+		};
+		
+		window.deleteProduct = async function(productName) {
+			if (!confirm('האם אתה בטוח שברצונך למחוק את המוצר?')) return;
+			await deleteInventoryItem(productName);
+			await loadAllData();
+			showToast('המוצר נמחק בהצלחה', 'success');
+			displayInventory();
+		};
+		
+		window.deleteVariant = function(productName, variantIndex) {
+			if (!confirm('האם אתה בטוח שברצונך למחוק את הווריאנט?')) return;
+			const item = inventory.find(i => i.name === productName);
+			item.variants.splice(variantIndex, 1);
+			saveInventoryItem(item).then(loadAllData);
+		};
+		
+		window.editVariant = function(productName, variantIndex) {
+			const item = inventory.find(i => i.name === productName);
+			const variant = item.variants[variantIndex];
+			
+			populateUnitsSelect(document.getElementById('editVariantUnit'), variant.unit);
+			document.getElementById('editVariantProductName').value = productName;
+			document.getElementById('editVariantIndex').value = variantIndex;
+			document.getElementById('editVariantQuantityPacks').value = variant.quantityPacks || 0;
+			document.getElementById('editVariantQuantityUnits').value = variant.quantityUnits || 0;
+			document.getElementById('editVariantUnit').value = variant.unit || '';
+			document.getElementById('editVariantLocation').value = variant.location || '';
+			document.getElementById('editVariantExpiry').value = variant.expiry || '';
+
+			document.getElementById('editVariantModal').style.display = 'block';
+		};
+
+
+		function addVariant() {
+			const container = document.getElementById('variantsContainer');
+			const variantDiv = document.createElement('div');
+			variantDiv.className = 'form-row';
+			variantDiv.innerHTML = `
+				<div class="form-group">
+					<label>כמות חבילות</label>
+					<input type="number" class="variant-quantityPacks" min="0" required>
+				</div>
+				<div class="form-group">
+					<label>כמות יחידות בודדות</label>
+					<input type="number" class="variant-quantityUnits" min="0" required>
+				</div>
+				<div class="form-group">
+					<label>מיקום</label>
+					<select class="variant-location" required>
+						<option value="">בחר מחסן</option>
+						<option value="מחסן שתיה">מחסן שתיה</option>
+						<option value="מחסן אולם 1">מחסן אולם 1</option>
+						<option value="מטבח VIP">מטבח VIP</option>
+						<option value="מחסן מיכלים">מחסן מיכלים</option>
+						<option value="טכני">טכני</option>
+						<option value="מחסן גלידות">מחסן גלידות</option>
+						<option value="ממד מנקים">ממד מנקים</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>תאריך תפוגה</label>
+					<input type="date" class="variant-expiry">
+				</div>
+			`;
+
+			
+			container.appendChild(variantDiv);
+		}
+
+        // --- טפסים מלאי/תנועות/משתמשים ---
+		document.getElementById('addItemForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const variants = [];
+			document.querySelectorAll('#variantsContainer .form-row').forEach(variantRow => {
+				variants.push({
+					quantityPacks: parseInt(variantRow.querySelector('.variant-quantityPacks').value),
+					quantityUnits: parseInt(variantRow.querySelector('.variant-quantityUnits').value),
+					location: variantRow.querySelector('.variant-location').value,
+					expiry: variantRow.querySelector('.variant-expiry').value
+				});
+			});
+
+		const newItem = {
+			name: document.getElementById('itemName').value,
+			category: document.getElementById('itemCategory').value,
+			minPacks: parseInt(document.getElementById('minPacks').value),
+			baseUnitSingular: document.getElementById('baseUnitSingular').value,
+			baseUnitPlural: document.getElementById('baseUnitPlural').value,
+			packUnitSingular: document.getElementById('packUnitSingular').value,
+			packUnitPlural: document.getElementById('packUnitPlural').value,
+			unitsPerPack: parseInt(document.getElementById('unitsPerPack').value),
+			variants: variants
+		};
+
+			inventory.push(newItem);
+			await saveInventoryItem(newItem);
+			await loadAllData();
+			showToast('הפריט נוסף בהצלחה!', 'success');
+			this.reset();
+			document.getElementById('variantsContainer').innerHTML = '';
+			showTab('inventory');
+		});
+
+
+		document.getElementById('transactionForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const [productName, variantIndex] = document.getElementById('transProduct').value.split('||');
+			const transType = document.getElementById('transType').value;
+			const quantity = parseInt(document.getElementById('transQuantity').value);
+			const notes = document.getElementById('transNotes').value;
+
+			const item = inventory.find(i => i.name === productName);
+			const variant = item.variants[variantIndex];
+
+			if (transType === 'הוצאה') {
+				if (variant.quantity >= quantity) {
+					variant.quantity -= quantity;
+				} else {
+					showToast('אין מספיק מלאי', 'error');
+					return;
+				}
+			} else {
+				variant.quantity += quantity;
+			}
+
+			await saveInventoryItem(item);
+
+			const now = new Date();
+			const movement = {
+				date: now.toLocaleDateString('he-IL'),
+				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+				product: item.name,
+				unit: variant.unit,
+				location: variant.location,
+				type: transType,
+				quantity: quantity,
+				user: currentUser.fullName,
+				notes: notes
+			};
+
+			movements.push(movement);
+			await saveMovement(movement);
+
+			await loadAllData();
+			showToast('התנועה נרשמה בהצלחה!', 'success');
+			this.reset();
+			populateProductSelect();
+		});
+
+        document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentUser.permissions.includes('manage_users')) {
+                showToast('אין לך הרשאה לנהל משתמשים', 'error');
+                return;
+            }
+            const permissions = [];
+            document.querySelectorAll('#addUserForm input[type="checkbox"]:checked').forEach(cb => {
+                permissions.push(cb.id.replace('perm_', ''));
+            });
+            const newUser = {
+                username: document.getElementById('newUsername').value,
+                password: document.getElementById('newPassword').value,
+                fullName: document.getElementById('newFullName').value,
+                role: document.getElementById('newRole').value,
+                permissions: permissions
+            };
+            if (users.find(u => u.username === newUser.username)) {
+                showToast('שם משתמש זה כבר קיים במערכת', 'error');
+                return;
+            }
+            users.push(newUser);
+            await saveUser(newUser);
+            await loadAllData();
+            showToast('המשתמש נוסף בהצלחה!', 'success');
+            this.reset();
+            displayUsers();
+        });
+		
+		function getUnitLabel(count, singular, plural) {
+			if (typeof count === "undefined") return plural;
+			return (count === 1) ? singular : plural;
+		}
+
+        function displayUsers() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            users.forEach((user, index) => {
+                const canDelete = user.username !== 'admin';
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <div class="user-details">
+                        <strong>${user.fullName}</strong>
+                        <div style="font-size:14px;color:#666;">
+                            שם משתמש: ${user.username} | תפקיד: ${user.role}
+                        </div>
+                        <div style="font-size:14px;color:#666;margin-top:5px;">
+                            הרשאות: ${user.permissions.map(p => getPermissionName(p)).join(', ')}
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-small" onclick="editUser('${user.username}')">ערוך</button>
+                        ${canDelete ? `<button class="btn-small btn-danger" onclick="deleteUser('${user.username}')">מחק</button>` : ''}
+                    </div>
+                `;
+                userList.appendChild(userCard);
+            });
+        }
+
+        function getPermissionName(permission) {
+            const names = {
+                'view_inventory': 'צפייה במלאי',
+                'view_movements': 'צפייה בתנועות',
+                'add_transaction': 'רישום תנועות',
+                'add_item': 'הוספת פריטים',
+                'manage_users': 'ניהול משתמשים',
+                'view_reports': 'צפייה בדוחות'
+            };
+            return names[permission] || permission;
+        }
+
+        window.deleteUser = async function(username) {
+            if (!confirm('האם אתה בטוח שברצונך למחוק משתמש זה?')) return;
+            users = users.filter(u => u.username !== username);
+            await deleteUserFromDB(username);
+            await loadAllData();
+            showToast('המשתמש נמחק בהצלחה', 'success');
+            displayUsers();
+        };
+
+        // --- פונקציות עזר ---
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show';
+            if (type === 'error') toast.style.background = '#e74c3c';
+            else if (type === 'success') toast.style.background = '#27ae60';
+            else toast.style.background = '#333';
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- פונקציות עריכה ומחיקת מוצרים ---
+		window.editProduct = function(productName) {
+			const item = inventory.find(i => i.name === productName);
+			document.getElementById('editItemOriginalName').value = item.name;
+			document.getElementById('editItemName').value = item.name;
+			document.getElementById('editItemCategory').value = item.category;
+			document.getElementById('editBaseUnitSingular').value = item.baseUnitSingular || '';
+			document.getElementById('editBaseUnitPlural').value = item.baseUnitPlural || '';
+			document.getElementById('editPackUnitSingular').value = item.packUnitSingular || '';
+			document.getElementById('editPackUnitPlural').value = item.packUnitPlural || '';
+			document.getElementById('editUnitsPerPack').value = item.unitsPerPack;
+			document.getElementById('editMinPacks').value = item.minPacks;
+			document.getElementById('editModal').style.display = 'block';
+		};
+
+		
+		window.editItemFromBtn = function(btn) {
+			const itemName = btn.getAttribute('data-name');
+			window.editItem(itemName);
+		};
+        
+        window.deleteItem = async function(itemName) {
+            if (!confirm(`האם אתה בטוח שברצונך למחוק את המוצר "${itemName}"?`)) return;
+            
+            inventory = inventory.filter(i => i.name !== itemName);
+            await deleteInventoryItem(itemName);
+            await loadAllData();
+            showToast('המוצר נמחק בהצלחה', 'success');
+            displayInventory();
+        };
+        
+        window.deleteItemFromBtn = function(btn) {
+            const itemName = btn.getAttribute('data-name');
+            window.deleteItem(itemName);
+        };
+        
+        window.closeEditModal = function() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editItemForm').reset();
+        };
+        
+        // --- פונקציות עריכת משתמשים ---
+        window.editUser = function(username) {
+            if (!currentUser.permissions.includes('manage_users')) {
+                showToast('אין לך הרשאה לערוך משתמשים', 'error');
+                return;
+            }
+            
+            const user = users.find(u => u.username === username);
+            if (!user) {
+                showToast('משתמש לא נמצא', 'error');
+                return;
+            }
+            
+            document.getElementById('editUserOriginalUsername').value = user.username;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editFullName').value = user.fullName;
+            
+            // איפוס כל ה-checkboxes
+            document.querySelectorAll('#editUserForm input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // סימון ההרשאות הקיימות
+            user.permissions.forEach(perm => {
+                const checkbox = document.getElementById('edit_perm_' + perm);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            document.getElementById('editUserModal').style.display = 'block';
+        };
+        
+        window.closeEditUserModal = function() {
+            document.getElementById('editUserModal').style.display = 'none';
+            document.getElementById('editUserForm').reset();
+        };
+        
+		document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+			
+			const originalUsername = document.getElementById('editUserOriginalUsername').value;
+			const newUsername = document.getElementById('editUsername').value;
+
+			let user = users.find(u => u.username === originalUsername);
+			if (!user) {
+				showToast('משתמש לא נמצא', 'error');
+				return;
+			}
+
+			// עדכון פרטי המשתמש
+			user.fullName = document.getElementById('editFullName').value;
+			user.role = document.getElementById('newRole').value;
+
+			// עדכון שם משתמש (אם שונה)
+			if (originalUsername !== newUsername) {
+				await deleteUserFromDB(originalUsername);
+				user.username = newUsername;
+			}
+
+			// עדכון סיסמה רק אם הוזנה סיסמה חדשה
+			const newPassword = document.getElementById('editPassword').value;
+			if (newPassword) {
+				user.password = newPassword;
+			}
+
+			// עדכון הרשאות
+			const permissions = [];
+			document.querySelectorAll('#editUserForm input[type="checkbox"]:checked').forEach(cb => {
+				permissions.push(cb.id.replace('edit_perm_', ''));
+			});
+			user.permissions = permissions;
+
+			// שמירה ב-Firebase
+			await saveUser(user);
+			await loadAllData();
+
+			showToast('המשתמש עודכן בהצלחה!', 'success');
+			closeEditUserModal();
+			displayUsers();
+		});
+        
+		document.getElementById('editItemForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const originalName = document.getElementById('editItemOriginalName').value;
+			const item = inventory.find(i => i.name === originalName);
+
+			item.name = document.getElementById('editItemName').value;
+			item.category = document.getElementById('editItemCategory').value;
+			item.baseUnitSingular = document.getElementById('editBaseUnitSingular').value;
+			item.baseUnitPlural = document.getElementById('editBaseUnitPlural').value;
+			item.packUnitSingular = document.getElementById('editPackUnitSingular').value;
+			item.packUnitPlural = document.getElementById('editPackUnitPlural').value;
+			item.unitsPerPack = parseInt(document.getElementById('editUnitsPerPack').value);
+			item.minPacks = parseInt(document.getElementById('editMinPacks').value);
+
+			// אם השם השתנה, מחק את המוצר הקודם ב־Firebase
+			if (originalName !== item.name) {
+				await deleteInventoryItem(originalName);
+			}
+
+			await saveInventoryItem(item);
+			await loadAllData();
+
+			showToast('המוצר עודכן בהצלחה!', 'success');
+			closeEditModal();
+			displayInventory();
+		});
+
+        // סגור את המודל אם לוחצים מחוץ לו
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editModal');
+			const editVariantModal = document.getElementById('editVariantModal');
+			if (event.target === editVariantModal) {
+				closeEditVariantModal();
+			}
+            const editUserModal = document.getElementById('editUserModal');
+            if (event.target === editModal) {
+                closeEditModal();
+            } else if (event.target === editUserModal) {
+                closeEditUserModal();
+            }
+        };
+
+        // --- ייצוא דוחות ---
+		window.generateReport = function(type) {
+			const reportContent = document.getElementById('reportContent');
+			let html = '';
+			switch(type) {
+				case 'inventory':
+					html = '<h3>דוח מלאי מלא</h3>';
+					html += '<table style="width:100%; margin-top:20px;">';
+					html += '<thead><tr><th>שם מוצר</th><th>קטגוריה</th><th>כמות</th><th>מינימום</th><th>תפוגה קרובה</th></tr></thead>';
+					html += '<tbody>';
+					inventory.forEach(item => {
+						let totalPacks = 0, looseUnits = 0, earliestExpiry = null;
+						(item.variants || []).forEach(v => {
+							const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+							if (daysToExpiry === null || daysToExpiry > 0) {
+								totalPacks += v.quantityPacks || 0;
+								looseUnits += v.quantityUnits || 0;
+							}
+							if (v.expiry && (earliestExpiry === null || new Date(v.expiry) < earliestExpiry)) {
+								earliestExpiry = new Date(v.expiry);
+							}
+						});
+						totalPacks += Math.floor(looseUnits / item.unitsPerPack);
+						looseUnits = looseUnits % item.unitsPerPack;
+						html += `<tr>
+							<td>${item.name}</td>
+							<td>${item.category}</td>
+							<td>
+								${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+								${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+							</td>
+							<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
+							<td>${earliestExpiry ? earliestExpiry.toLocaleDateString('he-IL') : '-'}</td>
+						</tr>`;
+					});
+					html += '</tbody></table>';
+					break;
+
+				case 'lowStock':
+					html = '<h3>דוח חוסרים במלאי</h3>';
+					html += '<table style="width:100%; margin-top:20px;">';
+					html += '<thead><tr><th>שם מוצר</th><th>כמות נוכחית</th><th>כמות מינימום</th></tr></thead>';
+					html += '<tbody>';
+					inventory.forEach(item => {
+						let totalPacks = 0, looseUnits = 0;
+						(item.variants || []).forEach(v => {
+							const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+							if (daysToExpiry === null || daysToExpiry > 0) {
+								totalPacks += v.quantityPacks || 0;
+								looseUnits += v.quantityUnits || 0;
+							}
+						});
+						totalPacks += Math.floor(looseUnits / item.unitsPerPack);
+						looseUnits = looseUnits % item.unitsPerPack;
+						if (totalPacks < item.minPacks) {
+							html += `<tr class="low-stock">
+								<td>${item.name}</td>
+								<td>
+									${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+									${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+								</td>
+								<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
+							</tr>`;
+						}
+					});
+					html += '</tbody></table>';
+					break;
+
+				case 'expiring':
+					html = '<h3>דוח תפוגות קרובות</h3>';
+					html += '<table style="width:100%; margin-top:20px;">';
+					html += '<thead><tr><th>שם מוצר</th><th>מיקום</th><th>כמות</th><th>תאריך תפוגה</th><th>ימים לתפוגה</th></tr></thead>';
+					html += '<tbody>';
+					inventory.forEach(item => {
+						(item.variants || []).forEach(variant => {
+							const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+							if (daysToExpiry !== null && daysToExpiry <= 30 && daysToExpiry >= 0) {
+								html += `<tr>
+									<td>${item.name}</td>
+									<td>${variant.location}</td>
+									<td>
+										${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
+										${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+									</td>
+									<td>${variant.expiry ? new Date(variant.expiry).toLocaleDateString('he-IL') : '-'}</td>
+									<td>${daysToExpiry}</td>
+								</tr>`;
+							}
+						});
+					});
+					html += '</tbody></table>';
+					break;
+
+				case 'movements':
+                    html = '<h3>דוח תנועות אחרונות</h3>';
+                    const last30Days = new Date();
+                    last30Days.setDate(last30Days.getDate() - 30);
+                    
+                    const recentMovements = movements.filter(m => {
+                        const parts = m.date.split('/');
+                        const moveDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        return moveDate >= last30Days;
+                    });
+                    
+                    if (recentMovements.length === 0) {
+                        html += '<p>אין תנועות ב-30 הימים האחרונים</p>';
+                    } else {
+                        html += '<table style="width:100%; margin-top:20px;">';
+                        html += '<thead><tr><th>תאריך</th><th>שעה</th><th>מוצר</th><th>פעולה</th><th>כמות</th><th>משתמש</th></tr></thead>';
+                        html += '<tbody>';
+                        recentMovements.forEach(movement => {
+                            html += `<tr>
+                                <td>${movement.date}</td>
+                                <td>${movement.time}</td>
+                                <td>${movement.product}</td>
+                                <td>${movement.type}</td>
+                                <td>${movement.quantity}</td>
+                                <td>${movement.user}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    break;
+            }
+            
+            html += '<div style="margin-top:30px;">';
+            html += `<button onclick="exportReport('${type}')" class="btn-small" style="margin-right:10px;">ייצוא ל-CSV</button>`;
+            html += `<button onclick="printReport('${type}')" class="btn-small">הדפסה</button>`;
+            html += '</div>';
+            
+            reportContent.innerHTML = html;
+        };
+		
+		window.editVariant = function(productName, variantIndex) {
+			const item = inventory.find(i => i.name === productName);
+			const variant = item.variants[variantIndex];
+
+			document.getElementById('editVariantProductName').value = productName;
+			document.getElementById('editVariantIndex').value = variantIndex;
+			document.getElementById('editVariantQuantityPacks').value = variant.quantityPacks;
+			document.getElementById('editVariantQuantityUnits').value = variant.quantityUnits;
+			document.getElementById('editVariantUnit').value = variant.unit;
+			document.getElementById('editVariantLocation').value = variant.location;
+			document.getElementById('editVariantExpiry').value = variant.expiry || '';
+
+			document.getElementById('editVariantModal').style.display = 'block';
+		};
+
+		window.closeEditVariantModal = function() {
+			document.getElementById('editVariantModal').style.display = 'none';
+			document.getElementById('editVariantForm').reset();
+		};
+
+		document.getElementById('editVariantForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			const productName = document.getElementById('editVariantProductName').value;
+			const variantIndex = parseInt(document.getElementById('editVariantIndex').value);
+			const item = inventory.find(i => i.name === productName);
+
+			item.variants[variantIndex] = {
+				quantityPacks: parseInt(document.getElementById('editVariantQuantityPacks').value),
+				quantityUnits: parseInt(document.getElementById('editVariantQuantityUnits').value),
+				unit: document.getElementById('editVariantUnit').value,
+				location: document.getElementById('editVariantLocation').value,
+				expiry: document.getElementById('editVariantExpiry').value
+			};
+
+			await saveInventoryItem(item);
+			await loadAllData();
+			showToast('הווריאנט עודכן בהצלחה!', 'success');
+			closeEditVariantModal();
+			displayInventory();
+		});
+
+        window.exportReport = function(type) {
+            let csv = '';
+            let filename = '';
+            
+            switch(type) {
+                case 'inventory':
+                    csv = 'שם מוצר,קטגוריה,כמות,מינימום,יחידה,תפוגה,מיקום\n';
+                    inventory.forEach(item => {
+                        csv += `"${item.name}","${item.category}",${item.quantity},${item.minQuantity},"${item.unit}","${item.expiry || ''}","${item.location}"\n`;
+                    });
+                    filename = 'דוח_מלאי_מלא.csv';
+                    break;
+                    
+                case 'lowStock':
+                    csv = 'שם מוצר,כמות נוכחית,כמות מינימום,חוסר\n';
+                    inventory.filter(item => item.quantity < item.minQuantity).forEach(item => {
+                        const shortage = item.minQuantity - item.quantity;
+                        csv += `"${item.name}",${item.quantity},${item.minQuantity},${shortage}\n`;
+                    });
+                    filename = 'דוח_חוסרים.csv';
+                    break;
+                    
+                case 'expiring':
+                    csv = 'שם מוצר,תאריך תפוגה,ימים לתפוגה,כמות\n';
+                    inventory.filter(item => {
+                        if (!item.expiry) return false;
+                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        return days <= 30;
+                    }).forEach(item => {
+                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        csv += `"${item.name}","${item.expiry}",${days},"${item.quantity} ${item.unit}"\n`;
+                    });
+                    filename = 'דוח_תפוגות.csv';
+                    break;
+                    
+                case 'movements':
+                    csv = 'תאריך,שעה,מוצר,פעולה,כמות,משתמש,הערות\n';
+                    movements.forEach(m => {
+                        csv += `"${m.date}","${m.time}","${m.product}","${m.type}",${m.quantity},"${m.user}","${m.notes || ''}"\n`;
+                    });
+                    filename = 'דוח_תנועות.csv';
+                    break;
+            }
+            
+            // יצירת קובץ CSV עם BOM לתמיכה בעברית
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (navigator.msSaveBlob) {
+                navigator.msSaveBlob(blob, filename);
+            } else {
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+            }
+            
+            showToast('הדוח יוצא בהצלחה!', 'success');
+        };
+
+        window.printReport = function(type) {
+            const reportContent = document.getElementById('reportContent').innerHTML;
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html dir="rtl">
+                <head>
+                    <title>הדפסת דוח</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; direction: rtl; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                        th { background: #f4f4f4; }
+                        .low-stock { background-color: #ffebee; }
+                        .expiring-soon { background-color: #fff3e0; }
+                        @media print {
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${reportContent}
+                    <script>
+                        window.onload = function() { 
+                            window.print(); 
+                            window.close();
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        };
+		function formatDate(dateStr) {
+			if (!dateStr) return '';
+			const date = new Date(dateStr);
+			if (isNaN(date)) return dateStr; // אם לא מצליח לפרש כתאריך, מחזיר כפי שהוזן
+			const day = String(date.getDate()).padStart(2, '0');
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const year = date.getFullYear();
+			return `${day}/${month}/${year}`;
+		}
+		// --- טיפול בבחירה "הוסף יחידה חדשה" עבור יחידות מידה ואריזה ---
+		document.addEventListener('change', function(e) {
+			// בסיס יחיד
+			if (e.target && e.target.id === 'baseUnitSingular') {
+				if (e.target.value === '__add_new__') {
+					const newUnit = prompt('הזן שם יחידת מידה בסיסית (יחיד) חדשה:');
+					if (newUnit && !baseUnitsSingularList.includes(newUnit)) {
+						baseUnitsSingularList.push(newUnit);
+						localStorage.setItem('baseUnitsSingularList', JSON.stringify(baseUnitsSingularList));
+						populateUnitsSelect(e.target, baseUnitsSingularList, newUnit);
+					} else {
+						populateUnitsSelect(e.target, baseUnitsSingularList);
+					}
+				}
+			}
+			// בסיס רבים
+			if (e.target && e.target.id === 'baseUnitPlural') {
+				if (e.target.value === '__add_new__') {
+					const newUnit = prompt('הזן שם יחידת מידה בסיסית (רבים) חדשה:');
+					if (newUnit && !baseUnitsPluralList.includes(newUnit)) {
+						baseUnitsPluralList.push(newUnit);
+						localStorage.setItem('baseUnitsPluralList', JSON.stringify(baseUnitsPluralList));
+						populateUnitsSelect(e.target, baseUnitsPluralList, newUnit);
+					} else {
+						populateUnitsSelect(e.target, baseUnitsPluralList);
+					}
+				}
+			}
+			// חבילה יחיד
+			if (e.target && e.target.id === 'packUnitSingular') {
+				if (e.target.value === '__add_new__') {
+					const newUnit = prompt('הזן שם יחידת אריזה (יחיד) חדשה:');
+					if (newUnit && !packUnitsSingularList.includes(newUnit)) {
+						packUnitsSingularList.push(newUnit);
+						localStorage.setItem('packUnitsSingularList', JSON.stringify(packUnitsSingularList));
+						populateUnitsSelect(e.target, packUnitsSingularList, newUnit);
+					} else {
+						populateUnitsSelect(e.target, packUnitsSingularList);
+					}
+				}
+			}
+			// חבילה רבים
+			if (e.target && e.target.id === 'packUnitPlural') {
+				if (e.target.value === '__add_new__') {
+					const newUnit = prompt('הזן שם יחידת אריזה (רבים) חדשה:');
+					if (newUnit && !packUnitsPluralList.includes(newUnit)) {
+						packUnitsPluralList.push(newUnit);
+						localStorage.setItem('packUnitsPluralList', JSON.stringify(packUnitsPluralList));
+						populateUnitsSelect(e.target, packUnitsPluralList, newUnit);
+					} else {
+						populateUnitsSelect(e.target, packUnitsPluralList);
+					}
+				}
+			}
+		});
+
+    </script>
+	<footer style="text-align:center; padding:20px 0; color:#333; background:transparent; font-size:15px;">
+    © 2025 כל הזכויות שמורות לחיליק ביטאן
+	</footer>
+</body>
+</html>
