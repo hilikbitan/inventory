@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>רשימת ליקוט</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h2>רשימת ליקוט</h2>
+    <div id="listArea"></div>
+    <div style="margin-top:20px;">
+        <label>שם העובד המלקט:</label>
+        <input type="text" id="workerName" required>
+    </div>
+    <button id="submitBtn" onclick="submitPicking()">סיים ושלח</button>
+    <div id="resultMsg"></div>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+    // Firebase config כמו אצלך בדיוק
+    const firebaseConfig = {...};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // קריאת id מה-URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const pickId = urlParams.get('id');
+    let pickDoc;
+
+    async function loadPicking() {
+        if (!pickId) {
+            document.getElementById('listArea').innerText = "לא הועברה רשימת ליקוט";
+            return;
+        }
+        const docSnap = await db.collection('pickingLists').doc(pickId).get();
+        if (!docSnap.exists) {
+            document.getElementById('listArea').innerText = "רשימת הליקוט לא קיימת";
+            return;
+        }
+        pickDoc = docSnap.data();
+        renderPickingList(pickDoc.plan);
+    }
+
+    function renderPickingList(plan) {
+        let html = `<table border="1" style="width:100%;text-align:right;"><tr>
+        <th>מוצר</th><th>כמות</th><th>מחסן</th><th>תוקף</th><th>נלקח ✓</th><th>לא נמצא ✗</th></tr>`;
+        plan.forEach((row, i) => {
+            html += `<tr>
+                <td>${row.productName}</td>
+                <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+                <td>${row.location}</td>
+                <td>${row.expiry ? formatDate(row.expiry) : ''}</td>
+                <td style="text-align:center"><input type="radio" name="status${i}" value="ok"></td>
+                <td style="text-align:center"><input type="radio" name="status${i}" value="no"></td>
+            </tr>`;
+        });
+        html += `</table>`;
+        document.getElementById('listArea').innerHTML = html;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date)) return dateStr;
+        return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
+    }
+
+    async function submitPicking() {
+        const workerName = document.getElementById('workerName').value.trim();
+        if (!workerName) {
+            document.getElementById('resultMsg').innerText = "יש להזין שם מלקט";
+            return;
+        }
+        // איסוף תוצאות (וי/איקס)
+        const statuses = [];
+        pickDoc.plan.forEach((row, i) => {
+            const radios = document.getElementsByName('status'+i);
+            let val = '';
+            radios.forEach(r => { if (r.checked) val = r.value; });
+            statuses.push(val);
+        });
+        if (statuses.includes('')) {
+            document.getElementById('resultMsg').innerText = "יש לסמן כל שורה";
+            return;
+        }
+        // שלח ל-DB
+        await db.collection('pickingLists').doc(pickId).update({
+            status: 'done',
+            pickedBy: workerName,
+            pickedAt: new Date().toISOString(),
+            results: statuses
+        });
+        document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
+        document.getElementById('submitBtn').disabled = true;
+    }
+
+    loadPicking();
+    </script>
+</body>
+</html>
