@@ -535,6 +535,45 @@
 			</div>
 		</div>
 
+		<div id="addVariantModal" class="modal">
+		  <div class="modal-content">
+			<div class="modal-header">
+			  <h2>הוספת וריאנט חדש</h2>
+			  <span class="close" onclick="closeAddVariantModal()">&times;</span>
+			</div>
+			<form id="addVariantForm">
+			  <input type="hidden" id="addVariantProductName">
+			  <div class="form-row">
+				<div class="form-group">
+				  <label for="addVariantQuantityPacks">כמות חבילות</label>
+				  <input type="number" id="addVariantQuantityPacks" min="0" required>
+				</div>
+				<div class="form-group">
+				  <label for="addVariantQuantityUnits">יחידות בודדות</label>
+				  <input type="number" id="addVariantQuantityUnits" min="0" required>
+				</div>
+				<div class="form-group">
+				  <label for="addVariantLocation">מיקום</label>
+				  <select id="addVariantLocation" required>
+					<option value="">בחר מחסן</option>
+					<option value="מחסן שתיה">מחסן שתיה</option>
+					<option value="מחסן אולם 1">מחסן אולם 1</option>
+					<option value="מטבח VIP">מטבח VIP</option>
+					<option value="מחסן מיכלים">מחסן מיכלים</option>
+					<option value="טכני">טכני</option>
+					<option value="מחסן גלידות">מחסן גלידות</option>
+					<option value="ממד מנקים">ממד מנקים</option>
+				  </select>
+				</div>
+				<div class="form-group">
+				  <label for="addVariantExpiry">תאריך תפוגה</label>
+				  <input type="date" id="addVariantExpiry">
+				</div>
+			  </div>
+			  <button type="submit">הוסף וריאנט</button>
+			</form>
+		  </div>
+		</div>
         
         <!-- מודל עריכת משתמש -->
         <div id="editUserModal" class="modal">
@@ -908,8 +947,9 @@
 					<td>${getGlobalStatus(totalPacks, item.minPacks, earliestExpiry)}</td>
 					<td>
 						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
-						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך מוצר</button>
-						<button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק מוצר</button>`
+						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
+						<button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">➕ הוסף פריטים</button>
+						<button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
 						: ''}
 					</td>
 				`;
@@ -1091,8 +1131,8 @@
 					<td></td>
 					<td>
 						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
-							? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך מוצר</button>
-							   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק מוצר</button>`
+							? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
+							   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
 							: ''}
 					</td>
 				`;
@@ -2016,6 +2056,20 @@
             printWindow.document.close();
         };
 		
+		window.openAddVariantModal = function(productName) {
+		  document.getElementById('addVariantProductName').value = productName;
+		  document.getElementById('addVariantQuantityPacks').value = 0;
+		  document.getElementById('addVariantQuantityUnits').value = 0;
+		  document.getElementById('addVariantLocation').value = '';
+		  document.getElementById('addVariantExpiry').value = '';
+		  document.getElementById('addVariantModal').style.display = 'block';
+		};
+		window.closeAddVariantModal = function() {
+		  document.getElementById('addVariantModal').style.display = 'none';
+		  document.getElementById('addVariantForm').reset();
+		};
+
+		
 		function addTransactionRow() {
 			const container = document.getElementById('multiTransactionRows');
 			const rowIdx = container.children.length;
@@ -2218,9 +2272,10 @@
 					<td>${earliestExpiry ? formatDate(earliestExpiry) : '-'}</td>
 					<td>${getGlobalStatus(totalPacks, item.minPacks, earliestExpiry)}</td>
 					<td>
-						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
-						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך מוצר</button>
-						<button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק מוצר</button>`
+						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת' || currentUser.role === 'מחסנאי')
+						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
+						<button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">הוסף</button>
+						<button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
 						: ''}
 					</td>
 				`;
@@ -2288,6 +2343,29 @@
 			let expiry = getEarliestExpiry(item);
 			return getGlobalStatus(totalPacks, item.minPacks, expiry);
 		}
+		
+		document.getElementById('addVariantForm').addEventListener('submit', async function(e) {
+		  e.preventDefault();
+		  const productName = document.getElementById('addVariantProductName').value;
+		  const item = inventory.find(i => i.name === productName);
+		  if (!item) {
+			showToast('מוצר לא נמצא', 'error');
+			return;
+		  }
+		  const newVariant = {
+			quantityPacks: parseInt(document.getElementById('addVariantQuantityPacks').value),
+			quantityUnits: parseInt(document.getElementById('addVariantQuantityUnits').value),
+			location: document.getElementById('addVariantLocation').value,
+			expiry: document.getElementById('addVariantExpiry').value
+		  };
+		  item.variants.push(newVariant);
+		  await saveInventoryItem(item);
+		  await loadAllData();
+		  updateStats();
+		  showToast('הווריאנט נוסף בהצלחה!', 'success');
+		  closeAddVariantModal();
+		  displayInventory();
+		});
     </script>
 	<footer style="text-align:center; padding:20px 0; color:#333; background:transparent; font-size:15px;">
     © 2025 כל הזכויות שמורות לחיליק ביטאן
