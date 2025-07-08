@@ -254,8 +254,12 @@
 				<form id="transactionForm">
 					<div id="multiTransactionRows"></div>
 					<button type="button" onclick="addTransactionRow()">➕ הוסף מוצר/וריאנט</button>
+					<button type="button" onclick="startPickingList()">המשך לליקוט</button>
 					<button type="submit">רשום תנועה</button>
 				</form>
+				<!-- טבלת ליקוט שיתופית -->
+				<div id="pickingListContainer" style="margin-top:20px;"></div>
+				<button type="button" id="sharePickingBtn" style="display:none;margin-bottom:20px;">📤 צור קישור שיתוף</button>
 			</div>
 						
             <!-- טאב הוספת פריט -->
@@ -1463,54 +1467,132 @@
 					errorMessages.push('לא נבחר מוצר או סוג פעולה באחת השורות');
 					continue;
 				}
-				const [productName, variantIndex] = productSelect.value.split('||');
+				const productName = productSelect.value;
 				const transType = typeSelect.value;
 				const quantityPacks = parseInt(quantityPacksInput.value) || 0;
 				const quantityUnits = parseInt(quantityUnitsInput.value) || 0;
 				const notes = notesInput.value;
 
 				if ((quantityPacks === 0 && quantityUnits === 0)) {
-					errorMessages.push(`יש להזין כמות חוקית ב-${productName}`);
-					continue;
+				  errorMessages.push(`יש להזין כמות חוקית ב-${productName}`);
+				  continue;
 				}
 
 				const item = inventory.find(i => i.name === productName);
 				if (!item) {
-					errorMessages.push(`המוצר "${productName}" לא נמצא`);
-					continue;
+				  errorMessages.push(`המוצר "${productName}" לא נמצא`);
+				  continue;
 				}
-				const variant = item.variants[variantIndex];
-				if (!variant) {
-					errorMessages.push(`מיקום לא נמצא ב-${productName}`);
-					continue;
-				}
+				
+				function getPickingPlan(item, packsNeeded, unitsNeeded) {
+					let variants = (item.variants || []).map((v, idx) => ({...v, idx}));
+					// מיון תוקף קרוב ביותר
+					variants.sort((a, b) => {
+						let da = a.expiry ? new Date(a.expiry) : new Date(3000,1,1);
+						let db = b.expiry ? new Date(b.expiry) : new Date(3000,1,1);
+						return da - db;
+					});
 
-				if (transType === 'הוצאה') {
-					if (variant.quantityPacks < quantityPacks || variant.quantityUnits < quantityUnits) {
-						errorMessages.push(`אין מספיק מלאי ב"${item.name}"`);
-						continue;
+					let toTakePacks = packsNeeded;
+					let toTakeUnits = unitsNeeded;
+					let pickingList = [];
+					for (const v of variants) {
+						if (toTakePacks <= 0 && toTakeUnits <= 0) break;
+						let takePacks = Math.min(toTakePacks, v.quantityPacks);
+						let takeUnits = Math.min(toTakeUnits, v.quantityUnits);
+						if (takePacks > 0 || takeUnits > 0) {
+							pickingList.push({
+								location: v.location,
+								expiry: v.expiry,
+								takePacks,
+								takeUnits,
+								variantIndex: v.idx
+							});
+							toTakePacks -= takePacks;
+							toTakeUnits -= takeUnits;
+						}
 					}
-					variant.quantityPacks -= quantityPacks;
-					variant.quantityUnits -= quantityUnits;
-				} else {
-					variant.quantityPacks += quantityPacks;
-					variant.quantityUnits += quantityUnits;
+					return pickingList; // מכיל את כל המקומות והכמויות שמוצע לקחת מהם
 				}
 
-				await saveInventoryItem(item);
+				function pickVariantsForQuantity(item, packsNeeded, unitsNeeded) {
+					// מחזיר מערך של {variantIndex, takePacks, takeUnits}
+					let plan = [];
+					let toTakePacks = packsNeeded;
+					let toTakeUnits = unitsNeeded;
+					// ממיין וריאנטים לפי תוקף עולה
+					let sortedVariants = (item.variants || []).map((v, idx) => ({...v, idx}))
+						.sort((a, b) => {
+							let da = a.expiry ? new Date(a.expiry) : new Date(3000,1,1);
+							let db = b.expiry ? new Date(b.expiry) : new Date(3000,1,1);
+							return da - db;
+						});
 
-				const movement = {
+					for (let v of sortedVariants) {
+						let takePacks = 0, takeUnits = 0;
+						if (toTakePacks > 0 && v.quantityPacks > 0) {
+							takePacks = Math.min(toTakePacks, v.quantityPacks);
+							toTakePacks -= takePacks;
+						}
+						if (toTakeUnits > 0 && v.quantityUnits > 0) {
+							takeUnits = Math.min(toTakeUnits, v.quantityUnits);
+							toTakeUnits -= takeUnits;
+						}
+						if (takePacks > 0 || takeUnits > 0) {
+							plan.push({variantIndex: v.idx, takePacks, takeUnits, location: v.location, expiry: v.expiry});
+						}
+						if (toTakePacks <= 0 && toTakeUnits <= 0) break;
+					}
+					return {plan, leftPacks: toTakePacks, leftUnits: toTakeUnits};
+				}
+
+				// הנה הקטע שמבצע את החלוקה:
+				const {plan, leftPacks, leftUnits} = pickVariantsForQuantity(item, quantityPacks, quantityUnits);
+				if (transType === 'הוצאה') {
+				  if (leftPacks > 0 || leftUnits > 0) {
+					errorMessages.push(`אין מספיק מלאי ל-${item.name}`);
+					continue;
+				  }
+				  // עדכון בפועל של הכמויות לפי כל וריאנט
+				  for (const pick of plan) {
+					let variant = item.variants[pick.variantIndex];
+					variant.quantityPacks -= pick.takePacks;
+					variant.quantityUnits -= pick.takeUnits;
+					await saveMovement({
+					  date, time,
+					  product: item.name,
+					  location: variant.location,
+					  expiry: variant.expiry,
+					  type: transType,
+					  quantityPacks: pick.takePacks,
+					  quantityUnits: pick.takeUnits,
+					  user,
+					  notes
+					});
+					anySuccess = true;
+				  }
+				} else {
+				  // הכנסה: כרגע קל – פשוט מוסיפים לווריאנט הראשון (או שתפתח מודל בחירה בעתיד)
+				  if (!item.variants[0]) {
+					errorMessages.push(`אין וריאנטים פעילים ל-${item.name}`);
+					continue;
+				  }
+				  item.variants[0].quantityPacks += quantityPacks;
+				  item.variants[0].quantityUnits += quantityUnits;
+				  await saveMovement({
 					date, time,
 					product: item.name,
-					location: variant.location,
+					location: item.variants[0].location,
+					expiry: item.variants[0].expiry,
 					type: transType,
 					quantityPacks,
 					quantityUnits,
 					user,
 					notes
-				};
-				await saveMovement(movement);
-				anySuccess = true;
+				  });
+				  anySuccess = true;
+				}
+				await saveInventoryItem(item);
 			}
 
 			await loadAllData();
@@ -2080,17 +2162,14 @@
 			row.innerHTML = `
 				<div class="form-group">
 					<select class="transProductSelect" required>
-						<option value="">בחר מוצר/מיקום</option>
-						${
-							inventory.flatMap(item => 
-								(item.variants||[]).map((variant, idx) => 
-									`<option value="${item.name}||${idx}">
-										${item.name} - ${variant.location}
-										(כמות: ${variant.quantityPacks} ${item.packUnitSingular || 'חבילות'}${variant.quantityUnits>0?' + '+variant.quantityUnits+' '+item.baseUnitSingular:''})
-									</option>`
-								)
-							).join('')
-						}
+					  <option value="">בחר מוצר</option>
+					  ${
+						inventory.map(item => 
+						  `<option value="${item.name}">
+							${item.name} (${item.category})
+						  </option>`
+						).join('')
+					  }
 					</select>
 				</div>
 				<div class="form-group">
@@ -2366,6 +2445,225 @@
 		  closeAddVariantModal();
 		  displayInventory();
 		});
+		
+		// עוזר: מחזיר תוקף בפורמט קצר
+		function formatDateShort(dateStr) {
+			if (!dateStr) return '';
+			const d = new Date(dateStr);
+			if (isNaN(d)) return dateStr;
+			return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+		}
+
+		// יוצר את רשימת הליקוט (שלב ראשון)
+		function startPickingList() {
+			const rows = document.querySelectorAll('#multiTransactionRows .form-row');
+			let planList = [];
+
+			for (const row of rows) {
+				const productSelect = row.querySelector('.transProductSelect');
+				const quantityPacksInput = row.querySelector('.transQuantityPacksInput');
+				const quantityUnitsInput = row.querySelector('.transQuantityUnitsInput');
+				if (!productSelect.value) continue;
+				const productName = productSelect.value;
+				const packs = parseInt(quantityPacksInput.value) || 0;
+				const units = parseInt(quantityUnitsInput.value) || 0;
+				if (packs === 0 && units === 0) continue;
+				const item = inventory.find(i => i.name === productName);
+				if (!item) continue;
+				const picking = getPickingPlan(item, packs, units);
+				picking.forEach(p => {
+					planList.push({
+						productName,
+						takePacks: p.takePacks,
+						takeUnits: p.takeUnits,
+						location: p.location,
+						expiry: p.expiry,
+						variantIndex: p.variantIndex,
+						item // הפניה לאובייקט המוצר
+					});
+				});
+			}
+			renderPickingTable(planList);
+			// הצג כפתור שיתוף
+			document.getElementById('sharePickingBtn').style.display = planList.length ? '' : 'none';
+			// שמור את הרשימה ל־window (עבור השיתוף)
+			window._currentPickingPlanList = planList;
+		}
+
+		// יוצרת טבלה לסימון V/X ושדה שם מלקט
+		function renderPickingTable(planList) {
+			const container = document.getElementById('pickingListContainer');
+			if (planList.length === 0) {
+				container.innerHTML = "<div style='color:red'>לא נבחרו מוצרים או אין מספיק מלאי!</div>";
+				return;
+			}
+
+			let html = `<table border="1" style="width:100%;text-align:right;">
+			<tr>
+				<th>מוצר</th>
+				<th>כמות</th>
+				<th>מחסן</th>
+				<th>תוקף</th>
+				<th>נלקח ✓</th>
+				<th>לא נמצא ✗</th>
+			</tr>`;
+
+			planList.forEach((row, i) => {
+				html += `<tr data-row="${i}">
+					<td>${row.productName}</td>
+					<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+					<td>${row.location}</td>
+					<td>${formatDateShort(row.expiry)}</td>
+					<td style="text-align:center">
+						<input type="radio" name="status${i}" class="pick-ok">
+					</td>
+					<td style="text-align:center">
+						<input type="radio" name="status${i}" class="pick-no">
+					</td>
+				</tr>`;
+			});
+			html += `</table>
+			<div style="margin-top:15px;">
+				<label>שם העובד המלקט:</label>
+				<input type="text" id="workerName" required>
+			</div>
+			<button id="finishPickingBtn" disabled style="margin-top:15px;">סיים ליקוט ושמור</button>
+			<div id="resultMsg"></div>`;
+
+			container.innerHTML = html;
+
+			// אפשרות לשמור ליקוט רק כשסומנו כל השורות
+			const radios = container.querySelectorAll('input[type="radio"]');
+			radios.forEach(r => r.addEventListener('change', () => {
+				let allMarked = true;
+				planList.forEach((row, i) => {
+					const ok = container.querySelector(`input[name="status${i}"].pick-ok`).checked;
+					const no = container.querySelector(`input[name="status${i}"].pick-no`).checked;
+					if (!ok && !no) allMarked = false;
+				});
+				document.getElementById('finishPickingBtn').disabled = !allMarked;
+			}));
+
+			// שמירה (רק למנהלים תהיה גישה לדוח)
+			document.getElementById('finishPickingBtn').onclick = () => finishPicking(planList);
+		}
+
+		// קוד לחלוקת וריאנטים לפי תוקף
+		function getPickingPlan(item, packsNeeded, unitsNeeded) {
+			let variants = (item.variants || []).map((v, idx) => ({...v, idx}));
+			// מיון תוקף קרוב ביותר
+			variants.sort((a, b) => {
+				let da = a.expiry ? new Date(a.expiry) : new Date(3000,1,1);
+				let db = b.expiry ? new Date(b.expiry) : new Date(3000,1,1);
+				return da - db;
+			});
+			let toTakePacks = packsNeeded;
+			let toTakeUnits = unitsNeeded;
+			let pickingList = [];
+			for (const v of variants) {
+				if (toTakePacks <= 0 && toTakeUnits <= 0) break;
+				let takePacks = Math.min(toTakePacks, v.quantityPacks);
+				let takeUnits = Math.min(toTakeUnits, v.quantityUnits);
+				if (takePacks > 0 || takeUnits > 0) {
+					pickingList.push({
+						location: v.location,
+						expiry: v.expiry,
+						takePacks,
+						takeUnits,
+						variantIndex: v.idx,
+					});
+					toTakePacks -= takePacks;
+					toTakeUnits -= takeUnits;
+				}
+			}
+			return pickingList;
+		}
+
+		// שמירה בפועל של תוצאות הליקוט (ב־Firestore)
+		async function finishPicking(planList) {
+			const container = document.getElementById('pickingListContainer');
+			const rows = container.querySelectorAll('tr[data-row]');
+			let results = [];
+			let workerName = document.getElementById('workerName').value.trim();
+			if (!workerName) {
+				document.getElementById('resultMsg').innerText = "יש להזין שם מלקט";
+				return;
+			}
+			for (let i = 0; i < planList.length; i++) {
+				const row = rows[i];
+				const ok = row.querySelector('.pick-ok').checked;
+				const no = row.querySelector('.pick-no').checked;
+				results.push({ status: ok ? 'נלקח' : 'לא נמצא' });
+			}
+
+			// יוצרים מזהה ייחודי
+			const id = 'pick_' + Math.random().toString(36).substr(2, 8);
+			const now = new Date();
+			await db.collection('pickingLists').doc(id).set({
+				id,
+				date: now.toLocaleDateString('he-IL'),
+				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+				createdBy: currentUser.fullName,
+				pickedBy: workerName,
+				plan: planList,
+				results: results,
+				status: 'done'
+			});
+			document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
+			document.getElementById('finishPickingBtn').disabled = true;
+			showToast('הליקוט נשמר בהצלחה!', 'success');
+		}
+
+		// פונקציית שיתוף - ייצוא קישור עם נתוני הליקוט
+		function sharePickingLink() {
+			// שומר את ה־planList בבסיס נתונים ואז משתף קישור
+			const planList = window._currentPickingPlanList || [];
+			if (!planList.length) {
+				showToast('לא קיימת רשימת ליקוט לשיתוף', 'error');
+				return;
+			}
+			const creatorName = currentUser.fullName;
+			savePickingListToDB(planList, creatorName).then(id => {
+				const link = `${window.location.origin}/pick.html?id=${id}`;
+				if (navigator.share) {
+					navigator.share({
+						title: 'רשימת ליקוט',
+						url: link
+					});
+				} else {
+					copyToClipboard(link);
+					showToast('קישור הועתק ללוח', 'success');
+				}
+				document.getElementById('pickingListContainer').innerHTML +=
+					`<div style="margin-top:20px;">העתק את הקישור ושלח לעובד:<br>
+					<a href="${link}" target="_blank">${link}</a></div>`;
+			});
+		}
+
+		// שומר את הליקוט בבסיס נתונים ומחזיר id
+		async function savePickingListToDB(planList, creatorName) {
+			const id = 'pick_' + Math.random().toString(36).substr(2, 8);
+			const now = new Date();
+			await db.collection('pickingLists').doc(id).set({
+				id,
+				date: now.toLocaleDateString('he-IL'),
+				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+				createdBy: creatorName,
+				plan: planList,
+				status: 'open'
+			});
+			return id;
+		}
+
+		// העתקה ללוח (עוזר)
+		function copyToClipboard(text) {
+			const tmp = document.createElement('textarea');
+			tmp.value = text;
+			document.body.appendChild(tmp);
+			tmp.select();
+			document.execCommand('copy');
+			document.body.removeChild(tmp);
+		}
     </script>
 	<footer style="text-align:center; padding:20px 0; color:#333; background:transparent; font-size:15px;">
     © 2025 כל הזכויות שמורות לחיליק ביטאן
