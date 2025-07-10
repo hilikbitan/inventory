@@ -2681,21 +2681,100 @@
 			const rows = document.querySelectorAll('#multiTransactionRows .form-row');
 			const pickingPlan = [];
 
+			// עבור כל שורה בטופס (כל מוצר שהוזן)
 			for (const row of rows) {
 				const productSelect = row.querySelector('.transProductSelect');
-				const quantityPacksInput = row.querySelector('.transQuantityPacksInput');
 				const quantityUnitsInput = row.querySelector('.transQuantityUnitsInput');
+				const quantityPacksInput = row.querySelector('.transQuantityPacksInput');
+
 				if (!productSelect.value) continue;
 
-				pickingPlan.push({
-					productName: productSelect.value,
-					takePacks: parseInt(quantityPacksInput.value) || 0,
-					takeUnits: parseInt(quantityUnitsInput.value) || 0,
-					location: '', // יתמלא בעת הפיצול בפועל
-					expiry: ''    // יתמלא בעת הפיצול בפועל
-				});
+				const productName = productSelect.value;
+				let requiredUnits = parseInt(quantityUnitsInput.value) || 0;
+				let requiredPacks = parseInt(quantityPacksInput.value) || 0;
+
+				// מצא את הפריט במלאי שלך
+				const item = inventory.find(x => x.name === productName);
+				if (!item) continue;
+
+				// ---- ליקוט חכם לפי תוקף קרוב (FEFO) ----
+				// נעבור קודם לפי חבילות, אחר כך לפי יחידות
+
+				// ליקוט לפי חבילות
+				if (requiredPacks > 0) {
+					// מיין חבילות לפי expiry (ותאריכים חסרים בסוף)
+					const packsVariants = (item.variants || [])
+						.filter(v => v.quantityPacks > 0)
+						.slice()
+						.sort((a, b) => {
+							if (!a.expiry) return 1;
+							if (!b.expiry) return -1;
+							return new Date(a.expiry) - new Date(b.expiry);
+						});
+					for (const variant of packsVariants) {
+						if (requiredPacks <= 0) break;
+						const qty = variant.quantityPacks || 0;
+						if (qty === 0) continue;
+						const takePacks = Math.min(requiredPacks, qty);
+						pickingPlan.push({
+							productName,
+							takePacks,
+							takeUnits: 0,
+							location: variant.location,
+							expiry: variant.expiry
+						});
+						requiredPacks -= takePacks;
+					}
+				}
+
+				// ליקוט לפי יחידות
+				if (requiredUnits > 0) {
+					const unitsVariants = (item.variants || [])
+						.filter(v => v.quantityUnits > 0)
+						.slice()
+						.sort((a, b) => {
+							if (!a.expiry) return 1;
+							if (!b.expiry) return -1;
+							return new Date(a.expiry) - new Date(b.expiry);
+						});
+					for (const variant of unitsVariants) {
+						if (requiredUnits <= 0) break;
+						const qty = variant.quantityUnits || 0;
+						if (qty === 0) continue;
+						const takeUnits = Math.min(requiredUnits, qty);
+						pickingPlan.push({
+							productName,
+							takePacks: 0,
+							takeUnits,
+							location: variant.location,
+							expiry: variant.expiry
+						});
+						requiredUnits -= takeUnits;
+					}
+				}
+
+				// אם נותרו דרישות שלא היה אפשר לספק — צור שורה חסרה
+				if (requiredPacks > 0) {
+					pickingPlan.push({
+						productName,
+						takePacks: requiredPacks,
+						takeUnits: 0,
+						location: "חסר במלאי",
+						expiry: ""
+					});
+				}
+				if (requiredUnits > 0) {
+					pickingPlan.push({
+						productName,
+						takePacks: 0,
+						takeUnits: requiredUnits,
+						location: "חסר במלאי",
+						expiry: ""
+					});
+				}
 			}
 
+			// כאן אפשר להמשיך כרגיל — לשמור את pickingPlan ב-Firebase כ-plan
 			if (pickingPlan.length === 0) {
 				showToast('לא נבחרו מוצרים לליקוט', 'error');
 				return;
@@ -2704,25 +2783,10 @@
 			// שמירת רשימת ליקוט חדשה ל-DB
 			const pickId = await createPickingList(pickingPlan);
 
-			// שמירת תנועת סטנדביי - שים לב: עדיין לא מוריד מהמלאי!
-			await db.collection('movements').add({
-				pickingListId: pickId,
-				status: 'standby',
-				plan: pickingPlan,
-				createdBy: currentUser.fullName,
-				date: new Date().toISOString()
-			});
-
-			// יצירת קישור שיתוף
+			// ... המשך השיתוף וכו'
 			const link = `${window.location.origin}/pick.html?id=${pickId}`;
-			document.getElementById('pickingListContainer').innerHTML = `<div>קישור לרשימת ליקוט: <a href="${link}" target="_blank">${link}</a></div>`;
-			document.getElementById('sharePickingBtn').style.display = '';
-			document.getElementById('sharePickingBtn').onclick = function() {
-				copyToClipboard(link);
-				showToast('הקישור הועתק', 'success');
-			};
-
-			// הצג קישור (או פתח אוטומטית בחלון חדש)
+			document.getElementById('pickingListContainer').innerHTML =
+				`<div>קישור לרשימת ליקוט: <a href="${link}" target="_blank">${link}</a></div>`;
 			window.open(link, '_blank');
 		}
 
