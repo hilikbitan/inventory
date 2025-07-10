@@ -662,6 +662,18 @@
             </div>
         </div>
 		
+		<div id="editPickingModal" class="modal" style="display:none;direction:rtl;">
+		  <div class="modal-content" style="max-width:600px;margin:50px auto;background:#fff;padding:28px;border-radius:14px;box-shadow:0 6px 36px #0002;">
+			<span class="close" onclick="closeEditPicking()" style="float:left;cursor:pointer;font-size:2em;">&times;</span>
+			<h3 style="text-align:center;margin-top:0;">עריכת רשימת ליקוט</h3>
+			<div id="editPickingListArea"></div>
+			<div style="margin:16px 0;">
+			  <button class="btn-main" onclick="selectAllPicking(true)">בחר הכל</button>
+			  <button class="btn-main" onclick="selectAllPicking(false)">נקה הכל</button>
+			</div>
+			<button class="btn-main" onclick="saveEditPicking()">אשר וסגור</button>
+		  </div>
+		</div>		
     </div>
 	
 	
@@ -912,6 +924,7 @@
 					</td>
 					<td>
 						${p.status === 'open' ? `<button onclick="approvePicking('${p.id}')">אשר וסגור</button>` : ''}
+						<button onclick="openEditPicking('${p.id}')">ערוך</button>
 						<button onclick="deletePicking('${p.id}')">מחק</button>
 					</td>
 				</tr>
@@ -1190,69 +1203,132 @@
 			document.getElementById('editMovementQuantityUnits').value = movement.quantityUnits;
 			document.getElementById('editMovementNotes').value = movement.notes || '';
 			document.getElementById('editMovementModal').style.display = 'block';
-		};
+		};	
+		
+		window.openEditPicking = async function(pickId) {
+			const pickSnap = await db.collection('pickingLists').doc(pickId).get();
+			if (!pickSnap.exists) return showToast('רשימת הליקוט לא קיימת', 'error');
+			const pick = pickSnap.data();
+			window.currentEditPickId = pickId;
 
+			// בנה טבלה לעריכה
+			let html = `<table class="picking-table"><tr>
+				<th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>נלקח ✓</th><th>לא נלקח ✗</th></tr>`;
+			pick.plan.forEach((row, i) => {
+				html += `<tr>
+					<td>${row.productName}</td>
+					<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+					<td>${row.location || ''}</td>
+					<td>${row.expiry ? formatDate(row.expiry) : ''}</td>
+					<td style="text-align:center"><input type="radio" name="edit_status${i}" value="נלקח"></td>
+					<td style="text-align:center"><input type="radio" name="edit_status${i}" value="לא נלקח"></td>
+				</tr>`;
+			});
+			html += `</table>`;
+			document.getElementById('editPickingListArea').innerHTML = html;
+
+			// פותח את המודל
+			document.getElementById('editPickingModal').style.display = "block";
+			// ברירת מחדל: בחר הכל
+			selectAllPicking(true);
+		}
+
+		// סגור את המודל
+		window.closeEditPicking = function() {
+			document.getElementById('editPickingModal').style.display = "none";
+			window.lastEditPickingResults = null;
+		}
+
+		// כפתור "בחר הכל" או "נקה הכל"
+		window.selectAllPicking = function(val=true) {
+			const pickModal = document.getElementById('editPickingListArea');
+			if (!pickModal) return;
+			const radios = pickModal.querySelectorAll('input[type=radio][value="נלקח"]');
+			radios.forEach(r => r.checked = val);
+			const radios2 = pickModal.querySelectorAll('input[type=radio][value="לא נלקח"]');
+			if (!val) radios2.forEach(r => r.checked = true);
+		}
+
+		// אשר את העריכה
+		window.saveEditPicking = async function() {
+			const pickId = window.currentEditPickId;
+			const pickSnap = await db.collection('pickingLists').doc(pickId).get();
+			if (!pickSnap.exists) return showToast('רשימת הליקוט לא קיימת', 'error');
+			const pick = pickSnap.data();
+
+			// אוסף תוצאות
+			const results = [];
+			pick.plan.forEach((row, i) => {
+				const radios = document.getElementsByName('edit_status'+i);
+				let val = '';
+				radios.forEach(r => { if (r.checked) val = r.value; });
+				results.push({ status: val });
+			});
+
+			// בדוק שסומן לכל השורות משהו
+			if (results.some(r => !r.status)) {
+				showToast("יש לסמן לכל מוצר אם נלקח או לא", "error");
+				return;
+			}
+
+			// שומר תוצאות בזיכרון זמני עבור approvePicking
+			window.lastEditPickingResults = results;
+
+			// מאשר הליקוט עם העריכה!
+			await approvePicking(pickId, true);
+
+			closeEditPicking();
+		}
+	
 		// סגירת המודל
 		window.closeEditMovementModal = function() {
 			document.getElementById('editMovementModal').style.display = 'none';
 			document.getElementById('editMovementForm').reset();
 		};
 		
-		window.approvePicking = async function(pickId) {
-			if (!confirm("לאשר ולהוציא מהמלאי את הליקוט הזה?")) return;
-			// שלוף את המסמך
-			const doc = await db.collection('pickingLists').doc(pickId).get();
-			if (!doc.exists) {
-				showToast("רשימת הליקוט לא נמצאה", "error");
-				return;
-			}
-			const pick = doc.data();
-			if (!pick.plan || !pick.results) {
-				showToast("רשימה לא שלמה", "error");
-				return;
+		window.approvePicking = async function(pickId, manual = false) {
+			const pickSnap = await db.collection('pickingLists').doc(pickId).get();
+			if (!pickSnap.exists) return showToast('רשימת הליקוט לא קיימת', 'error');
+			const pick = pickSnap.data();
+
+			// במצב רגיל — מאשר הכל אוטומטית
+			let results = [];
+			if (!manual) {
+				results = pick.plan.map(() => ({ status: "נלקח" }));
+			} else {
+				// אם עורך, נקבל את המערך מ-modal העריכה (נבנה בהמשך)
+				results = window.lastEditPickingResults || pick.plan.map(() => ({ status: "" }));
 			}
 
-			// עבור כל שורה שסומנה כ"נלקח" — הוצא מהמלאי והוסף תנועת הוצאה
+			// עדכון סטטוס והרשימה
+			await db.collection('pickingLists').doc(pickId).update({
+				status: 'done',
+				results,
+				pickedBy: currentUser.fullName,
+				pickedAt: new Date().toISOString()
+			});
+
+			// ייצור תנועות מלאי בפועל לכל מה שסומן "נלקח"
 			for (let i = 0; i < pick.plan.length; i++) {
+				if (results[i].status !== 'נלקח') continue;
 				const row = pick.plan[i];
-				const result = pick.results[i];
-				if (result.status !== 'נלקח') continue; // לא נלקח בפועל, מדלגים
-
-				// עדכן מלאי (מוצא וריאנט מתאים במוצר לפי location+expiry)
-				let item = inventory.find(it => it.name === row.productName);
-				if (!item) continue;
-				let variant = (item.variants || []).find(v =>
-					v.location === row.location &&
-					v.expiry === row.expiry
-				);
-				if (!variant) continue;
-				variant.quantityPacks = Math.max(0, (variant.quantityPacks || 0) - (row.takePacks || 0));
-				variant.quantityUnits = Math.max(0, (variant.quantityUnits || 0) - (row.takeUnits || 0));
-
-				await saveInventoryItem(item);
-
-				// יצירת תנועת מלאי
-				const now = new Date();
 				await saveMovement({
-					date: now.toLocaleDateString('he-IL'),
-					time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
-					product: item.name,
-					location: variant.location,
-					expiry: variant.expiry,
+					date: new Date().toLocaleDateString('he-IL'),
+					time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
+					product: row.productName,
+					location: row.location,
+					expiry: row.expiry,
 					type: "הוצאה",
 					quantityPacks: row.takePacks,
 					quantityUnits: row.takeUnits,
-					user: pick.pickedBy || pick.createdBy,
-					notes: 'ליקוט מסודר'
+					user: currentUser.fullName,
+					notes: 'ליקוט אוטומטי ממנהל'
 				});
 			}
-			// עדכן סטטוס וסגור
-			await db.collection('pickingLists').doc(pickId).update({ status: 'closed', closedAt: new Date().toISOString() });
-			await loadAllData();
+
+			showToast('הליקוט אושר בהצלחה', 'success');
 			displayPickings();
-			updateStats();
-			showToast('הליקוט אושר והמלאי עודכן!', 'success');
-		}	
+		}
 
 		// שמירת עריכה
 		document.getElementById('editMovementForm').addEventListener('submit', async function(e) {
