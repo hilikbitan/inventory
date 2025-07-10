@@ -1954,6 +1954,7 @@
             document.getElementById('editUsername').value = user.username;
             document.getElementById('editPassword').value = '';
             document.getElementById('editFullName').value = user.fullName;
+			document.getElementById('editUserRole').value = user.role || '';
             
             // איפוס כל ה-checkboxes
             document.querySelectorAll('#editUserForm input[type="checkbox"]').forEach(cb => {
