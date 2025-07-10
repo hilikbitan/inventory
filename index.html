@@ -49,7 +49,7 @@
         label {display:block;margin-bottom:5px;font-weight:600;color:#555;}
         input,select {width:100%;padding:12px;border:1px solid #ddd;border-radius:4px;font-size:16px;-webkit-appearance:none;}
         input:focus,select:focus {outline:none;border-color:#3498db;box-shadow:0 0 0 2px rgba(52,152,219,0.2);}
-        button {background:#3498db;color:white;padding:12px 30px;border:none;border-radius:4px;cursor:pointer;font-size:16px;font-weight:600;transition:background .3s;width:100%;}
+        button {background:#3498db;color:white;padding:12px 30px;border:none;border-radius:4px;cursor:pointer;font-size:16px;font-weight:600;transition:background .3s;width:auto;}
         button:hover {background:#2980b9;}
         button:disabled {background:#95a5a6;cursor:not-allowed;}
         .stats {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:30px;}
@@ -126,6 +126,35 @@
             cursor: pointer;
             padding: 2px 6px;
         }
+		
+		#editPickingListArea {
+			max-height: 340px;
+			overflow-y: auto;
+			margin-bottom: 18px;
+		}
+		.modal-content button..btn-main {
+			min-width: 120px;
+			width: auto;
+			padding: 7px 22px;
+			font-size: 1em;
+			margin: 7px 6px 0 6px;
+			display: inline-block;
+			box-sizing: border-box;
+		}
+		.picking-table th, .picking-table td {
+			padding: 6px 8px;
+			font-size: 1em;
+			white-space: nowrap;
+			max-width: 140px;
+			text-overflow: ellipsis;
+			overflow: hidden;
+		}
+		.picking-table {
+			width: auto;
+			margin: 0 auto 10px auto;
+			min-width: 0;
+		}
+
     </style>
 </head>
 <body>
@@ -260,7 +289,7 @@
 					<div id="pickingListContainer" style="margin: 15px 0;"></div>
 				</form>
 				<!-- טבלת ליקוט שיתופית -->
-				<div id="pickingListContainer" style="margin-top:20px;"></div>
+				<div id="pickingListContainer"></div>
 				<button type="button" id="sharePickingBtn" style="display:none;margin-bottom:20px;" onclick="sharePickingLink()">📤 צור קישור שיתוף</button>
 			</div>
 						
@@ -667,13 +696,8 @@
 			<span class="close" onclick="closeEditPicking()" style="float:left;cursor:pointer;font-size:2em;">&times;</span>
 			<h3 style="text-align:center;margin-top:0;">עריכת רשימת ליקוט</h3>
 			<div id="editPickingListArea"></div>
-			<div style="margin:16px 0;">
-			  <button class="btn-main" onclick="selectAllPicking(true)">בחר הכל</button>
-			  <button class="btn-main" onclick="selectAllPicking(false)">נקה הכל</button>
-			</div>
-			<button class="btn-main" onclick="saveEditPicking()">אשר וסגור</button>
 		  </div>
-		</div>		
+		</div>	
     </div>
 	
 	
@@ -923,7 +947,6 @@
 						<a href="${link}" target="_blank" style="font-size:12px;">פתח רשימה</a>
 					</td>
 					<td>
-						${p.status === 'open' ? `<button onclick="approvePicking('${p.id}')">אשר וסגור</button>` : ''}
 						<button onclick="openEditPicking('${p.id}')">ערוך</button>
 						<button onclick="deletePicking('${p.id}')">מחק</button>
 					</td>
@@ -1211,25 +1234,39 @@
 			const pick = pickSnap.data();
 			window.currentEditPickId = pickId;
 
-			// בנה טבלה לעריכה
+			// בנה טבלה לעריכה עם checkbox
 			let html = `<table class="picking-table"><tr>
-				<th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>נלקח ✓</th><th>לא נלקח ✗</th></tr>`;
+				<th>מוצר</th>
+				<th>כמות</th>
+				<th>מיקום</th>
+				<th>תוקף</th>
+				<th>הערה</th>
+				<th>נלקח</th>
+			</tr>`;
 			pick.plan.forEach((row, i) => {
 				html += `<tr>
 					<td>${row.productName}</td>
 					<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
 					<td>${row.location || ''}</td>
 					<td>${row.expiry ? formatDate(row.expiry) : ''}</td>
-					<td style="text-align:center"><input type="radio" name="edit_status${i}" value="נלקח"></td>
-					<td style="text-align:center"><input type="radio" name="edit_status${i}" value="לא נלקח"></td>
+					<td>
+						<input type="text" id="edit_note_${i}" value="${row.note || ''}" style="width:95%;padding:4px 7px;">
+					</td>
+					<td style="text-align:center">
+						<input type="checkbox" class="edit-pick-checkbox" data-index="${i}" id="edit_pick_checkbox_${i}" checked>
+					</td>
 				</tr>`;
 			});
-			html += `</table>`;
-			document.getElementById('editPickingListArea').innerHTML = html;
 
-			// פותח את המודל
+			html += `</table>
+			<div style="text-align:center; margin-top:14px;">
+			  <button class="btn-main" onclick="selectAllPicking(true)">בחר הכל</button>
+			  <button class="btn-main" onclick="selectAllPicking(false)">נקה הכל</button>
+			  <button class="btn-main" onclick="saveEditPicking()">אשר וסגור</button>
+			</div>
+			`;
+			document.getElementById('editPickingListArea').innerHTML = html;
 			document.getElementById('editPickingModal').style.display = "block";
-			// ברירת מחדל: בחר הכל
 			selectAllPicking(true);
 		}
 
@@ -1243,11 +1280,10 @@
 		window.selectAllPicking = function(val=true) {
 			const pickModal = document.getElementById('editPickingListArea');
 			if (!pickModal) return;
-			const radios = pickModal.querySelectorAll('input[type=radio][value="נלקח"]');
-			radios.forEach(r => r.checked = val);
-			const radios2 = pickModal.querySelectorAll('input[type=radio][value="לא נלקח"]');
-			if (!val) radios2.forEach(r => r.checked = true);
+			const checkboxes = pickModal.querySelectorAll('.edit-pick-checkbox');
+			checkboxes.forEach(cb => cb.checked = val);
 		}
+
 
 		// אשר את העריכה
 		window.saveEditPicking = async function() {
@@ -1256,20 +1292,15 @@
 			if (!pickSnap.exists) return showToast('רשימת הליקוט לא קיימת', 'error');
 			const pick = pickSnap.data();
 
-			// אוסף תוצאות
+			// אוסף תוצאות מה-checkboxים
 			const results = [];
 			pick.plan.forEach((row, i) => {
-				const radios = document.getElementsByName('edit_status'+i);
-				let val = '';
-				radios.forEach(r => { if (r.checked) val = r.value; });
-				results.push({ status: val });
+				const cb = document.getElementById('edit_pick_checkbox_' + i);
+				results.push({ status: cb.checked ? "נלקח" : "לא נלקח" });
 			});
 
-			// בדוק שסומן לכל השורות משהו
-			if (results.some(r => !r.status)) {
-				showToast("יש לסמן לכל מוצר אם נלקח או לא", "error");
-				return;
-			}
+			// בדוק שסומן לכל השורות משהו (לא חובה — עכשיו אין רדיו)
+			// אפשר לוותר על בדיקה, כי ברירת מחדל היא "לא נלקח"
 
 			// שומר תוצאות בזיכרון זמני עבור approvePicking
 			window.lastEditPickingResults = results;
@@ -1279,6 +1310,7 @@
 
 			closeEditPicking();
 		}
+
 	
 		// סגירת המודל
 		window.closeEditMovementModal = function() {
@@ -1322,7 +1354,7 @@
 					quantityPacks: row.takePacks,
 					quantityUnits: row.takeUnits,
 					user: currentUser.fullName,
-					notes: 'ליקוט אוטומטי ממנהל'
+					notes: 'ליקוט אוטומטי!'
 				});
 			}
 
@@ -2853,12 +2885,27 @@
 			}
 
 			const pickId = await createPickingList(pickingPlan);
-
 			// המשך כרגיל
 			const link = `${window.location.origin}/pick.html?id=${pickId}`;
-			document.getElementById('pickingListContainer').innerHTML =
-				`<div>קישור לרשימת ליקוט: <a href="${link}" target="_blank">${link}</a></div>`;
-			window.open(link, '_blank');
+			const shareHtml = `
+			  <div style="margin:18px 0; display:flex; flex-wrap:wrap; gap:10px;">
+				<button class="btn-main" onclick="shareWhatsapp('${link}')">שלח ב־WhatsApp</button>
+				<button class="btn-main" onclick="shareTelegram('${link}')">שלח ב־Telegram</button>
+				<button class="btn-main" onclick="shareEmail('${link}')">שלח באימייל</button>
+				<button class="btn-main" onclick="copyToClipboard('${link}')">העתק קישור</button>
+			  </div>
+			  <div id="shareResultMsg" style="margin-top:10px; text-align:center;"></div>
+			`;
+			document.getElementById('pickingListContainer').innerHTML = shareHtml;
+			document.getElementById('transactionForm').reset(); // או
+			document.getElementById('multiTransactionRows').innerHTML = '';
+			addTransactionRow();
+
+			document.getElementById('pickingListBtn').disabled = true;
+			setTimeout(() => {
+			  document.getElementById('pickingListBtn').disabled = false;
+			}, 2500);
+			showToast('נוצרה רשימת ליקוט!');
 		}
 
 		// קוד לחלוקת וריאנטים לפי תוקף
@@ -2933,6 +2980,30 @@
 			await db.collection('pickingLists').doc(pickId).delete();
 			displayPickings();
 			showToast('הליקוט נמחק', 'success');
+		}
+		
+		function shareWhatsapp(link) {
+			const text = encodeURIComponent('קישור לרשימת ליקוט: ' + link);
+			window.open(`https://wa.me/?text=${text}`, '_blank');
+		}
+
+		function shareTelegram(link) {
+			const text = encodeURIComponent('קישור לרשימת ליקוט: ' + link);
+			window.open(`https://t.me/share/url?url=${text}`, '_blank');
+		}
+
+		function shareEmail(link) {
+			const subject = encodeURIComponent('קישור לרשימת ליקוט');
+			const body = encodeURIComponent('קישור לרשימת ליקוט:\n' + link);
+			window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+		}
+
+		function copyToClipboard(link) {
+			navigator.clipboard.writeText(link).then(() => {
+				document.getElementById('shareResultMsg').textContent = 'הקישור הועתק!';
+			}, () => {
+				document.getElementById('shareResultMsg').textContent = 'שגיאה בהעתקה';
+			});
 		}
 
     </script>
