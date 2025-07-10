@@ -755,6 +755,23 @@
 			});
 		}
 
+		async function createPickingList(planList) {
+			const now = new Date();
+			const docRef = await db.collection('pickingLists').add({
+				date: now.toLocaleDateString('he-IL'),
+				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+				createdBy: currentUser.fullName,
+				status: 'open',
+				plan: planList.map(p => ({
+					productName: p.productName,
+					takePacks: p.takePacks,
+					takeUnits: p.takeUnits,
+					location: p.location,
+					expiry: p.expiry
+				}))
+			});
+			return docRef.id;
+		}
 
         async function saveUser(user) {
             await db.collection('users').doc(user.username).set(user);
@@ -767,6 +784,19 @@
         async function saveInventoryItem(item) {
             await db.collection('inventory').doc(item.name).set(item);
         }
+		
+		async function createPickingList(plan) {
+		  const now = new Date();
+		  const docRef = await db.collection('pickingLists').add({
+			date: now.toLocaleDateString('he-IL'),
+			time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+			createdBy: currentUser.fullName,
+			status: 'open',
+			plan: plan
+		  });
+		  return docRef.id;
+		}
+
 
         async function deleteInventoryItem(name) {
             await db.collection('inventory').doc(name).delete();
@@ -775,6 +805,20 @@
         async function saveMovement(movement) {
             await db.collection('movements').add(movement);
         }
+		
+		async function savePickingListToDB(planList, creatorName) {
+			const id = 'pick_' + Math.random().toString(36).substr(2, 8);
+			const now = new Date();
+			await db.collection('pickingLists').doc(id).set({
+				id,
+				date: now.toLocaleDateString('he-IL'),
+				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+				createdBy: creatorName,
+				plan: planList,
+				status: 'open'
+			});
+			return id;
+		}
 
         // --- LOGIN & BOOT ---
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -1195,6 +1239,8 @@
 			displayPickings();
 			showToast('הליקוט נמחק', 'success');
 		}
+		
+		
 
 		// שמירת עריכה
 		document.getElementById('editMovementForm').addEventListener('submit', async function(e) {
@@ -2604,74 +2650,16 @@
 						takeUnits: p.takeUnits,
 						location: p.location,
 						expiry: p.expiry,
-						variantIndex: p.variantIndex,
-						item // הפניה לאובייקט המוצר
+						variantIndex: p.variantIndex
 					});
 				});
 			}
-			renderPickingTable(planList);
+			// אל תציג טבלה — זה יהיה רק ב-pick.html
+			// renderPickingTable(planList); <-- למחוק/להשבית!
 			// הצג כפתור שיתוף
 			document.getElementById('sharePickingBtn').style.display = planList.length ? '' : 'none';
 			// שמור את הרשימה ל־window (עבור השיתוף)
 			window._currentPickingPlanList = planList;
-		}
-
-		// יוצרת טבלה לסימון V/X ושדה שם מלקט
-		function renderPickingTable(planList) {
-			const container = document.getElementById('pickingListContainer');
-			if (planList.length === 0) {
-				container.innerHTML = "<div style='color:red'>לא נבחרו מוצרים או אין מספיק מלאי!</div>";
-				return;
-			}
-
-			let html = `<table border="1" style="width:100%;text-align:right;">
-			<tr>
-				<th>מוצר</th>
-				<th>כמות</th>
-				<th>מחסן</th>
-				<th>תוקף</th>
-				<th>נלקח ✓</th>
-				<th>לא נמצא ✗</th>
-			</tr>`;
-
-			planList.forEach((row, i) => {
-				html += `<tr data-row="${i}">
-					<td>${row.productName}</td>
-					<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
-					<td>${row.location}</td>
-					<td>${formatDateShort(row.expiry)}</td>
-					<td style="text-align:center">
-						<input type="radio" name="status${i}" class="pick-ok">
-					</td>
-					<td style="text-align:center">
-						<input type="radio" name="status${i}" class="pick-no">
-					</td>
-				</tr>`;
-			});
-			html += `</table>
-			<div style="margin-top:15px;">
-				<label>שם העובד המלקט:</label>
-				<input type="text" id="workerName" required>
-			</div>
-			<button id="finishPickingBtn" disabled style="margin-top:15px;">סיים ליקוט ושמור</button>
-			<div id="resultMsg"></div>`;
-
-			container.innerHTML = html;
-
-			// אפשרות לשמור ליקוט רק כשסומנו כל השורות
-			const radios = container.querySelectorAll('input[type="radio"]');
-			radios.forEach(r => r.addEventListener('change', () => {
-				let allMarked = true;
-				planList.forEach((row, i) => {
-					const ok = container.querySelector(`input[name="status${i}"].pick-ok`).checked;
-					const no = container.querySelector(`input[name="status${i}"].pick-no`).checked;
-					if (!ok && !no) allMarked = false;
-				});
-				document.getElementById('finishPickingBtn').disabled = !allMarked;
-			}));
-
-			// שמירה (רק למנהלים תהיה גישה לדוח)
-			document.getElementById('finishPickingBtn').onclick = () => finishPicking(planList);
 		}
 
 		// קוד לחלוקת וריאנטים לפי תוקף
@@ -2705,41 +2693,6 @@
 			return pickingList;
 		}
 
-		// שמירה בפועל של תוצאות הליקוט (ב־Firestore)
-		async function finishPicking(planList) {
-			const container = document.getElementById('pickingListContainer');
-			const rows = container.querySelectorAll('tr[data-row]');
-			let results = [];
-			let workerName = document.getElementById('workerName').value.trim();
-			if (!workerName) {
-				document.getElementById('resultMsg').innerText = "יש להזין שם מלקט";
-				return;
-			}
-			for (let i = 0; i < planList.length; i++) {
-				const row = rows[i];
-				const ok = row.querySelector('.pick-ok').checked;
-				const no = row.querySelector('.pick-no').checked;
-				results.push({ status: ok ? 'נלקח' : 'לא נמצא' });
-			}
-
-			// יוצרים מזהה ייחודי
-			const id = 'pick_' + Math.random().toString(36).substr(2, 8);
-			const now = new Date();
-			await db.collection('pickingLists').doc(id).set({
-				id,
-				date: now.toLocaleDateString('he-IL'),
-				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
-				createdBy: currentUser.fullName,
-				pickedBy: workerName,
-				plan: planList,
-				results: results,
-				status: 'done'
-			});
-			document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
-			document.getElementById('finishPickingBtn').disabled = true;
-			showToast('הליקוט נשמר בהצלחה!', 'success');
-		}
-
 		// פונקציית שיתוף - ייצוא קישור עם נתוני הליקוט
 		function sharePickingLink() {
 			// שומר את ה־planList בבסיס נתונים ואז משתף קישור
@@ -2764,21 +2717,6 @@
 					`<div style="margin-top:20px;">העתק את הקישור ושלח לעובד:<br>
 					<a href="${link}" target="_blank">${link}</a></div>`;
 			});
-		}
-
-		// שומר את הליקוט בבסיס נתונים ומחזיר id
-		async function savePickingListToDB(planList, creatorName) {
-			const id = 'pick_' + Math.random().toString(36).substr(2, 8);
-			const now = new Date();
-			await db.collection('pickingLists').doc(id).set({
-				id,
-				date: now.toLocaleDateString('he-IL'),
-				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
-				createdBy: creatorName,
-				plan: planList,
-				status: 'open'
-			});
-			return id;
 		}
 
 		// העתקה ללוח (עוזר)
