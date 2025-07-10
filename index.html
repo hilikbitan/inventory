@@ -190,7 +190,8 @@
 				<div class="tab" data-tab="addItem" data-permission="add_item" onclick="showTab(event, 'addItem')">הוספת פריט</div>
 				<div class="tab" data-tab="users" data-permission="manage_users" onclick="showTab(event, 'users')">ניהול משתמשים</div>
 				<div class="tab" data-tab="reports" data-permission="view_reports" onclick="showTab(event, 'reports')">דוחות</div>
-				<div class="tab" data-tab="pickings" data-permission="view_inventory" onclick="showTab(event, 'pickings')">ליקוטים</div>
+				<div class="tab" data-tab="pickings" data-permission="view_pickings" onclick="showTab(event, 'pickings')">ליקוטים</div>
+
 			</div>
             
             <!-- טאב מלאי נוכחי -->
@@ -357,6 +358,10 @@
                             <input type="checkbox" id="perm_view_inventory" checked>
                             <label for="perm_view_inventory">צפייה במלאי</label>
                         </div>
+						<div class="permission-item">
+							<input type="checkbox" id="perm_view_pickings">
+							<label for="perm_view_pickings">צפייה בליקוטים</label>
+						</div>
                         <div class="permission-item">
                             <input type="checkbox" id="perm_view_movements" checked>
                             <label for="perm_view_movements">צפייה בתנועות</label>
@@ -397,6 +402,10 @@
                 </div>
                 <div id="reportContent" style="margin-top: 30px;"></div>
             </div>
+			<div id="pickings" class="tab-content">
+				<h2>דוח ליקוטים</h2>
+				<div id="pickingsTableContainer"></div>
+			</div>
         </div>
         <!-- מודל עריכת וריאנט -->
 		<div id="editVariantModal" class="modal">
@@ -623,6 +632,10 @@
                             <input type="checkbox" id="edit_perm_view_inventory">
                             <label for="edit_perm_view_inventory">צפייה במלאי</label>
                         </div>
+						<div class="permission-item">
+							<input type="checkbox" id="edit_perm_view_pickings">
+							<label for="edit_perm_view_pickings">צפייה בליקוטים</label>
+						</div>
                         <div class="permission-item">
                             <input type="checkbox" id="edit_perm_view_movements">
                             <label for="edit_perm_view_movements">צפייה בתנועות</label>
@@ -649,14 +662,10 @@
                 </form>
             </div>
         </div>
+		
     </div>
 	
-	<div id="pickings" class="tab-content">
-		<h2>דוח ליקוטים</h2>
-		<div id="pickingsTableContainer"></div>
-	</div>
-    
-    <div class="toast" id="toast"></div>
+	
 	
 	
 
@@ -1853,7 +1862,8 @@
                 'add_transaction': 'רישום תנועות',
                 'add_item': 'הוספת פריטים',
                 'manage_users': 'ניהול משתמשים',
-                'view_reports': 'צפייה בדוחות'
+                'view_reports': 'צפייה בדוחות',
+				'view_pickings': 'צפייה בליקוטים'
             };
             return names[permission] || permission;
         }
