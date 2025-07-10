@@ -1243,16 +1243,7 @@
 			displayPickings();
 			updateStats();
 			showToast('הליקוט אושר והמלאי עודכן!', 'success');
-		}
-		
-		window.deletePicking = async function(pickId) {
-			if (!confirm("האם למחוק את הליקוט?")) return;
-			await db.collection('pickingLists').doc(pickId).delete();
-			displayPickings();
-			showToast('הליקוט נמחק', 'success');
-		}
-		
-		
+		}	
 
 		// שמירת עריכה
 		document.getElementById('editMovementForm').addEventListener('submit', async function(e) {
@@ -2740,6 +2731,14 @@
 			document.execCommand('copy');
 			document.body.removeChild(tmp);
 		}
+		
+		window.deletePicking = async function(pickId) {
+			if (!confirm("האם למחוק את הליקוט?")) return;
+			await db.collection('pickingLists').doc(pickId).delete();
+			displayPickings();
+			showToast('הליקוט נמחק', 'success');
+		}
+
     </script>
 	<footer style="text-align:center; padding:20px 0; color:#333; background:transparent; font-size:15px;">
     © 2025 כל הזכויות שמורות לחיליק ביטאן
