@@ -17,12 +17,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script>
-    // Firebase config כמו אצלך בדיוק
-    const firebaseConfig = {...};
+    // === Firebase config ===
+    const firebaseConfig = { ... };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // קריאת id מה-URL
+    // קבלת id מה-URL
     const urlParams = new URLSearchParams(window.location.search);
     const pickId = urlParams.get('id');
     let pickDoc;
@@ -38,25 +38,37 @@
             return;
         }
         pickDoc = docSnap.data();
-		// אם הליקוט כבר בוצע - מציג תוצאות בלבד ולא מאפשר סימון נוסף
-		if (pickDoc.status === 'done' || pickDoc.status === 'closed') {
-			let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
-			pickDoc.plan.forEach((row, i) => {
-				const status = pickDoc.results && pickDoc.results[i] ? pickDoc.results[i].status : '';
-				html += `<tr>
-					<td>${row.productName}</td>
-					<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
-					<td>${row.location}</td>
-					<td>${row.expiry ? formatDate(row.expiry) : ''}</td>
-					<td>${status}</td>
-				</tr>`;
-			});
-			html += '</table><div style="color:green;margin-top:10px;">ליקוט זה כבר בוצע!</div>';
-			document.getElementById('listArea').innerHTML = html;
-			document.getElementById('submitBtn').style.display = 'none';
-			document.getElementById('workerName').disabled = true;
-			return;
-		}
+
+        // ---- בדיקת plan ----
+        console.log("pickDoc", pickDoc);
+        if (!pickDoc.plan || !Array.isArray(pickDoc.plan) || pickDoc.plan.length === 0) {
+            document.getElementById('listArea').innerHTML = '<div style="color:red;">לא קיימת רשימת מוצרים בליקוט זה.</div>';
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('workerName').disabled = true;
+            return;
+        }
+
+        // אם הליקוט כבר בוצע - מציג תוצאות בלבד
+        if (pickDoc.status === 'done' || pickDoc.status === 'closed') {
+            let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
+            pickDoc.plan.forEach((row, i) => {
+                const status = pickDoc.results && pickDoc.results[i] ? pickDoc.results[i].status : '';
+                html += `<tr>
+                    <td>${row.productName}</td>
+                    <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+                    <td>${row.location}</td>
+                    <td>${row.expiry ? formatDate(row.expiry) : ''}</td>
+                    <td>${status}</td>
+                </tr>`;
+            });
+            html += '</table><div style="color:green;margin-top:10px;">ליקוט זה כבר בוצע!</div>';
+            document.getElementById('listArea').innerHTML = html;
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('workerName').disabled = true;
+            return;
+        }
+
+        // אחרת – טבלת ליקוט פעילה
         renderPickingList(pickDoc.plan);
     }
 
@@ -90,20 +102,21 @@
             document.getElementById('resultMsg').innerText = "יש להזין שם מלקט";
             return;
         }
-        // איסוף תוצאות (וי/איקס)
+        // איסוף תוצאות
         const statuses = [];
         pickDoc.plan.forEach((row, i) => {
-			const radios = document.getElementsByName('status'+i);
-			let val = '';
-			radios.forEach(r => { if (r.checked) val = r.value; });
-			statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
-		});
-		
-        if (statuses.includes('')) {
+            const radios = document.getElementsByName('status'+i);
+            let val = '';
+            radios.forEach(r => { if (r.checked) val = r.value; });
+            statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
+        });
+
+        // בדיקה שכל שורה סומנה
+        if (statuses.some(s => !s.status)) {
             document.getElementById('resultMsg').innerText = "יש לסמן כל שורה";
             return;
         }
-        // שלח ל-DB
+        // שמירה
         await db.collection('pickingLists').doc(pickId).update({
             status: 'done',
             pickedBy: workerName,
@@ -112,22 +125,23 @@
         });
         document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
         document.getElementById('submitBtn').disabled = true;
-		// מציג טבלת תוצאות למלקט
-		let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
-		pickDoc.plan.forEach((row, i) => {
-			const status = statuses[i].status;
-			html += `<tr>
-				<td>${row.productName}</td>
-				<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
-				<td>${row.location}</td>
-				<td>${row.expiry ? formatDate(row.expiry) : ''}</td>
-				<td>${status}</td>
-			</tr>`;
-		});
-		html += '</table><div style="color:green;margin-top:10px;">הליקוט נשמר בהצלחה!</div>';
-		document.getElementById('listArea').innerHTML = html;
-		document.getElementById('submitBtn').style.display = 'none';
-		document.getElementById('workerName').disabled = true;
+
+        // מציג טבלת תוצאות
+        let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
+        pickDoc.plan.forEach((row, i) => {
+            const status = statuses[i].status;
+            html += `<tr>
+                <td>${row.productName}</td>
+                <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+                <td>${row.location}</td>
+                <td>${row.expiry ? formatDate(row.expiry) : ''}</td>
+                <td>${status}</td>
+            </tr>`;
+        });
+        html += '</table><div style="color:green;margin-top:10px;">הליקוט נשמר בהצלחה!</div>';
+        document.getElementById('listArea').innerHTML = html;
+        document.getElementById('submitBtn').style.display = 'none';
+        document.getElementById('workerName').disabled = true;
     }
 
     loadPicking();
