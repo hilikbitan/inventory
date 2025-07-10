@@ -190,6 +190,7 @@
 				<div class="tab" data-tab="addItem" data-permission="add_item" onclick="showTab(event, 'addItem')">הוספת פריט</div>
 				<div class="tab" data-tab="users" data-permission="manage_users" onclick="showTab(event, 'users')">ניהול משתמשים</div>
 				<div class="tab" data-tab="reports" data-permission="view_reports" onclick="showTab(event, 'reports')">דוחות</div>
+				<div class="tab" data-tab="pickings" data-permission="view_inventory" onclick="showTab(event, 'pickings')">ליקוטים</div>
 			</div>
             
             <!-- טאב מלאי נוכחי -->
@@ -648,6 +649,11 @@
             </div>
         </div>
     </div>
+	
+	<div id="pickings" class="tab-content">
+		<h2>דוח ליקוטים</h2>
+		<div id="pickingsTableContainer"></div>
+	</div>
     
     <div class="toast" id="toast"></div>
 	
@@ -793,6 +799,62 @@
                 showToast('שגיאה בהתחברות. נסה שוב.', 'error');
             }
         });
+		
+		async function displayPickings() {
+			const container = document.getElementById('pickingsTableContainer');
+			container.innerHTML = "טוען...";
+			// טען את הליקוטים מ־Firestore
+			let pickingsSnap = await db.collection('pickingLists').orderBy('date', 'desc').get();
+			let pickings = [];
+			pickingsSnap.forEach(doc => pickings.push(doc.data()));
+			if (pickings.length === 0) {
+				container.innerHTML = "<div>לא קיימות רשימות ליקוט</div>";
+				return;
+			}
+			let html = `
+			<table style="width:100%;text-align:right;">
+				<tr>
+					<th>תאריך</th>
+					<th>שעה</th>
+					<th>מי יצר</th>
+					<th>מלקט</th>
+					<th>סטטוס</th>
+					<th>פריטים</th>
+					<th>תוצאה</th>
+					<th>פעולות</th>
+				</tr>
+			`;
+			pickings.forEach(p => {
+				html += `
+				<tr>
+					<td>${p.date || ''}</td>
+					<td>${p.time || ''}</td>
+					<td>${p.createdBy || ''}</td>
+					<td>${p.pickedBy || ''}</td>
+					<td>${p.status || 'פתוח'}</td>
+					<td>
+						<ul style="padding-right: 18px;">
+							${(p.plan || []).map(item =>
+								`<li>${item.productName} — ${item.takePacks} חב'${item.takeUnits ? ' + ' + item.takeUnits + ' יחידות' : ''} — ${item.location}</li>`
+							).join('')}
+						</ul>
+					</td>
+					<td>
+						${(p.results && p.results.length) ? p.results.map((r, i) =>
+							`<div>שורה ${i+1}: ${r.status}</div>`
+						).join('') : ''}
+					</td>
+					<td>
+						${p.status === 'open' ? `<button onclick="approvePicking('${p.id}')">אשר וסגור</button>` : ''}
+						<button onclick="deletePicking('${p.id}')">מחק</button>
+					</td>
+				</tr>
+				`;
+			});
+			html += `</table>`;
+			container.innerHTML = html;
+		}
+
 
         function showMainScreen() {
 			
@@ -898,7 +960,8 @@
 				populateUnitsSelect(document.getElementById('baseUnitPlural'), baseUnitsPluralList);
 				populateUnitsSelect(document.getElementById('packUnitSingular'), packUnitsSingularList);
 				populateUnitsSelect(document.getElementById('packUnitPlural'), packUnitsPluralList);
-			}	
+			}
+			else if (tabName === 'pickings') displayPickings();			
 		};
 
 
@@ -1069,6 +1132,69 @@
 			document.getElementById('editMovementModal').style.display = 'none';
 			document.getElementById('editMovementForm').reset();
 		};
+		
+		window.approvePicking = async function(pickId) {
+			if (!confirm("לאשר ולהוציא מהמלאי את הליקוט הזה?")) return;
+			// שלוף את המסמך
+			const doc = await db.collection('pickingLists').doc(pickId).get();
+			if (!doc.exists) {
+				showToast("רשימת הליקוט לא נמצאה", "error");
+				return;
+			}
+			const pick = doc.data();
+			if (!pick.plan || !pick.results) {
+				showToast("רשימה לא שלמה", "error");
+				return;
+			}
+
+			// עבור כל שורה שסומנה כ"נלקח" — הוצא מהמלאי והוסף תנועת הוצאה
+			for (let i = 0; i < pick.plan.length; i++) {
+				const row = pick.plan[i];
+				const result = pick.results[i];
+				if (result.status !== 'נלקח') continue; // לא נלקח בפועל, מדלגים
+
+				// עדכן מלאי (מוצא וריאנט מתאים במוצר לפי location+expiry)
+				let item = inventory.find(it => it.name === row.productName);
+				if (!item) continue;
+				let variant = (item.variants || []).find(v =>
+					v.location === row.location &&
+					v.expiry === row.expiry
+				);
+				if (!variant) continue;
+				variant.quantityPacks = Math.max(0, (variant.quantityPacks || 0) - (row.takePacks || 0));
+				variant.quantityUnits = Math.max(0, (variant.quantityUnits || 0) - (row.takeUnits || 0));
+
+				await saveInventoryItem(item);
+
+				// יצירת תנועת מלאי
+				const now = new Date();
+				await saveMovement({
+					date: now.toLocaleDateString('he-IL'),
+					time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+					product: item.name,
+					location: variant.location,
+					expiry: variant.expiry,
+					type: "הוצאה",
+					quantityPacks: row.takePacks,
+					quantityUnits: row.takeUnits,
+					user: pick.pickedBy || pick.createdBy,
+					notes: 'ליקוט מסודר'
+				});
+			}
+			// עדכן סטטוס וסגור
+			await db.collection('pickingLists').doc(pickId).update({ status: 'closed', closedAt: new Date().toISOString() });
+			await loadAllData();
+			displayPickings();
+			updateStats();
+			showToast('הליקוט אושר והמלאי עודכן!', 'success');
+		}
+		
+		window.deletePicking = async function(pickId) {
+			if (!confirm("האם למחוק את הליקוט?")) return;
+			await db.collection('pickingLists').doc(pickId).delete();
+			displayPickings();
+			showToast('הליקוט נמחק', 'success');
+		}
 
 		// שמירת עריכה
 		document.getElementById('editMovementForm').addEventListener('submit', async function(e) {

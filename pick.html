@@ -38,6 +38,25 @@
             return;
         }
         pickDoc = docSnap.data();
+		// אם הליקוט כבר בוצע - מציג תוצאות בלבד ולא מאפשר סימון נוסף
+		if (pickDoc.status === 'done' || pickDoc.status === 'closed') {
+			let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
+			pickDoc.plan.forEach((row, i) => {
+				const status = pickDoc.results && pickDoc.results[i] ? pickDoc.results[i].status : '';
+				html += `<tr>
+					<td>${row.productName}</td>
+					<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+					<td>${row.location}</td>
+					<td>${row.expiry ? formatDate(row.expiry) : ''}</td>
+					<td>${status}</td>
+				</tr>`;
+			});
+			html += '</table><div style="color:green;margin-top:10px;">ליקוט זה כבר בוצע!</div>';
+			document.getElementById('listArea').innerHTML = html;
+			document.getElementById('submitBtn').style.display = 'none';
+			document.getElementById('workerName').disabled = true;
+			return;
+		}
         renderPickingList(pickDoc.plan);
     }
 
@@ -74,11 +93,12 @@
         // איסוף תוצאות (וי/איקס)
         const statuses = [];
         pickDoc.plan.forEach((row, i) => {
-            const radios = document.getElementsByName('status'+i);
-            let val = '';
-            radios.forEach(r => { if (r.checked) val = r.value; });
-            statuses.push(val);
-        });
+			const radios = document.getElementsByName('status'+i);
+			let val = '';
+			radios.forEach(r => { if (r.checked) val = r.value; });
+			statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
+		});
+		
         if (statuses.includes('')) {
             document.getElementById('resultMsg').innerText = "יש לסמן כל שורה";
             return;
@@ -92,6 +112,22 @@
         });
         document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
         document.getElementById('submitBtn').disabled = true;
+		// מציג טבלת תוצאות למלקט
+		let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
+		pickDoc.plan.forEach((row, i) => {
+			const status = statuses[i].status;
+			html += `<tr>
+				<td>${row.productName}</td>
+				<td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
+				<td>${row.location}</td>
+				<td>${row.expiry ? formatDate(row.expiry) : ''}</td>
+				<td>${status}</td>
+			</tr>`;
+		});
+		html += '</table><div style="color:green;margin-top:10px;">הליקוט נשמר בהצלחה!</div>';
+		document.getElementById('listArea').innerHTML = html;
+		document.getElementById('submitBtn').style.display = 'none';
+		document.getElementById('workerName').disabled = true;
     }
 
     loadPicking();
