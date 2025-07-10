@@ -22,11 +22,12 @@
 	  apiKey: "AIzaSyAg4keZ42SfFHhwjhkYbl7TdJnuN0WsuUc",
 	  authDomain: "inventory-57376.firebaseapp.com",
 	  projectId: "inventory-57376",
-	  storageBucket: "inventory-57376.firebasestorage.app",
+	  storageBucket: "inventory-57376.appspot.com",
 	  messagingSenderId: "165204980655",
 	  appId: "1:165204980655:web:f7c5a78a0ae11f7191355a",
 	  measurementId: "G-E8EK3N3DLE"
 	};
+	
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -105,52 +106,63 @@
     }
 
     async function submitPicking() {
-        const workerName = document.getElementById('workerName').value.trim();
-        if (!workerName) {
-            document.getElementById('resultMsg').innerText = "יש להזין שם מלקט";
-            return;
-        }
-        // איסוף תוצאות
-        const statuses = [];
-        pickDoc.plan.forEach((row, i) => {
-            const radios = document.getElementsByName('status'+i);
-            let val = '';
-            radios.forEach(r => { if (r.checked) val = r.value; });
-            statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
-        });
+		const workerName = document.getElementById('workerName').value.trim();
+		if (!workerName) {
+			document.getElementById('resultMsg').innerText = "יש להזין שם מלקט";
+			return;
+		}
+		// איסוף תוצאות
+		const statuses = [];
+		pickDoc.plan.forEach((row, i) => {
+			const radios = document.getElementsByName('status'+i);
+			let val = '';
+			radios.forEach(r => { if (r.checked) val = r.value; });
+			statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
+		});
 
-        // בדיקה שכל שורה סומנה
-        if (statuses.some(s => !s.status)) {
-            document.getElementById('resultMsg').innerText = "יש לסמן כל שורה";
-            return;
-        }
-        // שמירה
-        await db.collection('pickingLists').doc(pickId).update({
-            status: 'done',
-            pickedBy: workerName,
-            pickedAt: new Date().toISOString(),
-            results: statuses
-        });
-        document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
-        document.getElementById('submitBtn').disabled = true;
+		if (statuses.some(s => !s.status)) {
+			document.getElementById('resultMsg').innerText = "יש לסמן כל שורה";
+			return;
+		}
 
-        // מציג טבלת תוצאות
-        let html = '<h3>רשימת ליקוט שבוצעה</h3><table border="1" style="width:100%;text-align:right;"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>';
-        pickDoc.plan.forEach((row, i) => {
-            const status = statuses[i].status;
-            html += `<tr>
-                <td>${row.productName}</td>
-                <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
-                <td>${row.location}</td>
-                <td>${row.expiry ? formatDate(row.expiry) : ''}</td>
-                <td>${status}</td>
-            </tr>`;
-        });
-        html += '</table><div style="color:green;margin-top:10px;">הליקוט נשמר בהצלחה!</div>';
-        document.getElementById('listArea').innerHTML = html;
-        document.getElementById('submitBtn').style.display = 'none';
-        document.getElementById('workerName').disabled = true;
-    }
+		// עדכון הליקוט
+		await db.collection('pickingLists').doc(pickId).update({
+			status: 'done',
+			pickedBy: workerName,
+			pickedAt: new Date().toISOString(),
+			results: statuses
+		});
+
+		// הפעלת תנועת סטנדביי (עבור נלקח בלבד)
+		// שולף את התנועה שקשורה לליקוט הזה
+		const movementsSnap = await db.collection('movements').where('pickingListId', '==', pickId).where('status', '==', 'standby').get();
+		for (const doc of movementsSnap.docs) {
+			const mov = doc.data();
+			// עבור כל מוצר שסומן כ"נלקח"
+			for (let i = 0; i < pickDoc.plan.length; i++) {
+				if (statuses[i].status === 'נלקח') {
+					// כאן אפשר ליצור תנועה אמיתית
+					await db.collection('movements').add({
+						date: new Date().toLocaleDateString('he-IL'),
+						time: new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
+						product: pickDoc.plan[i].productName,
+						type: 'הוצאה',
+						quantityPacks: pickDoc.plan[i].takePacks,
+						quantityUnits: pickDoc.plan[i].takeUnits,
+						user: workerName,
+						notes: 'ליקוט אוטומטי'
+					});
+				}
+			}
+			// מחיקת תנועת הסטנדביי (אם תרצה)
+			await db.collection('movements').doc(doc.id).delete();
+		}
+
+		document.getElementById('resultMsg').innerText = "הליקוט נשמר בהצלחה!";
+		document.getElementById('submitBtn').disabled = true;
+		document.getElementById('workerName').disabled = true;
+		document.getElementById('listArea').innerHTML += "<div style='color:green;margin-top:10px;'>המלאי עודכן אוטומטית!</div>";
+	}
 
     loadPicking();
     </script>

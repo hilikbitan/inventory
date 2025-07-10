@@ -2630,39 +2630,52 @@
 		}
 
 		// יוצר את רשימת הליקוט (שלב ראשון)
-		function startPickingList() {
+		async function startPickingList() {
 			const rows = document.querySelectorAll('#multiTransactionRows .form-row');
-			let planList = [];
+			const pickingPlan = [];
 
 			for (const row of rows) {
 				const productSelect = row.querySelector('.transProductSelect');
 				const quantityPacksInput = row.querySelector('.transQuantityPacksInput');
 				const quantityUnitsInput = row.querySelector('.transQuantityUnitsInput');
 				if (!productSelect.value) continue;
-				const productName = productSelect.value;
-				const packs = parseInt(quantityPacksInput.value) || 0;
-				const units = parseInt(quantityUnitsInput.value) || 0;
-				if (packs === 0 && units === 0) continue;
-				const item = inventory.find(i => i.name === productName);
-				if (!item) continue;
-				const picking = getPickingPlan(item, packs, units);
-				picking.forEach(p => {
-					planList.push({
-						productName,
-						takePacks: p.takePacks,
-						takeUnits: p.takeUnits,
-						location: p.location,
-						expiry: p.expiry,
-						variantIndex: p.variantIndex
-					});
+
+				pickingPlan.push({
+					productName: productSelect.value,
+					takePacks: parseInt(quantityPacksInput.value) || 0,
+					takeUnits: parseInt(quantityUnitsInput.value) || 0,
+					location: '', // יתמלא בעת הפיצול בפועל
+					expiry: ''    // יתמלא בעת הפיצול בפועל
 				});
 			}
-			// אל תציג טבלה — זה יהיה רק ב-pick.html
-			// renderPickingTable(planList); <-- למחוק/להשבית!
-			// הצג כפתור שיתוף
-			document.getElementById('sharePickingBtn').style.display = planList.length ? '' : 'none';
-			// שמור את הרשימה ל־window (עבור השיתוף)
-			window._currentPickingPlanList = planList;
+
+			if (pickingPlan.length === 0) {
+				showToast('לא נבחרו מוצרים לליקוט', 'error');
+				return;
+			}
+
+			// שמירת רשימת ליקוט חדשה ל-DB
+			const pickId = await createPickingList(pickingPlan);
+
+			// שמירת תנועת סטנדביי - שים לב: עדיין לא מוריד מהמלאי!
+			await db.collection('movements').add({
+				pickingListId: pickId,
+				status: 'standby',
+				plan: pickingPlan,
+				createdBy: currentUser.fullName,
+				date: new Date().toISOString()
+			});
+
+			// יצירת קישור שיתוף
+			const link = `${window.location.origin}/pick.html?id=${pickId}`;
+			document.getElementById('sharePickingBtn').style.display = '';
+			document.getElementById('sharePickingBtn').onclick = function() {
+				copyToClipboard(link);
+				showToast('הקישור הועתק', 'success');
+			};
+
+			// הצג קישור (או פתח אוטומטית בחלון חדש)
+			window.open(link, '_blank');
 		}
 
 		// קוד לחלוקת וריאנטים לפי תוקף
