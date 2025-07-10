@@ -1471,9 +1471,10 @@
 			const tbody = document.getElementById('movementsBody');
 			tbody.innerHTML = '';
 			movements.forEach((movement, idx) => {
-				// בדיקת הרשאה לעריכה/מחיקה
+				// הצג רק תנועות שיש להן מוצר, פעולה וכמות
+				if (!movement.product || !movement.type) return;
 				let canEdit = ['מנהל מערכת','מנהל מתחם','מנהל/ת משמרת','מחסנאי'].includes(currentUser.role);
-				row = tbody.insertRow();
+				let row = tbody.insertRow();
 				row.innerHTML = `
 					<td>${movement.date}</td>
 					<td>${movement.time}</td>
@@ -2161,10 +2162,19 @@
                     last30Days.setDate(last30Days.getDate() - 30);
                     
                     const recentMovements = movements.filter(m => {
-                        const parts = m.date.split('/');
-                        const moveDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                        return moveDate >= last30Days;
-                    });
+						// סנן תנועות בלי product/type (למנוע undefined)
+						if (!m.product || !m.type) return false;
+						let moveDate;
+						if (m.date && m.date.includes('/')) {
+							const parts = m.date.split('/');
+							moveDate = new Date(parts[2], parts[1] - 1, parts[0]);
+						} else if (m.date && m.date.includes('-')) {
+							moveDate = new Date(m.date);
+						} else {
+							return false;
+						}
+						return moveDate >= last30Days;
+					});
                     
                     if (recentMovements.length === 0) {
                         html += '<p>אין תנועות ב-30 הימים האחרונים</p>';
