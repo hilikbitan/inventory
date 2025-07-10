@@ -794,6 +794,7 @@
 			status: 'open',
 			plan: plan
 		  });
+		  await docRef.update({ id: docRef.id });
 		  return docRef.id;
 		}
 
@@ -850,7 +851,11 @@
 			// טען את הליקוטים מ־Firestore
 			let pickingsSnap = await db.collection('pickingLists').orderBy('date', 'desc').get();
 			let pickings = [];
-			pickingsSnap.forEach(doc => pickings.push(doc.data()));
+			pickingsSnap.forEach(doc => {
+				let data = doc.data();
+				data.id = doc.id; // שמירה על ID גם אם לא נשמר בשדה
+				pickings.push(data);
+			});
 			if (pickings.length === 0) {
 				container.innerHTML = "<div>לא קיימות רשימות ליקוט</div>";
 				return;
@@ -865,10 +870,13 @@
 					<th>סטטוס</th>
 					<th>פריטים</th>
 					<th>תוצאה</th>
+					<th>שיתוף</th>
 					<th>פעולות</th>
 				</tr>
 			`;
 			pickings.forEach(p => {
+				// יצירת קישור שיתוף
+				const link = `${window.location.origin}/pick.html?id=${p.id || p.id}`;
 				html += `
 				<tr>
 					<td>${p.date || ''}</td>
@@ -889,6 +897,11 @@
 						).join('') : ''}
 					</td>
 					<td>
+						<button onclick="copyToClipboard('${link}')">העתק קישור</button>
+						<br>
+						<a href="${link}" target="_blank" style="font-size:12px;">פתח רשימה</a>
+					</td>
+					<td>
 						${p.status === 'open' ? `<button onclick="approvePicking('${p.id}')">אשר וסגור</button>` : ''}
 						<button onclick="deletePicking('${p.id}')">מחק</button>
 					</td>
@@ -898,7 +911,6 @@
 			html += `</table>`;
 			container.innerHTML = html;
 		}
-
 
         function showMainScreen() {
 			
