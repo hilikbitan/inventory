@@ -1880,16 +1880,20 @@
 
         // --- פונקציות עזר ---
         function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast show';
-            if (type === 'error') toast.style.background = '#e74c3c';
-            else if (type === 'success') toast.style.background = '#27ae60';
-            else toast.style.background = '#333';
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
+			const toast = document.getElementById('toast');
+			if (!toast) {
+				alert(message); // הגנה — fallback
+				return;
+			}
+			toast.textContent = message;
+			toast.className = 'toast show';
+			if (type === 'error') toast.style.background = '#e74c3c';
+			else if (type === 'success') toast.style.background = '#27ae60';
+			else toast.style.background = '#333';
+			setTimeout(() => {
+				toast.classList.remove('show');
+			}, 3000);
+		}
 
         // --- פונקציות עריכה ומחיקת מוצרים ---
 		window.editProduct = function(productName) {
