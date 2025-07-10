@@ -2698,11 +2698,8 @@
 				if (!item) continue;
 
 				// ---- ליקוט חכם לפי תוקף קרוב (FEFO) ----
-				// נעבור קודם לפי חבילות, אחר כך לפי יחידות
-
 				// ליקוט לפי חבילות
 				if (requiredPacks > 0) {
-					// מיין חבילות לפי expiry (ותאריכים חסרים בסוף)
 					const packsVariants = (item.variants || [])
 						.filter(v => v.quantityPacks > 0)
 						.slice()
@@ -2774,16 +2771,15 @@
 				}
 			}
 
-			// כאן אפשר להמשיך כרגיל — לשמור את pickingPlan ב-Firebase כ-plan
+			// כאן שמור את כל plan כמו שהוא
 			if (pickingPlan.length === 0) {
 				showToast('לא נבחרו מוצרים לליקוט', 'error');
 				return;
 			}
 
-			// שמירת רשימת ליקוט חדשה ל-DB
 			const pickId = await createPickingList(pickingPlan);
 
-			// ... המשך השיתוף וכו'
+			// המשך כרגיל
 			const link = `${window.location.origin}/pick.html?id=${pickId}`;
 			document.getElementById('pickingListContainer').innerHTML =
 				`<div>קישור לרשימת ליקוט: <a href="${link}" target="_blank">${link}</a></div>`;
