@@ -257,6 +257,7 @@
 					<button type="button" onclick="addTransactionRow()">➕ הוסף מוצר/וריאנט</button>
 					<button type="button" onclick="startPickingList()">המשך לליקוט</button>
 					<button type="submit">רשום תנועה</button>
+					<div id="pickingListContainer" style="margin: 15px 0;"></div>
 				</form>
 				<!-- טבלת ליקוט שיתופית -->
 				<div id="pickingListContainer" style="margin-top:20px;"></div>
@@ -2668,6 +2669,7 @@
 
 			// יצירת קישור שיתוף
 			const link = `${window.location.origin}/pick.html?id=${pickId}`;
+			document.getElementById('pickingListContainer').innerHTML = `<div>קישור לרשימת ליקוט: <a href="${link}" target="_blank">${link}</a></div>`;
 			document.getElementById('sharePickingBtn').style.display = '';
 			document.getElementById('sharePickingBtn').onclick = function() {
 				copyToClipboard(link);
