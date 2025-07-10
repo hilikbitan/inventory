@@ -2159,28 +2159,43 @@
 				case 'movements':
                     html = '<h3>דוח תנועות אחרונות</h3>';
                     const last30Days = new Date();
-                    last30Days.setDate(last30Days.getDate() - 30);
-                    
-                    const recentMovements = movements.filter(m => {
-						// סנן תנועות בלי product/type (למנוע undefined)
-						if (!m.product || !m.type) return false;
+					last30Days.setDate(last30Days.getDate() - 30);
+
+					const recentMovements = movements.filter(m => {
 						let moveDate;
+
 						if (m.date && m.date.includes('/')) {
 							// dd/mm/yyyy
 							const parts = m.date.split('/');
-							moveDate = new Date(parts[2], parts[1] - 1, parts[0]);
+							// הגנה - תומך גם ב-1/7/2025 וגם ב-01/07/2025
+							moveDate = new Date(
+								Number(parts[2]),
+								Number(parts[1]) - 1,
+								Number(parts[0])
+							);
 						} else if (m.date && m.date.includes('.')) {
 							// dd.mm.yyyy
 							const parts = m.date.split('.');
-							moveDate = new Date(parts[2], parts[1] - 1, parts[0]);
+							moveDate = new Date(
+								Number(parts[2]),
+								Number(parts[1]) - 1,
+								Number(parts[0])
+							);
 						} else if (m.date && m.date.includes('-')) {
 							// yyyy-mm-dd או yyyy-mm-ddTHH:mm:ssZ
+							// מאפשר גם פורמטים כמו 2025-07-10T14:54:24.562Z
 							moveDate = new Date(m.date);
 						} else {
+							// תאריך לא מזוהה
 							return false;
 						}
+
+						// בדיקת תקינות התאריך
+						if (isNaN(moveDate.getTime())) return false;
+
 						return moveDate >= last30Days;
 					});
+
                     
                     if (recentMovements.length === 0) {
                         html += '<p>אין תנועות ב-30 הימים האחרונים</p>';
