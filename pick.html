@@ -52,6 +52,10 @@
     .picking-table tr:nth-child(odd) {
         background: #f7faff;
     }
+    .picking-table tr.missing-stock {
+        background: #ffebee !important;
+        color: #c62828;
+    }
     input[type="text"] {
         width: 55%;
         padding: 7px;
@@ -83,6 +87,10 @@
     button:hover, .btn-main:hover {
         background: #0a3268;
     }
+    button:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+    }
     #resultMsg {
         margin: 16px 0 0;
         font-size: 1.08em;
@@ -95,6 +103,10 @@
     }
     .error {
         color: #e74c3c;
+        font-weight: bold;
+    }
+    .warning {
+        color: #ff9800;
         font-weight: bold;
     }
     @media (max-width: 600px) {
@@ -138,6 +150,13 @@
     const urlParams = new URLSearchParams(window.location.search);
     const pickId = urlParams.get('id');
     let pickDoc;
+    let inventory = [];
+
+    async function loadInventory() {
+        const invSnap = await db.collection('inventory').get();
+        inventory = [];
+        invSnap.forEach(doc => inventory.push(doc.data()));
+    }
 
     async function loadPicking() {
         if (!pickId) {
@@ -145,6 +164,10 @@
             document.getElementById('submitBtn').style.display = 'none';
             return;
         }
+        
+        // טען מלאי
+        await loadInventory();
+        
         const docSnap = await db.collection('pickingLists').doc(pickId).get();
         if (!docSnap.exists) {
             document.getElementById('listArea').innerHTML = "<span class='error'>רשימת הליקוט לא קיימת</span>";
@@ -166,7 +189,8 @@
             html += `<table class="picking-table"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>`;
             pickDoc.plan.forEach((row, i) => {
                 const status = pickDoc.results && pickDoc.results[i] ? pickDoc.results[i].status : '';
-                html += `<tr>
+                const rowClass = row.location === 'חסר במלאי' ? 'missing-stock' : '';
+                html += `<tr class="${rowClass}">
                     <td>${row.productName}</td>
                     <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
                     <td>${row.location}</td>
@@ -187,17 +211,28 @@
     function renderPickingList(plan) {
         let html = `<table class="picking-table"><tr>
         <th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>נלקח ✓</th><th>לא נמצא ✗</th></tr>`;
+        
         plan.forEach((row, i) => {
-            html += `<tr>
+            const rowClass = row.location === 'חסר במלאי' ? 'missing-stock' : '';
+            const disabled = row.location === 'חסר במלאי' ? 'disabled' : '';
+            
+            html += `<tr class="${rowClass}">
                 <td>${row.productName}</td>
                 <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
                 <td>${row.location}</td>
                 <td>${row.expiry ? formatDate(row.expiry) : ''}</td>
-                <td style="text-align:center"><input type="radio" name="status${i}" value="ok"></td>
-                <td style="text-align:center"><input type="radio" name="status${i}" value="no"></td>
+                <td style="text-align:center"><input type="radio" name="status${i}" value="ok" ${disabled}></td>
+                <td style="text-align:center"><input type="radio" name="status${i}" value="no" ${disabled}></td>
             </tr>`;
         });
         html += `</table>`;
+        
+        // הוסף הודעה אם יש חוסרים
+        const hasMissingItems = plan.some(row => row.location === 'חסר במלאי');
+        if (hasMissingItems) {
+            html += '<div class="warning" style="margin-top: 10px;">⚠️ ישנם פריטים החסרים במלאי</div>';
+        }
+        
         document.getElementById('listArea').innerHTML = html;
     }
 
@@ -214,20 +249,32 @@
             document.getElementById('resultMsg').innerHTML = "<span class='error'>יש להזין שם מלקט</span>";
             return;
         }
+        
         // איסוף תוצאות (וי/איקס)
         const statuses = [];
+        let hasUncheckedItems = false;
+        
         pickDoc.plan.forEach((row, i) => {
-            const radios = document.getElementsByName('status'+i);
-            let val = '';
-            radios.forEach(r => { if (r.checked) val = r.value; });
-            statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
+            if (row.location === 'חסר במלאי') {
+                statuses.push({ status: 'חסר במלאי' });
+            } else {
+                const radios = document.getElementsByName('status'+i);
+                let val = '';
+                radios.forEach(r => { if (r.checked) val = r.value; });
+                if (!val) {
+                    hasUncheckedItems = true;
+                } else {
+                    statuses.push({ status: (val === 'ok' ? 'נלקח' : 'לא נמצא') });
+                }
+            }
         });
 
-        if (statuses.some(s => !s.status)) {
-            document.getElementById('resultMsg').innerHTML = "<span class='error'>יש לסמן כל שורה</span>";
+        if (hasUncheckedItems) {
+            document.getElementById('resultMsg').innerHTML = "<span class='error'>יש לסמן כל שורה (למעט חסרים)</span>";
             return;
         }
 
+        // עדכון רשימת הליקוט
         await db.collection('pickingLists').doc(pickId).update({
             status: 'done',
             pickedBy: workerName,
@@ -235,16 +282,64 @@
             results: statuses
         });
 
+        // עדכון המלאי בפועל - רק עבור פריטים שנלקחו
+        for (let i = 0; i < pickDoc.plan.length; i++) {
+            const row = pickDoc.plan[i];
+            if (statuses[i].status !== 'נלקח') continue;
+            
+            // מצא את המוצר
+            const item = inventory.find(inv => inv.name === row.productName);
+            if (!item) continue;
+            
+            // מצא את הווריאנט המתאים
+            const variantIndex = item.variants.findIndex(v => 
+                v.location === row.location && 
+                v.expiry === row.expiry
+            );
+            
+            if (variantIndex === -1) continue;
+            
+            // עדכן את הכמות בווריאנט
+            const variant = item.variants[variantIndex];
+            variant.quantityPacks -= row.takePacks;
+            variant.quantityUnits -= row.takeUnits;
+            
+            // אם יש יותר יחידות מנדרש לחבילה, המר לחבילות
+            if (variant.quantityUnits < 0) {
+                const neededPacks = Math.ceil(Math.abs(variant.quantityUnits) / item.unitsPerPack);
+                variant.quantityPacks -= neededPacks;
+                variant.quantityUnits += neededPacks * item.unitsPerPack;
+            }
+            
+            // שמור את המוצר המעודכן
+            await db.collection('inventory').doc(item.name).set(item);
+            
+            // רשום תנועת מלאי
+            await db.collection('movements').add({
+                date: new Date().toLocaleDateString('he-IL'),
+                time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
+                product: row.productName,
+                location: row.location,
+                expiry: row.expiry,
+                type: "הוצאה",
+                quantityPacks: row.takePacks,
+                quantityUnits: row.takeUnits,
+                user: workerName,
+                notes: `ליקוט על ידי ${workerName}`
+            });
+        }
+
         document.getElementById('resultMsg').innerHTML = "<span class='success'>הליקוט נשמר בהצלחה!</span>";
         document.getElementById('submitBtn').disabled = true;
         document.getElementById('workerName').disabled = true;
 
         // תצוגת טבלת תוצאות
-        let html = '<h3 style="text-align:center;color:#28a745;margin-top:0;">ליקוט שבוצע</h3>';
+        let html = '<h3 style="text-align:center;color:#28a745;margin-top:20px;">ליקוט שבוצע</h3>';
         html += `<table class="picking-table"><tr><th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>סטטוס</th></tr>`;
         pickDoc.plan.forEach((row, i) => {
             const status = statuses[i].status;
-            html += `<tr>
+            const rowClass = status === 'חסר במלאי' ? 'missing-stock' : '';
+            html += `<tr class="${rowClass}">
                 <td>${row.productName}</td>
                 <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
                 <td>${row.location}</td>
@@ -252,12 +347,28 @@
                 <td>${status}</td>
             </tr>`;
         });
-        html += '</table><div class="success">הליקוט נשמר בהצלחה!</div>';
+        html += '</table>';
+        
+        // סיכום
+        const takenCount = statuses.filter(s => s.status === 'נלקח').length;
+        const notFoundCount = statuses.filter(s => s.status === 'לא נמצא').length;
+        const missingCount = statuses.filter(s => s.status === 'חסר במלאי').length;
+        
+        html += '<div style="margin-top:20px;text-align:center;">';
+        html += `<strong>סיכום:</strong> `;
+        html += `<span style="color:#28a745;">נלקחו: ${takenCount}</span> | `;
+        html += `<span style="color:#e74c3c;">לא נמצאו: ${notFoundCount}</span>`;
+        if (missingCount > 0) {
+            html += ` | <span style="color:#ff9800;">חסרים במלאי: ${missingCount}</span>`;
+        }
+        html += '</div>';
+        
         document.getElementById('listArea').innerHTML = html;
         document.getElementById('submitBtn').style.display = 'none';
     }
 
-    loadPicking();
+    // טען את הליקוט בעת טעינת הדף
+    window.addEventListener('load', loadPicking);
   </script>
 </body>
 </html>

@@ -132,7 +132,7 @@
 			overflow-y: auto;
 			margin-bottom: 18px;
 		}
-		.modal-content button..btn-main {
+		.modal-content button.btn-main {
 			min-width: 120px;
 			width: auto;
 			padding: 7px 22px;
@@ -154,7 +154,14 @@
 			margin: 0 auto 10px auto;
 			min-width: 0;
 		}
-
+        /* תיקון תצוגת כמויות שליליות */
+        input[type="number"] {
+            min: 0;
+        }
+        .error-input {
+            border-color: #e74c3c !important;
+            background-color: #ffe6e6 !important;
+        }
     </style>
 </head>
 <body>
@@ -228,7 +235,7 @@
                 <h2>מלאי נוכחי</h2>
 				<div style="display:flex; gap:15px; align-items:center; margin-bottom: 10px;">
 					<input type="text" id="inventorySearch" placeholder="חפש מוצר..." style="padding:10px; font-size:16px; width:250px; border-radius:6px; border:1px solid #ccc;">
-					<select id="categoryFilter" style="padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;">
+					<select id="categoryFilter" style="padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;" aria-label="סינון לפי קטגוריה" title="בחר קטגוריה לסינון">
 						<option value="">כל הקטגוריות</option>
 						<option value="מזון">מזון</option>
 						<option value="משקאות">משקאות</option>
@@ -267,6 +274,8 @@
                                 <th>תאריך</th>
                                 <th>שעה</th>
                                 <th>שם מוצר</th>
+                                <th>מיקום</th>
+                                <th>תוקף</th>
                                 <th>פעולה</th>
                                 <th>כמות</th>
                                 <th>מבצע</th>
@@ -285,12 +294,9 @@
 				<form id="transactionForm">
 					<div id="multiTransactionRows"></div>
 					<button type="button" onclick="addTransactionRow()">➕ הוסף מוצר/וריאנט</button>
-					<button type="button" onclick="startPickingList()">רשום תנועה</button>
+					<button type="submit">רשום תנועה</button>
 					<div id="pickingListContainer" style="margin: 15px 0;"></div>
 				</form>
-				<!-- טבלת ליקוט שיתופית -->
-				<div id="pickingListContainer"></div>
-				<button type="button" id="sharePickingBtn" style="display:none;margin-bottom:20px;" onclick="sharePickingLink()">📤 צור קישור שיתוף</button>
 			</div>
 						
             <!-- טאב הוספת פריט -->
@@ -304,7 +310,7 @@
 						</div>
 						<div class="form-group">
 							<label for="itemCategory">קטגוריה</label>
-							<select id="itemCategory" required>
+							<select id="itemCategory" required aria-label="קטגוריית המוצר" title="בחר קטגוריה למוצר">
 								<option value="">בחר קטגוריה</option>
 								<option value="מזון">מזון</option>
 								<option value="משקאות">משקאות</option>
@@ -317,19 +323,19 @@
 					<div class="form-row">
 						<div class="form-group">
 							<label for="baseUnitSingular">יחידת מידה בסיסית (יחיד)</label>
-								<select id="baseUnitSingular" required></select>
+								<select id="baseUnitSingular" required aria-label="יחידת מידה בסיסית ביחיד" title="בחר יחידת מידה בסיסית ביחיד"></select>
 						</div>
 						<div class="form-group">
 							<label for="baseUnitPlural">יחידת מידה בסיסית (רבים)</label>
-							<select id="baseUnitPlural" required></select>
+							<select id="baseUnitPlural" required aria-label="יחידת מידה בסיסית ברבים" title="בחר יחידת מידה בסיסית ברבים"></select>
 						</div>
 						<div class="form-group">
 							<label for="packUnitSingular">שם יחידת אריזה (יחיד)</label>
-							<select id="packUnitSingular" required></select>
+							<select id="packUnitSingular" required aria-label="יחידת אריזה ביחיד" title="בחר יחידת אריזה ביחיד"></select>
 						</div>
 						<div class="form-group">
 							<label for="packUnitPlural">שם יחידת אריזה (רבים)</label>
-							<select id="packUnitPlural" required></select>
+							<select id="packUnitPlural" required aria-label="יחידת אריזה ברבים" title="בחר יחידת אריזה ברבים"></select>
 						</div>
 						<div class="form-group">
 							<label for="unitsPerPack">כמה יחידות בכל אריזה</label>
@@ -368,7 +374,7 @@
 						</div>
 						<div class="form-group">
 							<label for="newRole">תפקיד</label>
-							<select id="newRole" required>
+							<select id="newRole" required aria-label="תפקיד המשתמש" title="בחר תפקיד למשתמש">
 								<option value="">בחר תפקיד</option>
 								<option value="מנהל מערכת">מנהל מערכת</option>
 								<option value="מנהל מתחם">מנהל מתחם</option>
@@ -457,7 +463,7 @@
 						
 						<div class="form-group">
 							<label for="editVariantLocation">מיקום</label>
-							<select id="editVariantLocation" required>
+							<select id="editVariantLocation" required aria-label="מיקום המחסן" title="בחר מיקום מחסן">
 								<option value="">בחר מחסן</option>
 								<option value="מחסן שתיה">מחסן שתיה</option>
 								<option value="מחסן אולם 1">מחסן אולם 1</option>
@@ -495,7 +501,7 @@
 				</div>
 				<div class="form-group">
 				  <label for="editMovementType">סוג פעולה</label>
-				  <select id="editMovementType" required>
+				  <select id="editMovementType" required aria-label="סוג הפעולה" title="בחר סוג פעולה">
 					<option value="הוצאה">הוצאה מהמלאי</option>
 					<option value="הכנסה">הכנסה למלאי</option>
 				  </select>
@@ -509,6 +515,16 @@
 				<div class="form-group">
 				  <label for="editMovementQuantityUnits">כמות יחידות</label>
 				  <input type="number" id="editMovementQuantityUnits" min="0" required>
+				</div>
+			  </div>
+			  <div class="form-row">
+				<div class="form-group">
+				  <label for="editMovementLocation">מיקום</label>
+				  <input type="text" id="editMovementLocation">
+				</div>
+				<div class="form-group">
+				  <label for="editMovementExpiry">תוקף</label>
+				  <input type="date" id="editMovementExpiry">
 				</div>
 				<div class="form-group">
 				  <label for="editMovementNotes">הערות</label>
@@ -536,7 +552,7 @@
 						</div>
 						<div class="form-group">
 							<label for="editItemCategory">קטגוריה</label>
-							<select id="editItemCategory" required>
+							<select id="editItemCategory" required aria-label="קטגוריית המוצר" title="בחר קטגוריה למוצר">
 								<option value="מזון">מזון</option>
 								<option value="משקאות">משקאות</option>
 								<option value="אריזות">אריזות</option>
@@ -597,7 +613,7 @@
 				</div>
 				<div class="form-group">
 				  <label for="addVariantLocation">מיקום</label>
-				  <select id="addVariantLocation" required>
+				  <select id="addVariantLocation" required aria-label="מיקום המחסן" title="בחר מיקום מחסן">
 					<option value="">בחר מחסן</option>
 					<option value="מחסן שתיה">מחסן שתיה</option>
 					<option value="מחסן אולם 1">מחסן אולם 1</option>
@@ -642,7 +658,7 @@
                         </div>
 						<div class="form-group">
 							<label for="editUserRole">תפקיד</label>
-							<select id="editUserRole" required>
+							<select id="editUserRole" required aria-label="תפקיד המשתמש" title="בחר תפקיד למשתמש">
 								<option value="">בחר תפקיד</option>
 								<option value="מנהל מערכת">מנהל מערכת</option>
 								<option value="מנהל מתחם">מנהל מתחם</option>
@@ -715,18 +731,68 @@
             appId: "1:165204980655:web:f7c5a78a0ae11f7191355a",
             measurementId: "G-E8EK3N3DLE"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        
+        // אתחול Firebase עם טיפול בשגיאות
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            
+            // הגדרת Persistence (אופציונלי - לעבודה אופליין)
+            db.enablePersistence()
+                .catch((err) => {
+                    if (err.code == 'failed-precondition') {
+                        console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                    } else if (err.code == 'unimplemented') {
+                        console.log('The current browser does not support persistence.');
+                    }
+                });
+            
+            // בדיקת חיבור
+            db.collection('_health_check').doc('test').get()
+                .then(() => {
+                    console.log('Firebase connected successfully');
+                })
+                .catch((error) => {
+                    console.error('Firebase connection error:', error);
+                    showConnectionError();
+                });
+                
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            showConnectionError();
+        }
+        
+        // פונקציה להצגת שגיאת חיבור
+        function showConnectionError() {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #f44336;
+                color: white;
+                padding: 15px 30px;
+                border-radius: 5px;
+                z-index: 9999;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            `;
+            errorDiv.innerHTML = `
+                <strong>⚠️ בעיית חיבור</strong><br>
+                לא ניתן להתחבר לשרת. בדוק את החיבור לאינטרנט ורענן את הדף.
+            `;
+            document.body.appendChild(errorDiv);
+        }
 
         // --- משתנים גלובליים ---
         let users = [];
         let inventory = [];
         let movements = [];
         let currentUser = null;
-		let baseUnitsSingularList = [];
-		let baseUnitsPluralList = [];
-		let packUnitsSingularList = [];
-		let packUnitsPluralList = [];
+		let baseUnitsSingularList = ['יחידה', 'בקבוק', 'חבילה', 'קופסה', 'שקית', 'אריזה'];
+		let baseUnitsPluralList = ['יחידות', 'בקבוקים', 'חבילות', 'קופסאות', 'שקיות', 'אריזות'];
+		let packUnitsSingularList = ['קרטון', 'משטח', 'ארגז', 'חבילה', 'מארז'];
+		let packUnitsPluralList = ['קרטונים', 'משטחים', 'ארגזים', 'חבילות', 'מארזים'];
 		if (localStorage.getItem('baseUnitsSingularList')) {
 			try { baseUnitsSingularList = JSON.parse(localStorage.getItem('baseUnitsSingularList')); } catch {}
 		}
@@ -741,53 +807,77 @@
 		}
 
 		
-        // --- פונקציות Firebase ---
-        async function loadAllData() {
-            // טען משתמשים
-            users = [];
-            let usersSnap = await db.collection('users').get();
-            usersSnap.forEach(doc => users.push(doc.data()));
-            if (users.length === 0) { // במידה ולא קיימים משתמשים – צור ברירת מחדל
-                users = [
-                    {
-                        username: 'admin',
-                        password: '1234',
-                        fullName: 'מנהל המערכת',
-                        role: 'מנהל',
-                        permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'manage_users', 'view_reports']
-                    },
-                    {
-                        username: 'warehouse',
-                        password: '1234',
-                        fullName: 'יוסי כהן',
-                        role: 'מחסנאי',
-                        permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'view_reports']
-                    },
-                    {
-                        username: 'staff',
-                        password: '1234',
-                        fullName: 'דני לוי',
-                        role: 'צוות',
-                        permissions: ['view_inventory', 'view_movements', 'add_transaction']
+        // --- פונקציות Firebase עם retry ---
+        async function loadAllDataWithRetry(retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    await loadAllData();
+                    return; // הצלחה
+                } catch (error) {
+                    console.error(`Load attempt ${i + 1} failed:`, error);
+                    if (i === retries - 1) {
+                        throw error; // זרוק שגיאה אחרי כל הניסיונות
                     }
-                ];
-                for (const u of users) {
-                    await db.collection('users').doc(u.username).set(u);
+                    // המתן לפני ניסיון נוסף
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
             }
-            // טען מלאי
-            inventory = [];
-            let invSnap = await db.collection('inventory').get();
-            invSnap.forEach(doc => inventory.push(doc.data()));
-            
-            // טען תנועות
-            movements = [];
-			let movSnap = await db.collection('movements').orderBy('date', 'desc').limit(200).get();
-            movSnap.forEach(doc => {
-				let data = doc.data();
-				data.id = doc.id; // שמירת מזהה המסמך
-				movements.push(data);
-			});
+        }
+        
+        async function loadAllData() {
+            try {
+                // טען משתמשים
+                users = [];
+                let usersSnap = await db.collection('users').get();
+                usersSnap.forEach(doc => users.push(doc.data()));
+                if (users.length === 0) { // במידה ולא קיימים משתמשים – צור ברירת מחדל
+                    users = [
+                        {
+                            username: 'admin',
+                            password: '1234',
+                            fullName: 'מנהל המערכת',
+                            role: 'מנהל',
+                            permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'manage_users', 'view_reports', 'view_pickings']
+                        },
+                        {
+                            username: 'warehouse',
+                            password: '1234',
+                            fullName: 'יוסי כהן',
+                            role: 'מחסנאי',
+                            permissions: ['view_inventory', 'view_movements', 'add_transaction', 'add_item', 'view_reports', 'view_pickings']
+                        },
+                        {
+                            username: 'staff',
+                            password: '1234',
+                            fullName: 'דני לוי',
+                            role: 'צוות',
+                            permissions: ['view_inventory', 'view_movements', 'add_transaction']
+                        }
+                    ];
+                    for (const u of users) {
+                        await db.collection('users').doc(u.username).set(u);
+                    }
+                }
+                // טען מלאי
+                inventory = [];
+                let invSnap = await db.collection('inventory').get();
+                invSnap.forEach(doc => inventory.push(doc.data()));
+                
+                // טען תנועות
+                movements = [];
+                let movSnap = await db.collection('movements').orderBy('date', 'desc').limit(200).get();
+                movSnap.forEach(doc => {
+                    let data = doc.data();
+                    data.id = doc.id; // שמירת מזהה המסמך
+                    movements.push(data);
+                });
+            } catch (error) {
+                console.error('Error loading data:', error);
+                if (error.code === 'unavailable') {
+                    throw new Error('אין חיבור לשרת. בדוק את החיבור לאינטרנט.');
+                }
+                throw error;
+            }
         }
 		
 		async function loadMovementsOnly() {
@@ -800,36 +890,6 @@
 			});
 		}
 
-		async function createPickingList(planList) {
-			const now = new Date();
-			const docRef = await db.collection('pickingLists').add({
-				date: now.toLocaleDateString('he-IL'),
-				time: now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}),
-				createdBy: currentUser.fullName,
-				status: 'open',
-				plan: planList.map(p => ({
-					productName: p.productName,
-					takePacks: p.takePacks,
-					takeUnits: p.takeUnits,
-					location: p.location,
-					expiry: p.expiry
-				}))
-			});
-			return docRef.id;
-		}
-
-        async function saveUser(user) {
-            await db.collection('users').doc(user.username).set(user);
-        }
-
-        async function deleteUserFromDB(username) {
-            await db.collection('users').doc(username).delete();
-        }
-
-        async function saveInventoryItem(item) {
-            await db.collection('inventory').doc(item.name).set(item);
-        }
-		
 		async function createPickingList(plan) {
 		  const now = new Date();
 		  const docRef = await db.collection('pickingLists').add({
@@ -843,13 +903,25 @@
 		  return docRef.id;
 		}
 
+        async function saveUser(user) {
+            await db.collection('users').doc(user.username).set(user);
+        }
+
+        async function deleteUserFromDB(username) {
+            await db.collection('users').doc(username).delete();
+        }
+
+        async function saveInventoryItem(item) {
+            await db.collection('inventory').doc(item.name).set(item);
+        }
 
         async function deleteInventoryItem(name) {
             await db.collection('inventory').doc(name).delete();
         }
 
         async function saveMovement(movement) {
-            await db.collection('movements').add(movement);
+            const docRef = await db.collection('movements').add(movement);
+            return docRef.id;
         }
 		
 		async function savePickingListToDB(planList, creatorName) {
@@ -873,7 +945,7 @@
             const password = document.getElementById('password').value;
             
             try {
-                await loadAllData();
+                await loadAllDataWithRetry();
 				updateStats();
                 const user = users.find(u => u.username === username && u.password === password);
                 if (user) {
@@ -886,7 +958,11 @@
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showToast('שגיאה בהתחברות. נסה שוב.', 'error');
+                if (error.message && error.message.includes('אין חיבור')) {
+                    showToast(error.message, 'error');
+                } else {
+                    showToast('שגיאה בהתחברות. נסה שוב.', 'error');
+                }
             }
         });
 		
@@ -922,13 +998,27 @@
 			pickings.forEach(p => {
 				// יצירת קישור שיתוף
 				const link = `${window.location.origin}/pick.html?id=${p.id || p.id}`;
+				
+				// חישוב תוצאות
+				let resultsHtml = '';
+				if (p.results && p.results.length) {
+					const takenCount = p.results.filter(r => r.status === 'נלקח').length;
+					const notFoundCount = p.results.filter(r => r.status === 'לא נמצא').length;
+					resultsHtml = `
+						<div style="text-align:center;">
+							<span style="color:#28a745;">✓ ${takenCount}</span> | 
+							<span style="color:#e74c3c;">✗ ${notFoundCount}</span>
+						</div>
+					`;
+				}
+				
 				html += `
 				<tr>
 					<td>${p.date || ''}</td>
 					<td>${p.time || ''}</td>
 					<td>${p.createdBy || ''}</td>
-					<td>${p.pickedBy || ''}</td>
-					<td>${p.status || 'פתוח'}</td>
+					<td>${p.pickedBy || '-'}</td>
+					<td>${p.status === 'done' ? '✓ בוצע' : '⏳ ממתין'}</td>
 					<td>
 						<ul style="padding-right: 18px;">
 							${(p.plan || []).map(item =>
@@ -936,11 +1026,7 @@
 							).join('')}
 						</ul>
 					</td>
-					<td>
-						${(p.results && p.results.length) ? p.results.map((r, i) =>
-							`<div>שורה ${i+1}: ${r.status}</div>`
-						).join('') : ''}
-					</td>
+					<td>${resultsHtml}</td>
 					<td>
 						<button onclick="copyToClipboard('${link}')">העתק קישור</button>
 						<br>
@@ -998,7 +1084,7 @@
 
         window.addEventListener('load', async function() {
             try {
-                await loadAllData();
+                await loadAllDataWithRetry();
 				updateStats();
                 const savedUser = localStorage.getItem('currentUser');
                 if (savedUser) {
@@ -1011,7 +1097,13 @@
                 }
             } catch (error) {
                 console.error('Load error:', error);
-                showToast('שגיאה בטעינת הנתונים', 'error');
+                showToast('שגיאה בטעינת הנתונים - בדוק חיבור לאינטרנט', 'error');
+                // הצג כפתור רענון
+                const refreshBtn = document.createElement('button');
+                refreshBtn.textContent = 'נסה שוב';
+                refreshBtn.style.cssText = 'margin-top: 20px;';
+                refreshBtn.onclick = () => location.reload();
+                document.querySelector('.login-box').appendChild(refreshBtn);
             }
         });
 
@@ -1070,7 +1162,47 @@
 			const tbody = document.getElementById('inventoryBody');
 			tbody.innerHTML = '';
 
-			inventory.forEach(item => {
+			let filtered = [...inventory];
+
+			// סינון לפי חיפוש
+			if (inventorySearch) {
+				filtered = filtered.filter(item => item.name.includes(inventorySearch));
+			}
+			// סינון לפי קטגוריה
+			if (categoryFilter) {
+				filtered = filtered.filter(item => item.category === categoryFilter);
+			}
+
+			// מיון
+			if (inventorySort.by) {
+				filtered.sort((a, b) => {
+					let av, bv;
+					switch (inventorySort.by) {
+						case 'name': av = a.name; bv = b.name; break;
+						case 'category': av = a.category; bv = b.category; break;
+						case 'quantity': {
+							// חישוב כמו אצלך
+							let [ap, au] = totalPacksAndUnits(a);
+							let [bp, bu] = totalPacksAndUnits(b);
+							av = ap + au / (a.unitsPerPack || 1);
+							bv = bp + bu / (b.unitsPerPack || 1);
+						} break;
+						case 'min': av = a.minPacks; bv = b.minPacks; break;
+						case 'expiry': {
+							let ae = getEarliestExpiry(a);
+							let be = getEarliestExpiry(b);
+							av = ae ? new Date(ae) : new Date(3000,1,1);
+							bv = be ? new Date(be) : new Date(3000,1,1);
+						} break;
+						case 'status': av = getGlobalStatusStr(a); bv = getGlobalStatusStr(b); break;
+						default: av = a.name; bv = b.name;
+					}
+					if (typeof av === "string") return inventorySort.dir * av.localeCompare(bv);
+					else return inventorySort.dir * ((av > bv) - (av < bv));
+				});
+			}
+
+			filtered.forEach(item => {
 				let totalAvailable = 0;
 				let earliestExpiry = null;
 
@@ -1222,8 +1354,10 @@
 			document.getElementById('editMovementId').value = movement.id;
 			document.getElementById('editMovementProduct').value = movement.product;
 			document.getElementById('editMovementType').value = movement.type;
-			document.getElementById('editMovementQuantityPacks').value = movement.quantityPacks;
-			document.getElementById('editMovementQuantityUnits').value = movement.quantityUnits;
+			document.getElementById('editMovementQuantityPacks').value = movement.quantityPacks || 0;
+			document.getElementById('editMovementQuantityUnits').value = movement.quantityUnits || 0;
+			document.getElementById('editMovementLocation').value = movement.location || '';
+			document.getElementById('editMovementExpiry').value = movement.expiry || '';
 			document.getElementById('editMovementNotes').value = movement.notes || '';
 			document.getElementById('editMovementModal').style.display = 'block';
 		};	
@@ -1344,6 +1478,35 @@
 			for (let i = 0; i < pick.plan.length; i++) {
 				if (results[i].status !== 'נלקח') continue;
 				const row = pick.plan[i];
+				
+				// חפש את המוצר והווריאנט המתאים
+				const item = inventory.find(inv => inv.name === row.productName);
+				if (!item) continue;
+				
+				// מצא את הווריאנט המדויק לפי מיקום ותאריך תפוגה
+				const variantIndex = item.variants.findIndex(v => 
+					v.location === row.location && 
+					v.expiry === row.expiry
+				);
+				
+				if (variantIndex === -1) continue;
+				
+				// עדכן את הכמות בווריאנט
+				const variant = item.variants[variantIndex];
+				variant.quantityPacks -= row.takePacks;
+				variant.quantityUnits -= row.takeUnits;
+				
+				// אם יש יותר יחידות מנדרש לחבילה, המר לחבילות
+				if (variant.quantityUnits < 0) {
+					const neededPacks = Math.ceil(Math.abs(variant.quantityUnits) / item.unitsPerPack);
+					variant.quantityPacks -= neededPacks;
+					variant.quantityUnits += neededPacks * item.unitsPerPack;
+				}
+				
+				// שמור את המוצר המעודכן
+				await saveInventoryItem(item);
+				
+				// רשום תנועה
 				await saveMovement({
 					date: new Date().toLocaleDateString('he-IL'),
 					time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
@@ -1358,6 +1521,10 @@
 				});
 			}
 
+			// טען מחדש את הנתונים
+			await loadAllData();
+			updateStats();
+			
 			showToast('הליקוט אושר בהצלחה', 'success');
 			displayPickings();
 		}
@@ -1372,6 +1539,8 @@
 				type: document.getElementById('editMovementType').value,
 				quantityPacks: parseInt(document.getElementById('editMovementQuantityPacks').value),
 				quantityUnits: parseInt(document.getElementById('editMovementQuantityUnits').value),
+				location: document.getElementById('editMovementLocation').value,
+				expiry: document.getElementById('editMovementExpiry').value,
 				notes: document.getElementById('editMovementNotes').value
 			});
 			await loadMovementsOnly();
@@ -1388,187 +1557,34 @@
 			displayMovements();
 			showToast('התנועה נמחקה בהצלחה!', 'success');
 		};
-		
-		function displayInventoryReport() {
-			const tbody = document.getElementById('inventoryBody');
-			tbody.innerHTML = '';
-
-			inventory.forEach(item => {
-				// חישוב כמות כוללת, מינימום ותוקף
-				let totalPacks = 0;
-				let looseUnits = 0;
-				let earliestExpiry = null;
-				(item.variants || []).forEach(v => {
-					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-					if (daysToExpiry === null || daysToExpiry > 0) {
-						totalPacks += v.quantityPacks || 0;
-						looseUnits += v.quantityUnits || 0;
-					}
-					if (v.expiry && (earliestExpiry === null || new Date(v.expiry) < earliestExpiry)) {
-						earliestExpiry = new Date(v.expiry);
-					}
-				});
-				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
-				looseUnits = looseUnits % item.unitsPerPack;
-
-				// שורת מוצר מסכמת
-				const row = tbody.insertRow();
-				row.classList.add('main-row');
-				row.innerHTML = `
-					<td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
-					<td>${item.name}</td>
-					<td>${item.category}</td>
-					<td>
-						${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
-						${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-					</td>
-					<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
-					<td>${earliestExpiry ? earliestExpiry.toLocaleDateString('he-IL') : '-'}</td>
-					<td></td>
-					<td>
-						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
-							? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
-							   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
-							: ''}
-					</td>
-				`;
-
-				// שורות בן — וריאנטים (אם אתה רוצה)
-				(item.variants || []).forEach((variant, index) => {
-					const variantRow = tbody.insertRow();
-					variantRow.classList.add('variant-row');
-					variantRow.style.display = 'none';
-
-					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-					
-					let expiryStatus = '-';
-					if (daysToExpiry !== null && daysToExpiry >= 0) {
-						if (daysToExpiry <= 7) expiryStatus = '🔴';
-						else if (daysToExpiry <= 14) expiryStatus = '🟠';
-						else if (daysToExpiry <= 30) expiryStatus = '🟡';
-						else expiryStatus = '🟢';
-					}
-
-					variantRow.innerHTML = `
-						<td></td>
-						<td colspan="2">${variant.location}</td>
-						<td>
-							${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
-							${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-						</td>
-						<td>-</td>
-						<td>${formatDate(variant.expiry) || '-'}</td>
-						<td>${expiryStatus}</td>
-						<td>
-							${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
-								? `<button class="btn-small btn-edit" onclick="editVariant('${item.name}', ${index})">ערוך</button>
-								   <button class="btn-small btn-danger" onclick="deleteVariant('${item.name}', ${index})">מחק</button>`
-								: ''}
-						</td>
-					`;
-				});
-			});
-		}
-
-		function displayLowStockReport() {
-			const tbody = document.getElementById('lowStockBody');
-			tbody.innerHTML = '';
-
-			inventory.forEach(item => {
-				let totalPacks = 0, looseUnits = 0;
-				(item.variants || []).forEach(v => {
-					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-					if (daysToExpiry === null || daysToExpiry > 0) {
-						totalPacks += v.quantityPacks || 0;
-						looseUnits += v.quantityUnits || 0;
-					}
-				});
-				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
-				looseUnits = looseUnits % item.unitsPerPack;
-
-				if (totalPacks < item.minPacks) {
-					const row = tbody.insertRow();
-					row.innerHTML = `
-						<td>${item.name}</td>
-						<td>${item.category}</td>
-						<td>
-							${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
-							${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-						</td>
-						<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
-					`;
-				}
-			});
-		}
-
-		function displayExpiringReport() {
-			const tbody = document.getElementById('expiringBody');
-			tbody.innerHTML = '';
-
-			inventory.forEach(item => {
-				(item.variants || []).forEach((variant, index) => {
-					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-					if (daysToExpiry !== null && daysToExpiry <= 30 && daysToExpiry >= 0) {
-						let expiryStatus = '-';
-						if (daysToExpiry <= 7) {
-							expiryStatus = '🔴';
-						} else if (daysToExpiry <= 14) {
-							expiryStatus = '🟠';
-						} else if (daysToExpiry <= 30) {
-							expiryStatus = '🟡';
-						} else {
-							expiryStatus = '🟢';
-						}
-
-						const row = tbody.insertRow();
-						row.innerHTML = `
-							<td>${item.name}</td>
-							<td>${variant.location}</td>
-							<td>
-								${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
-								${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-							</td>
-							<td>${formatDate(variant.expiry) || '-'}</td>
-							<td>${expiryStatus}</td>
-						`;
-					}
-				});
-			});
-		}
-
-		function calculateTotalAvailable(item) {
-			return item.variants.reduce((sum, variant) => {
-				const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-				if (daysToExpiry === null || daysToExpiry > 0) {
-					return sum + variant.quantity;
-				}
-				return sum;
-			}, 0);
-		}
 
 		function updateStats() {
 			document.getElementById('totalProducts').textContent = inventory.length;
 			let lowStockCount = 0, expiringCount = 0;
 			inventory.forEach(item => {
 				let totalPacks = 0, looseUnits = 0;
+				let hasExpiringVariant = false;
+				
 				(item.variants || []).forEach(v => {
 					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 					if (daysToExpiry === null || daysToExpiry > 0) {
 						totalPacks += v.quantityPacks || 0;
 						looseUnits += v.quantityUnits || 0;
 					}
+					// בדיקת תפוגה קרובה
+					if (daysToExpiry !== null && daysToExpiry <= 14 && daysToExpiry >= 0 && !hasExpiringVariant) {
+						hasExpiringVariant = true;
+						expiringCount++;
+					}
 				});
+				
 				totalPacks += Math.floor(looseUnits / item.unitsPerPack);
 				if (totalPacks < item.minPacks) lowStockCount++;
-
-				// תפוגה קרובה
-				(item.variants || []).forEach(v => {
-					const daysToExpiry = v.expiry ? Math.floor((new Date(v.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-					if (daysToExpiry !== null && daysToExpiry <= 14 && daysToExpiry >= 0) expiringCount++;
-				});
 			});
+			
 			document.getElementById('lowStockCount').textContent = lowStockCount;
 			document.getElementById('expiringCount').textContent = expiringCount;
+			
 			const today = new Date().toLocaleDateString('he-IL');
 			const todayMovements = movements.filter(m => m.date === today).length;
 			document.getElementById('todayMovements').textContent = todayMovements;
@@ -1586,6 +1602,8 @@
 					<td>${movement.date}</td>
 					<td>${movement.time}</td>
 					<td>${movement.product}</td>
+					<td>${movement.location || '-'}</td>
+					<td>${movement.expiry ? formatDate(movement.expiry) : '-'}</td>
 					<td>${movement.type}</td>
 					<td>${movement.quantityPacks} חב'${movement.quantityUnits > 0 ? ' + ' + movement.quantityUnits + ' יחידות' : ''}</td>
 					<td>${movement.user}</td>
@@ -1615,10 +1633,10 @@
 		
 		window.editProduct = function(productName) {
 			const item = inventory.find(i => i.name === productName);
-			populateUnitsSelect(document.getElementById('editBaseUnitSingular'), item.baseUnitSingular);
-			populateUnitsSelect(document.getElementById('editBaseUnitPlural'), item.baseUnitPlural);
-			populateUnitsSelect(document.getElementById('editPackUnitSingular'), item.packUnitSingular);
-			populateUnitsSelect(document.getElementById('editPackUnitPlural'), item.packUnitPlural);
+			populateUnitsSelect(document.getElementById('editBaseUnitSingular'), baseUnitsSingularList, item.baseUnitSingular);
+			populateUnitsSelect(document.getElementById('editBaseUnitPlural'), baseUnitsPluralList, item.baseUnitPlural);
+			populateUnitsSelect(document.getElementById('editPackUnitSingular'), packUnitsSingularList, item.packUnitSingular);
+			populateUnitsSelect(document.getElementById('editPackUnitPlural'), packUnitsPluralList, item.packUnitPlural);
 			document.getElementById('editItemOriginalName').value = item.name;
 			document.getElementById('editItemName').value = item.name;
 			document.getElementById('editItemCategory').value = item.category;
@@ -1629,7 +1647,7 @@
 			document.getElementById('editUnitsPerPack').value = item.unitsPerPack;
 			document.getElementById('editMinPacks').value = item.minPacks;
 
-			document.getElementById('editItemModal').style.display = 'block';
+			document.getElementById('editModal').style.display = 'block';
 		};
 		
 		window.deleteProduct = async function(productName) {
@@ -1641,23 +1659,25 @@
 			displayInventory();
 		};
 		
-		window.deleteVariant = function(productName, variantIndex) {
+		window.deleteVariant = async function(productName, variantIndex) {
 			if (!confirm('האם אתה בטוח שברצונך למחוק את הווריאנט?')) return;
 			const item = inventory.find(i => i.name === productName);
 			item.variants.splice(variantIndex, 1);
-			saveInventoryItem(item).then(loadAllData);
+			await saveInventoryItem(item);
+			await loadAllData();
+			updateStats();
+			displayInventory();
+			showToast('הווריאנט נמחק בהצלחה', 'success');
 		};
 		
 		window.editVariant = function(productName, variantIndex) {
 			const item = inventory.find(i => i.name === productName);
 			const variant = item.variants[variantIndex];
 			
-			populateUnitsSelect(document.getElementById('editVariantUnit'), variant.unit);
 			document.getElementById('editVariantProductName').value = productName;
 			document.getElementById('editVariantIndex').value = variantIndex;
 			document.getElementById('editVariantQuantityPacks').value = variant.quantityPacks || 0;
 			document.getElementById('editVariantQuantityUnits').value = variant.quantityUnits || 0;
-			document.getElementById('editVariantUnit').value = variant.unit || '';
 			document.getElementById('editVariantLocation').value = variant.location || '';
 			document.getElementById('editVariantExpiry').value = variant.expiry || '';
 
@@ -1680,7 +1700,7 @@
 				</div>
 				<div class="form-group">
 					<label>מיקום</label>
-					<select class="variant-location" required>
+					<select class="variant-location" required aria-label="מיקום המחסן" title="בחר מיקום מחסן">
 						<option value="">בחר מחסן</option>
 						<option value="מחסן שתיה">מחסן שתיה</option>
 						<option value="מחסן אולם 1">מחסן אולם 1</option>
@@ -1748,6 +1768,7 @@
 
 			const rows = document.querySelectorAll('#multiTransactionRows .form-row');
 			let anySuccess = false, errorMessages = [];
+			let pickingPlan = []; // לצורך יצירת רשימת ליקוט
 
 			for (const row of rows) {
 				const productSelect = row.querySelector('.transProductSelect');
@@ -1760,136 +1781,195 @@
 					errorMessages.push('לא נבחר מוצר או סוג פעולה באחת השורות');
 					continue;
 				}
+				
 				const productName = productSelect.value;
 				const transType = typeSelect.value;
 				const quantityPacks = parseInt(quantityPacksInput.value) || 0;
 				const quantityUnits = parseInt(quantityUnitsInput.value) || 0;
 				const notes = notesInput.value;
 
+				// בדיקת כמויות שליליות
+				if (quantityPacks < 0 || quantityUnits < 0) {
+					errorMessages.push(`לא ניתן להזין כמויות שליליות`);
+					quantityPacksInput.classList.add('error-input');
+					quantityUnitsInput.classList.add('error-input');
+					continue;
+				}
+
 				if ((quantityPacks === 0 && quantityUnits === 0)) {
-				  errorMessages.push(`יש להזין כמות חוקית ב-${productName}`);
-				  continue;
+					errorMessages.push(`יש להזין כמות חוקית ב-${productName}`);
+					continue;
 				}
 
 				const item = inventory.find(i => i.name === productName);
 				if (!item) {
-				  errorMessages.push(`המוצר "${productName}" לא נמצא`);
-				  continue;
-				}
-				
-				function getPickingPlan(item, packsNeeded, unitsNeeded) {
-					let variants = (item.variants || []).map((v, idx) => ({...v, idx}));
-					// מיון תוקף קרוב ביותר
-					variants.sort((a, b) => {
-						let da = a.expiry ? new Date(a.expiry) : new Date(3000,1,1);
-						let db = b.expiry ? new Date(b.expiry) : new Date(3000,1,1);
-						return da - db;
-					});
-
-					let toTakePacks = packsNeeded;
-					let toTakeUnits = unitsNeeded;
-					let pickingList = [];
-					for (const v of variants) {
-						if (toTakePacks <= 0 && toTakeUnits <= 0) break;
-						let takePacks = Math.min(toTakePacks, v.quantityPacks);
-						let takeUnits = Math.min(toTakeUnits, v.quantityUnits);
-						if (takePacks > 0 || takeUnits > 0) {
-							pickingList.push({
-								location: v.location,
-								expiry: v.expiry,
-								takePacks,
-								takeUnits,
-								variantIndex: v.idx
-							});
-							toTakePacks -= takePacks;
-							toTakeUnits -= takeUnits;
-						}
-					}
-					return pickingList; // מכיל את כל המקומות והכמויות שמוצע לקחת מהם
-				}
-
-				function pickVariantsForQuantity(item, packsNeeded, unitsNeeded) {
-					// מחזיר מערך של {variantIndex, takePacks, takeUnits}
-					let plan = [];
-					let toTakePacks = packsNeeded;
-					let toTakeUnits = unitsNeeded;
-					// ממיין וריאנטים לפי תוקף עולה
-					let sortedVariants = (item.variants || []).map((v, idx) => ({...v, idx}))
-						.sort((a, b) => {
-							let da = a.expiry ? new Date(a.expiry) : new Date(3000,1,1);
-							let db = b.expiry ? new Date(b.expiry) : new Date(3000,1,1);
-							return da - db;
-						});
-
-					for (let v of sortedVariants) {
-						let takePacks = 0, takeUnits = 0;
-						if (toTakePacks > 0 && v.quantityPacks > 0) {
-							takePacks = Math.min(toTakePacks, v.quantityPacks);
-							toTakePacks -= takePacks;
-						}
-						if (toTakeUnits > 0 && v.quantityUnits > 0) {
-							takeUnits = Math.min(toTakeUnits, v.quantityUnits);
-							toTakeUnits -= takeUnits;
-						}
-						if (takePacks > 0 || takeUnits > 0) {
-							plan.push({variantIndex: v.idx, takePacks, takeUnits, location: v.location, expiry: v.expiry});
-						}
-						if (toTakePacks <= 0 && toTakeUnits <= 0) break;
-					}
-					return {plan, leftPacks: toTakePacks, leftUnits: toTakeUnits};
-				}
-
-				// הנה הקטע שמבצע את החלוקה:
-				const {plan, leftPacks, leftUnits} = pickVariantsForQuantity(item, quantityPacks, quantityUnits);
-				if (transType === 'הוצאה') {
-				  if (leftPacks > 0 || leftUnits > 0) {
-					errorMessages.push(`אין מספיק מלאי ל-${item.name}`);
+					errorMessages.push(`המוצר "${productName}" לא נמצא`);
 					continue;
-				  }
-				  // עדכון בפועל של הכמויות לפי כל וריאנט
-				  for (const pick of plan) {
-					let variant = item.variants[pick.variantIndex];
-					variant.quantityPacks -= pick.takePacks;
-					variant.quantityUnits -= pick.takeUnits;
+				}
+
+				if (transType === 'הוצאה') {
+					// חישוב כמויות זמינות
+					let availablePacks = 0;
+					let availableUnits = 0;
+					
+					item.variants.forEach(v => {
+						availablePacks += v.quantityPacks || 0;
+						availableUnits += v.quantityUnits || 0;
+					});
+					
+					// המרת יחידות לחבילות אם אפשר
+					availablePacks += Math.floor(availableUnits / item.unitsPerPack);
+					availableUnits = availableUnits % item.unitsPerPack;
+					
+					// בדיקה אם יש מספיק מלאי
+					const neededTotalUnits = (quantityPacks * item.unitsPerPack) + quantityUnits;
+					const availableTotalUnits = (availablePacks * item.unitsPerPack) + availableUnits;
+					
+					if (neededTotalUnits > availableTotalUnits) {
+						errorMessages.push(`אין מספיק מלאי ל-${item.name}. זמין: ${availablePacks} חבילות + ${availableUnits} יחידות`);
+						continue;
+					}
+					
+					// ליקוט חכם לפי תוקף (FEFO)
+					const sortedVariants = item.variants
+						.map((v, idx) => ({...v, idx}))
+						.filter(v => v.quantityPacks > 0 || v.quantityUnits > 0)
+						.sort((a, b) => {
+							if (!a.expiry && !b.expiry) return 0;
+							if (!a.expiry) return 1;
+							if (!b.expiry) return -1;
+							return new Date(a.expiry) - new Date(b.expiry);
+						});
+					
+					let remainingPacks = quantityPacks;
+					let remainingUnits = quantityUnits;
+					
+					for (const variant of sortedVariants) {
+						if (remainingPacks <= 0 && remainingUnits <= 0) break;
+						
+						const takePacks = Math.min(remainingPacks, variant.quantityPacks);
+						const takeUnits = Math.min(remainingUnits, variant.quantityUnits);
+						
+						if (takePacks > 0 || takeUnits > 0) {
+							// עדכון הווריאנט
+							item.variants[variant.idx].quantityPacks -= takePacks;
+							item.variants[variant.idx].quantityUnits -= takeUnits;
+							
+							// רישום תנועה
+							await saveMovement({
+								date, time,
+								product: item.name,
+								location: variant.location,
+								expiry: variant.expiry,
+								type: transType,
+								quantityPacks: takePacks,
+								quantityUnits: takeUnits,
+								user,
+								notes
+							});
+							
+							// הוספה לתוכנית הליקוט
+							if (takePacks > 0 || takeUnits > 0) {
+								pickingPlan.push({
+									productName: item.name,
+									takePacks,
+									takeUnits,
+									location: variant.location,
+									expiry: variant.expiry
+								});
+							}
+							
+							remainingPacks -= takePacks;
+							remainingUnits -= takeUnits;
+							anySuccess = true;
+						}
+					}
+					
+					// אם נשארו יחידות, נסה להמיר מחבילות
+					if (remainingUnits > 0) {
+						for (const variant of sortedVariants) {
+							if (remainingUnits <= 0) break;
+							if (item.variants[variant.idx].quantityPacks > 0) {
+								const packsToBreak = Math.ceil(remainingUnits / item.unitsPerPack);
+								const actualPacksToBreak = Math.min(packsToBreak, item.variants[variant.idx].quantityPacks);
+								
+								item.variants[variant.idx].quantityPacks -= actualPacksToBreak;
+								item.variants[variant.idx].quantityUnits += (actualPacksToBreak * item.unitsPerPack) - remainingUnits;
+								
+								await saveMovement({
+									date, time,
+									product: item.name,
+									location: variant.location,
+									expiry: variant.expiry,
+									type: transType,
+									quantityPacks: 0,
+									quantityUnits: remainingUnits,
+									user,
+									notes: notes + ' (הומר מחבילות)'
+								});
+								
+								pickingPlan.push({
+									productName: item.name,
+									takePacks: 0,
+									takeUnits: remainingUnits,
+									location: variant.location,
+									expiry: variant.expiry
+								});
+								
+								remainingUnits = 0;
+								anySuccess = true;
+								break;
+							}
+						}
+					}
+					
+				} else { // הכנסה
+					if (!item.variants || item.variants.length === 0) {
+						errorMessages.push(`אין וריאנטים פעילים ל-${item.name}`);
+						continue;
+					}
+					
+					// הכנסה לווריאנט הראשון כברירת מחדל
+					item.variants[0].quantityPacks += quantityPacks;
+					item.variants[0].quantityUnits += quantityUnits;
+					
 					await saveMovement({
-					  date, time,
-					  product: item.name,
-					  location: variant.location,
-					  expiry: variant.expiry,
-					  type: transType,
-					  quantityPacks: pick.takePacks,
-					  quantityUnits: pick.takeUnits,
-					  user,
-					  notes
+						date, time,
+						product: item.name,
+						location: item.variants[0].location,
+						expiry: item.variants[0].expiry,
+						type: transType,
+						quantityPacks,
+						quantityUnits,
+						user,
+						notes
 					});
 					anySuccess = true;
-				  }
-				} else {
-				  // הכנסה: כרגע קל – פשוט מוסיפים לווריאנט הראשון (או שתפתח מודל בחירה בעתיד)
-				  if (!item.variants[0]) {
-					errorMessages.push(`אין וריאנטים פעילים ל-${item.name}`);
-					continue;
-				  }
-				  item.variants[0].quantityPacks += quantityPacks;
-				  item.variants[0].quantityUnits += quantityUnits;
-				  await saveMovement({
-					date, time,
-					product: item.name,
-					location: item.variants[0].location,
-					expiry: item.variants[0].expiry,
-					type: transType,
-					quantityPacks,
-					quantityUnits,
-					user,
-					notes
-				  });
-				  anySuccess = true;
 				}
+				
 				await saveInventoryItem(item);
+			}
+
+			// יצירת רשימת ליקוט אם היו הוצאות
+			if (pickingPlan.length > 0) {
+				const pickId = await createPickingList(pickingPlan);
+				const link = `${window.location.origin}/pick.html?id=${pickId}`;
+				const shareHtml = `
+					<h3>רשימת ליקוט נוצרה!</h3>
+					<div style="margin:18px 0; display:flex; flex-wrap:wrap; gap:10px;">
+						<button class="btn-main" onclick="shareWhatsapp('${link}')">שלח ב־WhatsApp</button>
+						<button class="btn-main" onclick="shareTelegram('${link}')">שלח ב־Telegram</button>
+						<button class="btn-main" onclick="shareEmail('${link}')">שלח באימייל</button>
+						<button class="btn-main" onclick="copyToClipboard('${link}')">העתק קישור</button>
+					</div>
+					<div id="shareResultMsg" style="margin-top:10px; text-align:center;"></div>
+				`;
+				document.getElementById('pickingListContainer').innerHTML = shareHtml;
 			}
 
 			await loadAllData();
 			updateStats();
+			
 			if (anySuccess) {
 				showToast('התנועות נרשמו בהצלחה!', 'success');
 				this.reset();
@@ -1897,6 +1977,7 @@
 				addTransactionRow();
 				displayMovements();
 			}
+			
 			if (errorMessages.length) {
 				showToast(errorMessages.join('\n'), 'error');
 			}
@@ -1988,11 +2069,7 @@
 
         // --- פונקציות עזר ---
         function showToast(message, type = 'info') {
-			const toast = document.getElementById('toast');
-			if (!toast) {
-				alert(message); // הגנה — fallback
-				return;
-			}
+			const toast = document.getElementById('toast') || createToast();
 			toast.textContent = message;
 			toast.className = 'toast show';
 			if (type === 'error') toast.style.background = '#e74c3c';
@@ -2002,23 +2079,16 @@
 				toast.classList.remove('show');
 			}, 3000);
 		}
+		
+		function createToast() {
+			const toast = document.createElement('div');
+			toast.id = 'toast';
+			toast.className = 'toast';
+			document.body.appendChild(toast);
+			return toast;
+		}
 
         // --- פונקציות עריכה ומחיקת מוצרים ---
-		window.editProduct = function(productName) {
-			const item = inventory.find(i => i.name === productName);
-			document.getElementById('editItemOriginalName').value = item.name;
-			document.getElementById('editItemName').value = item.name;
-			document.getElementById('editItemCategory').value = item.category;
-			document.getElementById('editBaseUnitSingular').value = item.baseUnitSingular || '';
-			document.getElementById('editBaseUnitPlural').value = item.baseUnitPlural || '';
-			document.getElementById('editPackUnitSingular').value = item.packUnitSingular || '';
-			document.getElementById('editPackUnitPlural').value = item.packUnitPlural || '';
-			document.getElementById('editUnitsPerPack').value = item.unitsPerPack;
-			document.getElementById('editMinPacks').value = item.minPacks;
-			document.getElementById('editModal').style.display = 'block';
-		};
-
-		
 		window.editItemFromBtn = function(btn) {
 			const itemName = btn.getAttribute('data-name');
 			window.editItem(itemName);
@@ -2333,20 +2403,6 @@
             reportContent.innerHTML = html;
         };
 		
-		window.editVariant = function(productName, variantIndex) {
-			const item = inventory.find(i => i.name === productName);
-			const variant = item.variants[variantIndex];
-
-			document.getElementById('editVariantProductName').value = productName;
-			document.getElementById('editVariantIndex').value = variantIndex;
-			document.getElementById('editVariantQuantityPacks').value = variant.quantityPacks || 0;
-			document.getElementById('editVariantQuantityUnits').value = variant.quantityUnits || 0;
-			document.getElementById('editVariantLocation').value = variant.location;
-			document.getElementById('editVariantExpiry').value = variant.expiry || '';
-
-			document.getElementById('editVariantModal').style.display = 'block';
-		};
-
 		window.closeEditVariantModal = function() {
 			document.getElementById('editVariantModal').style.display = 'none';
 			document.getElementById('editVariantForm').reset();
@@ -2380,636 +2436,39 @@
             
             switch(type) {
                 case 'inventory':
-                    csv = 'שם מוצר,קטגוריה,כמות,מינימום,יחידה,תפוגה,מיקום\n';
+                    csv = 'שם מוצר,קטגוריה,כמות חבילות,כמות יחידות,מינימום,תפוגה קרובה,מיקום\n';
                     inventory.forEach(item => {
-                        csv += `"${item.name}","${item.category}",${item.quantity},${item.minQuantity},"${item.unit}","${item.expiry || ''}","${item.location}"\n`;
+						item.variants.forEach(variant => {
+							csv += `"${item.name}","${item.category}",${variant.quantityPacks},${variant.quantityUnits},${item.minPacks},"${variant.expiry || ''}","${variant.location}"\n`;
+						});
                     });
                     filename = 'דוח_מלאי_מלא.csv';
                     break;
                     
                 case 'lowStock':
-                    csv = 'שם מוצר,כמות נוכחית,כמות מינימום,חוסר\n';
-                    inventory.filter(item => item.quantity < item.minQuantity).forEach(item => {
-                        const shortage = item.minQuantity - item.quantity;
-                        csv += `"${item.name}",${item.quantity},${item.minQuantity},${shortage}\n`;
-                    });
+                    csv = 'שם מוצר,כמות נוכחית חבילות,כמות מינימום,חוסר\n';
+					inventory.forEach(item => {
+						let totalPacks = 0;
+						item.variants.forEach(v => totalPacks += v.quantityPacks);
+						if (totalPacks < item.minPacks) {
+							const shortage = item.minPacks - totalPacks;
+							csv += `"${item.name}",${totalPacks},${item.minPacks},${shortage}\n`;
+						}
+					});
                     filename = 'דוח_חוסרים.csv';
                     break;
                     
                 case 'expiring':
-                    csv = 'שם מוצר,תאריך תפוגה,ימים לתפוגה,כמות\n';
-                    inventory.filter(item => {
-                        if (!item.expiry) return false;
-                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
-                        return days <= 30;
-                    }).forEach(item => {
-                        const days = Math.floor((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
-                        csv += `"${item.name}","${item.expiry}",${days},"${item.quantity} ${item.unit}"\n`;
-                    });
+                    csv = 'שם מוצר,מיקום,תאריך תפוגה,ימים לתפוגה,כמות חבילות,כמות יחידות\n';
+					inventory.forEach(item => {
+						item.variants.forEach(variant => {
+							if (variant.expiry) {
+								const days = Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+								if (days <= 30 && days >= 0) {
+									csv += `"${item.name}","${variant.location}","${variant.expiry}",${days},${variant.quantityPacks},${variant.quantityUnits}\n`;
+								}
+							}
+						});
+					});
                     filename = 'דוח_תפוגות.csv';
                     break;
-                    
-                case 'movements':
-                    csv = 'תאריך,שעה,מוצר,פעולה,כמות,משתמש,הערות\n';
-                    movements.forEach(m => {
-                        csv += `"${m.date}","${m.time}","${m.product}","${m.type}",${m.quantity},"${m.user}","${m.notes || ''}"\n`;
-                    });
-                    filename = 'דוח_תנועות.csv';
-                    break;
-            }
-            
-            // יצירת קובץ CSV עם BOM לתמיכה בעברית
-            const BOM = '\uFEFF';
-            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            if (navigator.msSaveBlob) {
-                navigator.msSaveBlob(blob, filename);
-            } else {
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-            }
-            
-            showToast('הדוח יוצא בהצלחה!', 'success');
-        };
-
-        window.printReport = function(type) {
-            const reportContent = document.getElementById('reportContent').innerHTML;
-            const printWindow = window.open('', '', 'height=600,width=800');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html dir="rtl">
-                <head>
-                    <title>הדפסת דוח</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; direction: rtl; }
-                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-                        th { background: #f4f4f4; }
-                        .low-stock { background-color: #ffebee; }
-                        .expiring-soon { background-color: #fff3e0; }
-                        @media print {
-                            button { display: none; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${reportContent}
-                    <script>
-                        window.onload = function() { 
-                            window.print(); 
-                            window.close();
-                        }
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        };
-		
-		window.openAddVariantModal = function(productName) {
-		  document.getElementById('addVariantProductName').value = productName;
-		  document.getElementById('addVariantQuantityPacks').value = 0;
-		  document.getElementById('addVariantQuantityUnits').value = 0;
-		  document.getElementById('addVariantLocation').value = '';
-		  document.getElementById('addVariantExpiry').value = '';
-		  document.getElementById('addVariantModal').style.display = 'block';
-		};
-		window.closeAddVariantModal = function() {
-		  document.getElementById('addVariantModal').style.display = 'none';
-		  document.getElementById('addVariantForm').reset();
-		};
-
-		
-		function addTransactionRow() {
-			const container = document.getElementById('multiTransactionRows');
-			const rowIdx = container.children.length;
-
-			// בנה שורה חדשה
-			const row = document.createElement('div');
-			row.className = 'form-row';
-			row.innerHTML = `
-				<div class="form-group">
-					<select class="transProductSelect" required>
-					  <option value="">בחר מוצר</option>
-					  ${
-						inventory.map(item => 
-						  `<option value="${item.name}">
-							${item.name} (${item.category})
-						  </option>`
-						).join('')
-					  }
-					</select>
-				</div>
-				<div class="form-group">
-					<select class="transTypeSelect" required>
-						<option value="">בחר פעולה</option>
-						<option value="הוצאה">הוצאה מהמלאי</option>
-						<option value="הכנסה">הכנסה למלאי</option>
-					</select>
-				</div>
-				<div class="form-group">
-					<input type="number" class="transQuantityPacksInput" min="0" placeholder="כמות חבילות" required>
-				</div>
-				<div class="form-group">
-					<input type="number" class="transQuantityUnitsInput" min="0" placeholder="כמות יחידות" required>
-				</div>
-				<div class="form-group">
-					<input type="text" class="transNotesInput" placeholder="הערות">
-				</div>
-				<div>
-					<button type="button" onclick="this.parentElement.parentElement.remove()">❌</button>
-				</div>
-			`;
-			container.appendChild(row);
-		}
-
-		// אוטומטית תוסיף שורה ראשונה כאשר נכנסים לטאב
-		document.addEventListener('DOMContentLoaded', function() {
-			if (document.getElementById('multiTransactionRows')) addTransactionRow();
-		});
-	
-		function formatDate(dateStr) {
-			if (!dateStr) return '';
-			const date = new Date(dateStr);
-			if (isNaN(date)) return dateStr; // אם לא מצליח לפרש כתאריך, מחזיר כפי שהוזן
-			const day = String(date.getDate()).padStart(2, '0');
-			const month = String(date.getMonth() + 1).padStart(2, '0');
-			const year = date.getFullYear();
-			return `${day}/${month}/${year}`;
-		}
-		// --- טיפול בבחירה "הוסף יחידה חדשה" עבור יחידות מידה ואריזה ---
-		document.addEventListener('change', function(e) {
-			// בסיס יחיד
-			if (e.target && e.target.id === 'baseUnitSingular') {
-				if (e.target.value === '__add_new__') {
-					const newUnit = prompt('הזן שם יחידת מידה בסיסית (יחיד) חדשה:');
-					if (newUnit && !baseUnitsSingularList.includes(newUnit)) {
-						baseUnitsSingularList.push(newUnit);
-						localStorage.setItem('baseUnitsSingularList', JSON.stringify(baseUnitsSingularList));
-						populateUnitsSelect(e.target, baseUnitsSingularList, newUnit);
-					} else {
-						populateUnitsSelect(e.target, baseUnitsSingularList);
-					}
-				}
-			}
-			// בסיס רבים
-			if (e.target && e.target.id === 'baseUnitPlural') {
-				if (e.target.value === '__add_new__') {
-					const newUnit = prompt('הזן שם יחידת מידה בסיסית (רבים) חדשה:');
-					if (newUnit && !baseUnitsPluralList.includes(newUnit)) {
-						baseUnitsPluralList.push(newUnit);
-						localStorage.setItem('baseUnitsPluralList', JSON.stringify(baseUnitsPluralList));
-						populateUnitsSelect(e.target, baseUnitsPluralList, newUnit);
-					} else {
-						populateUnitsSelect(e.target, baseUnitsPluralList);
-					}
-				}
-			}
-			// חבילה יחיד
-			if (e.target && e.target.id === 'packUnitSingular') {
-				if (e.target.value === '__add_new__') {
-					const newUnit = prompt('הזן שם יחידת אריזה (יחיד) חדשה:');
-					if (newUnit && !packUnitsSingularList.includes(newUnit)) {
-						packUnitsSingularList.push(newUnit);
-						localStorage.setItem('packUnitsSingularList', JSON.stringify(packUnitsSingularList));
-						populateUnitsSelect(e.target, packUnitsSingularList, newUnit);
-					} else {
-						populateUnitsSelect(e.target, packUnitsSingularList);
-					}
-				}
-			}
-			// חבילה רבים
-			if (e.target && e.target.id === 'packUnitPlural') {
-				if (e.target.value === '__add_new__') {
-					const newUnit = prompt('הזן שם יחידת אריזה (רבים) חדשה:');
-					if (newUnit && !packUnitsPluralList.includes(newUnit)) {
-						packUnitsPluralList.push(newUnit);
-						localStorage.setItem('packUnitsPluralList', JSON.stringify(packUnitsPluralList));
-						populateUnitsSelect(e.target, packUnitsPluralList, newUnit);
-					} else {
-						populateUnitsSelect(e.target, packUnitsPluralList);
-					}
-				}
-			}
-		});
-		
-		let inventorySearch = '';
-		let categoryFilter = '';
-		let inventorySort = { by: '', dir: 1 }; // dir: 1=asc, -1=desc
-
-		// האזנה לשדות החיפוש והסינון
-		document.getElementById('inventorySearch').addEventListener('input', function() {
-			inventorySearch = this.value.trim();
-			displayInventory();
-		});
-		document.getElementById('categoryFilter').addEventListener('change', function() {
-			categoryFilter = this.value;
-			displayInventory();
-		});
-
-		// פונקציית מיון
-		function sortInventory(by) {
-			if (inventorySort.by === by) inventorySort.dir *= -1;
-			else {
-				inventorySort.by = by;
-				inventorySort.dir = 1;
-			}
-			displayInventory();
-		}
-
-		// עדכן את displayInventory כך:
-		function displayInventory() {
-			const tbody = document.getElementById('inventoryBody');
-			tbody.innerHTML = '';
-
-			let filtered = [...inventory];
-
-			// סינון לפי חיפוש
-			if (inventorySearch) {
-				filtered = filtered.filter(item => item.name.includes(inventorySearch));
-			}
-			// סינון לפי קטגוריה
-			if (categoryFilter) {
-				filtered = filtered.filter(item => item.category === categoryFilter);
-			}
-
-			// מיון
-			if (inventorySort.by) {
-				filtered.sort((a, b) => {
-					let av, bv;
-					switch (inventorySort.by) {
-						case 'name': av = a.name; bv = b.name; break;
-						case 'category': av = a.category; bv = b.category; break;
-						case 'quantity': {
-							// חישוב כמו אצלך
-							let [ap, au] = totalPacksAndUnits(a);
-							let [bp, bu] = totalPacksAndUnits(b);
-							av = ap + au / (a.unitsPerPack || 1);
-							bv = bp + bu / (b.unitsPerPack || 1);
-						} break;
-						case 'min': av = a.minPacks; bv = b.minPacks; break;
-						case 'expiry': {
-							let ae = getEarliestExpiry(a);
-							let be = getEarliestExpiry(b);
-							av = ae ? new Date(ae) : new Date(3000,1,1);
-							bv = be ? new Date(be) : new Date(3000,1,1);
-						} break;
-						case 'status': av = getGlobalStatusStr(a); bv = getGlobalStatusStr(b); break;
-						default: av = a.name; bv = b.name;
-					}
-					if (typeof av === "string") return inventorySort.dir * av.localeCompare(bv);
-					else return inventorySort.dir * ((av > bv) - (av < bv));
-				});
-			}
-
-			filtered.forEach(item => {
-				let [totalPacks, looseUnits] = totalPacksAndUnits(item);
-				const earliestExpiry = getEarliestExpiry(item);
-				const row = tbody.insertRow();
-				row.classList.add('summary-row');
-				row.innerHTML = `
-					<td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
-					<td>${item.name}</td>
-					<td>${item.category}</td>
-					<td>
-						${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
-						${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-					</td>
-					<td>${item.minPacks} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
-					<td>${earliestExpiry ? formatDate(earliestExpiry) : '-'}</td>
-					<td>${getGlobalStatus(totalPacks, item.minPacks, earliestExpiry)}</td>
-					<td>
-						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת' || currentUser.role === 'מחסנאי')
-						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
-						<button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">הוסף</button>
-						<button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
-						: ''}
-					</td>
-				`;
-
-				(item.variants || []).forEach((variant, index) => {
-					const variantRow = tbody.insertRow();
-					variantRow.classList.add('variant-row');
-					variantRow.style.display = 'none';
-
-					const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-					let expiryStatus = '-';
-					if (daysToExpiry !== null && daysToExpiry >= 0) {
-						if (daysToExpiry <= 7) expiryStatus = '🔴';
-						else if (daysToExpiry <= 14) expiryStatus = '🟠';
-						else if (daysToExpiry <= 30) expiryStatus = '🟡';
-						else expiryStatus = '🟢';
-					}
-
-					variantRow.innerHTML = `
-						<td></td>
-						<td colspan="2">${variant.location}</td>
-						<td>
-						${variant.quantityPacks} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
-						${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-						</td>
-						<td>-</td>
-						<td>${formatDate(variant.expiry) || '-'}</td>
-						<td>${expiryStatus}</td>
-						<td>
-							${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
-								? `<button class="btn-small btn-edit" onclick="editVariant('${item.name}', ${index})">ערוך</button>
-								   <button class="btn-small btn-danger" onclick="deleteVariant('${item.name}', ${index})">מחק</button>`
-								: ''}
-						</td>
-					`;
-				});
-			});
-		}
-
-		// פונקציות עזר נוספות:
-		function totalPacksAndUnits(item) {
-			let totalPacks = 0, looseUnits = 0;
-			(item.variants || []).forEach(variant => {
-				const daysToExpiry = variant.expiry ? Math.floor((new Date(variant.expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-				if (daysToExpiry === null || daysToExpiry > 0) {
-					totalPacks += variant.quantityPacks;
-					looseUnits += variant.quantityUnits;
-				}
-			});
-			totalPacks += Math.floor(looseUnits / (item.unitsPerPack || 1));
-			looseUnits = looseUnits % (item.unitsPerPack || 1);
-			return [totalPacks, looseUnits];
-		}
-		function getEarliestExpiry(item) {
-			let earliest = null;
-			(item.variants || []).forEach(variant => {
-				if (variant.expiry && (!earliest || new Date(variant.expiry) < earliest)) {
-					earliest = new Date(variant.expiry);
-				}
-			});
-			return earliest ? earliest.toISOString() : null;
-		}
-		function getGlobalStatusStr(item) {
-			let [totalPacks, ] = totalPacksAndUnits(item);
-			let expiry = getEarliestExpiry(item);
-			return getGlobalStatus(totalPacks, item.minPacks, expiry);
-		}
-		
-		document.getElementById('addVariantForm').addEventListener('submit', async function(e) {
-		  e.preventDefault();
-		  const productName = document.getElementById('addVariantProductName').value;
-		  const item = inventory.find(i => i.name === productName);
-		  if (!item) {
-			showToast('מוצר לא נמצא', 'error');
-			return;
-		  }
-		  const newVariant = {
-			quantityPacks: parseInt(document.getElementById('addVariantQuantityPacks').value),
-			quantityUnits: parseInt(document.getElementById('addVariantQuantityUnits').value),
-			location: document.getElementById('addVariantLocation').value,
-			expiry: document.getElementById('addVariantExpiry').value
-		  };
-		  item.variants.push(newVariant);
-		  await saveInventoryItem(item);
-		  await loadAllData();
-		  updateStats();
-		  showToast('הווריאנט נוסף בהצלחה!', 'success');
-		  closeAddVariantModal();
-		  displayInventory();
-		});
-		
-		// עוזר: מחזיר תוקף בפורמט קצר
-		function formatDateShort(dateStr) {
-			if (!dateStr) return '';
-			const d = new Date(dateStr);
-			if (isNaN(d)) return dateStr;
-			return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
-		}
-
-		// יוצר את רשימת הליקוט (שלב ראשון)
-		async function startPickingList() {
-			const rows = document.querySelectorAll('#multiTransactionRows .form-row');
-			const pickingPlan = [];
-
-			// עבור כל שורה בטופס (כל מוצר שהוזן)
-			for (const row of rows) {
-				const productSelect = row.querySelector('.transProductSelect');
-				const quantityUnitsInput = row.querySelector('.transQuantityUnitsInput');
-				const quantityPacksInput = row.querySelector('.transQuantityPacksInput');
-
-				if (!productSelect.value) continue;
-
-				const productName = productSelect.value;
-				let requiredUnits = parseInt(quantityUnitsInput.value) || 0;
-				let requiredPacks = parseInt(quantityPacksInput.value) || 0;
-
-				// מצא את הפריט במלאי שלך
-				const item = inventory.find(x => x.name === productName);
-				if (!item) continue;
-
-				// ---- ליקוט חכם לפי תוקף קרוב (FEFO) ----
-				// ליקוט לפי חבילות
-				if (requiredPacks > 0) {
-					const packsVariants = (item.variants || [])
-						.filter(v => v.quantityPacks > 0)
-						.slice()
-						.sort((a, b) => {
-							if (!a.expiry) return 1;
-							if (!b.expiry) return -1;
-							return new Date(a.expiry) - new Date(b.expiry);
-						});
-					for (const variant of packsVariants) {
-						if (requiredPacks <= 0) break;
-						const qty = variant.quantityPacks || 0;
-						if (qty === 0) continue;
-						const takePacks = Math.min(requiredPacks, qty);
-						pickingPlan.push({
-							productName,
-							takePacks,
-							takeUnits: 0,
-							location: variant.location,
-							expiry: variant.expiry
-						});
-						requiredPacks -= takePacks;
-					}
-				}
-
-				// ליקוט לפי יחידות
-				if (requiredUnits > 0) {
-					const unitsVariants = (item.variants || [])
-						.filter(v => v.quantityUnits > 0)
-						.slice()
-						.sort((a, b) => {
-							if (!a.expiry) return 1;
-							if (!b.expiry) return -1;
-							return new Date(a.expiry) - new Date(b.expiry);
-						});
-					for (const variant of unitsVariants) {
-						if (requiredUnits <= 0) break;
-						const qty = variant.quantityUnits || 0;
-						if (qty === 0) continue;
-						const takeUnits = Math.min(requiredUnits, qty);
-						pickingPlan.push({
-							productName,
-							takePacks: 0,
-							takeUnits,
-							location: variant.location,
-							expiry: variant.expiry
-						});
-						requiredUnits -= takeUnits;
-					}
-				}
-
-				// אם נותרו דרישות שלא היה אפשר לספק — צור שורה חסרה
-				if (requiredPacks > 0) {
-					pickingPlan.push({
-						productName,
-						takePacks: requiredPacks,
-						takeUnits: 0,
-						location: "חסר במלאי",
-						expiry: ""
-					});
-				}
-				if (requiredUnits > 0) {
-					pickingPlan.push({
-						productName,
-						takePacks: 0,
-						takeUnits: requiredUnits,
-						location: "חסר במלאי",
-						expiry: ""
-					});
-				}
-			}
-
-			// כאן שמור את כל plan כמו שהוא
-			if (pickingPlan.length === 0) {
-				showToast('לא נבחרו מוצרים לליקוט', 'error');
-				return;
-			}
-
-			const pickId = await createPickingList(pickingPlan);
-			// המשך כרגיל
-			const link = `${window.location.origin}/pick.html?id=${pickId}`;
-			const shareHtml = `
-			  <div style="margin:18px 0; display:flex; flex-wrap:wrap; gap:10px;">
-				<button class="btn-main" onclick="shareWhatsapp('${link}')">שלח ב־WhatsApp</button>
-				<button class="btn-main" onclick="shareTelegram('${link}')">שלח ב־Telegram</button>
-				<button class="btn-main" onclick="shareEmail('${link}')">שלח באימייל</button>
-				<button class="btn-main" onclick="copyToClipboard('${link}')">העתק קישור</button>
-			  </div>
-			  <div id="shareResultMsg" style="margin-top:10px; text-align:center;"></div>
-			`;
-			document.getElementById('pickingListContainer').innerHTML = shareHtml;
-			document.getElementById('transactionForm').reset(); // או
-			document.getElementById('multiTransactionRows').innerHTML = '';
-			addTransactionRow();
-
-			document.getElementById('pickingListBtn').disabled = true;
-			setTimeout(() => {
-			  document.getElementById('pickingListBtn').disabled = false;
-			}, 2500);
-			showToast('נוצרה רשימת ליקוט!');
-		}
-
-		// קוד לחלוקת וריאנטים לפי תוקף
-		function getPickingPlan(item, packsNeeded, unitsNeeded) {
-			let variants = (item.variants || []).map((v, idx) => ({...v, idx}));
-			// מיון תוקף קרוב ביותר
-			variants.sort((a, b) => {
-				let da = a.expiry ? new Date(a.expiry) : new Date(3000,1,1);
-				let db = b.expiry ? new Date(b.expiry) : new Date(3000,1,1);
-				return da - db;
-			});
-			let toTakePacks = packsNeeded;
-			let toTakeUnits = unitsNeeded;
-			let pickingList = [];
-			for (const v of variants) {
-				if (toTakePacks <= 0 && toTakeUnits <= 0) break;
-				let takePacks = Math.min(toTakePacks, v.quantityPacks);
-				let takeUnits = Math.min(toTakeUnits, v.quantityUnits);
-				if (takePacks > 0 || takeUnits > 0) {
-					pickingList.push({
-						location: v.location,
-						expiry: v.expiry,
-						takePacks,
-						takeUnits,
-						variantIndex: v.idx,
-					});
-					toTakePacks -= takePacks;
-					toTakeUnits -= takeUnits;
-				}
-			}
-			return pickingList;
-		}
-
-		// פונקציית שיתוף - ייצוא קישור עם נתוני הליקוט
-		function sharePickingLink() {
-			// שומר את ה־planList בבסיס נתונים ואז משתף קישור
-			const planList = window._currentPickingPlanList || [];
-			if (!planList.length) {
-				showToast('לא קיימת רשימת ליקוט לשיתוף', 'error');
-				return;
-			}
-			const creatorName = currentUser.fullName;
-			savePickingListToDB(planList, creatorName).then(id => {
-				const link = `${window.location.origin}/pick.html?id=${id}`;
-				if (navigator.share) {
-					navigator.share({
-						title: 'רשימת ליקוט',
-						url: link
-					});
-				} else {
-					copyToClipboard(link);
-					showToast('קישור הועתק ללוח', 'success');
-				}
-				document.getElementById('pickingListContainer').innerHTML +=
-					`<div style="margin-top:20px;">העתק את הקישור ושלח לעובד:<br>
-					<a href="${link}" target="_blank">${link}</a></div>`;
-			});
-		}
-
-		// העתקה ללוח (עוזר)
-		function copyToClipboard(text) {
-			const tmp = document.createElement('textarea');
-			tmp.value = text;
-			document.body.appendChild(tmp);
-			tmp.select();
-			document.execCommand('copy');
-			document.body.removeChild(tmp);
-		}
-		
-		window.deletePicking = async function(pickId) {
-			if (!confirm("האם למחוק את הליקוט?")) return;
-			await db.collection('pickingLists').doc(pickId).delete();
-			displayPickings();
-			showToast('הליקוט נמחק', 'success');
-		}
-		
-		function shareWhatsapp(link) {
-			const text = encodeURIComponent('קישור לרשימת ליקוט: ' + link);
-			window.open(`https://wa.me/?text=${text}`, '_blank');
-		}
-
-		function shareTelegram(link) {
-			const text = encodeURIComponent('קישור לרשימת ליקוט: ' + link);
-			window.open(`https://t.me/share/url?url=${text}`, '_blank');
-		}
-
-		function shareEmail(link) {
-			const subject = encodeURIComponent('קישור לרשימת ליקוט');
-			const body = encodeURIComponent('קישור לרשימת ליקוט:\n' + link);
-			window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-		}
-
-		function copyToClipboard(link) {
-			navigator.clipboard.writeText(link).then(() => {
-				document.getElementById('shareResultMsg').textContent = 'הקישור הועתק!';
-			}, () => {
-				document.getElementById('shareResultMsg').textContent = 'שגיאה בהעתקה';
-			});
-		}
-
-    </script>
-	<div id="toast" class="toast"></div>
-	<footer style="text-align:center; padding:20px 0; color:#333; background:transparent; font-size:15px;">
-    © 2025 כל הזכויות שמורות לחיליק ביטאן
-	</footer>
-</body>
-</html>
