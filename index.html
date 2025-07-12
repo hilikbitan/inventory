@@ -168,7 +168,7 @@
     <div class="login-container" id="loginScreen">
         <div class="login-box">
             <h1>🎬 מערכת מלאי - סינמה סיטי חדרה 🍿</h1>
-			<form id="loginForm">
+			<form id="loginForm" onsubmit="return false;">
 				<div class="form-group">
 					<label for="username">שם משתמש</label>
 					<input type="text" id="username" required autocomplete="username">
@@ -733,9 +733,10 @@
         };
         
         // אתחול Firebase עם טיפול בשגיאות
+        let db;
         try {
             firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
+            db = firebase.firestore();
             
             // הגדרת Persistence (אופציונלי - לעבודה אופליין)
             db.enablePersistence()
@@ -747,15 +748,7 @@
                     }
                 });
             
-            // בדיקת חיבור
-            db.collection('_health_check').doc('test').get()
-                .then(() => {
-                    console.log('Firebase connected successfully');
-                })
-                .catch((error) => {
-                    console.error('Firebase connection error:', error);
-                    showConnectionError();
-                });
+            console.log('Firebase initialized successfully');
                 
         } catch (error) {
             console.error('Firebase initialization error:', error);
@@ -939,30 +932,45 @@
 		}
 
         // --- LOGIN & BOOT ---
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                await loadAllDataWithRetry();
-				updateStats();
-                const user = users.find(u => u.username === username && u.password === password);
-                if (user) {
-                    currentUser = user;
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    showMainScreen();
-                    showToast(`ברוך הבא, ${user.fullName}!`, 'success');
-                } else {
-                    showToast('שם משתמש או סיסמה שגויים', 'error');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                if (error.message && error.message.includes('אין חיבור')) {
-                    showToast(error.message, 'error');
-                } else {
-                    showToast('שגיאה בהתחברות. נסה שוב.', 'error');
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    // בדיקה שה-Firebase אותחל
+                    if (!db) {
+                        showToast('מערכת Firebase לא אותחלה. רענן את הדף ונסה שוב.', 'error');
+                        return false;
+                    }
+                    
+                    try {
+                        await loadAllDataWithRetry();
+                        updateStats();
+                        const user = users.find(u => u.username === username && u.password === password);
+                        if (user) {
+                            currentUser = user;
+                            localStorage.setItem('currentUser', JSON.stringify(user));
+                            showMainScreen();
+                            showToast(`ברוך הבא, ${user.fullName}!`, 'success');
+                        } else {
+                            showToast('שם משתמש או סיסמה שגויים', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        if (error.message && error.message.includes('אין חיבור')) {
+                            showToast(error.message, 'error');
+                        } else {
+                            showToast('שגיאה בהתחברות. נסה שוב.', 'error');
+                        }
+                    }
+                    
+                    return false;
+                });
             }
         });
 		
@@ -1083,6 +1091,21 @@
         }
 
         window.addEventListener('load', async function() {
+            console.log('Page loaded, checking Firebase...');
+            
+            // בדיקה ש-Firebase נטען
+            if (typeof firebase === 'undefined') {
+                console.error('Firebase not loaded!');
+                showToast('Firebase לא נטען - בדוק חיבור אינטרנט', 'error');
+                return;
+            }
+            
+            if (!db) {
+                console.error('Firestore not initialized!');
+                showToast('Firestore לא אותחל - רענן את הדף', 'error');
+                return;
+            }
+            
             try {
                 await loadAllDataWithRetry();
 				updateStats();
