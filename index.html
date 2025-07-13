@@ -2,7 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="theme-color" content="#2c3e50">
+	<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogItee16LXqNeb16og16DXmdeU15XXnCDXnteZ15DXmSAtINeh15nXoNeV15Qg16HXmdeY15kiLAogICJzaG9ydF9uYW1lIjogItee15zXkNeZINeh15nXoNeV15QiLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2Y1ZjVmNSIsCiAgInRoZW1lX2NvbG9yIjogIiMyYzNlNTAiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBSUFBQUFDQUNBWUFBQUREdDFkRkFBQUFCSE5DU1ZRSUNBZ0lmQWhraUFBQUFBbHdTRmx6QUFBQUJFZ0FBQUI0QVlnQlpBQUFBQUFCbDVqbGtBQUFBQUFBQUFBQUFBQUFBQkpSVTVFcmtKZ2dnPT0iLAogICAgICAic2l6ZXMiOiAiMTI4eDEyOCIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
     <title>מערכת ניהול מלאי - סינמה סיטי חדרה</title>
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -204,7 +209,86 @@
             font-size: 14px;
             margin-top: 5px;
         }
-        
+        /* === Bottom Navigation === */
+		.bottom-nav {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			background: white;
+			box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+			display: flex;
+			justify-content: space-around;
+			padding: 8px 0;
+			z-index: 100;
+		}
+
+		.bottom-nav-item {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 4px;
+			padding: 8px;
+			cursor: pointer;
+			background: transparent;
+			border: none;
+			color: #7f8c8d;
+			font-family: inherit;
+		}
+
+		.bottom-nav-item.active {
+			color: #3498db;
+		}
+
+		.bottom-nav-item span:first-child {
+			font-size: 20px;
+		}
+
+		.bottom-nav-item span:last-child {
+			font-size: 11px;
+			font-weight: 500;
+		}
+
+		@media (max-width: 767px) {
+			.main-container {
+				padding-bottom: 70px;
+			}
+		}
+		/* === Floating Action Button === */
+		.fab {
+			position: fixed;
+			bottom: 80px; /* מעל הניווט התחתון */
+			right: 20px;
+			width: 56px;
+			height: 56px;
+			border-radius: 50%;
+			background: #3498db;
+			color: white;
+			border: none;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			font-size: 24px;
+			cursor: pointer;
+			z-index: 99;
+			transition: all 0.3s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.fab:active {
+			transform: scale(0.9);
+			box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+		}
+
+		@media (min-width: 768px) {
+			.fab {
+				display: none !important;
+			}
+			.bottom-nav {
+				display: none !important;
+			}
+		}
         @media (max-width:768px){
             .container{padding:10px;}
             .tabs{margin-bottom:15px;}
@@ -224,9 +308,119 @@
             .stats{grid-template-columns:1fr;}
             .login-box{padding:30px 20px;}
         }
+		
+		/* === Mobile Optimizations === */
+		@media (max-width: 768px) {
+			/* הסתר מידע משני במובייל */
+			.user-info {
+				display: none;
+			}
+			
+			/* הגדל אזורי לחיצה */
+			button, .btn-small {
+				min-height: 44px;
+				min-width: 44px;
+			}
+			
+			/* התאם טאבים למובייל */
+			.tabs {
+				overflow-x: auto;
+				-webkit-overflow-scrolling: touch;
+				scrollbar-width: none;
+			}
+			
+			.tabs::-webkit-scrollbar {
+				display: none;
+			}
+			
+			/* טבלאות עם גלילה */
+			.table-wrapper {
+				margin: 0 -15px;
+				padding: 0 15px;
+			}
+			
+			/* טפסים מותאמים */
+			input, select {
+				font-size: 16px; /* מונע זום אוטומטי */
+			}
+			
+			/* כרטיסי סטטיסטיקה */
+			.stats {
+				grid-template-columns: repeat(2, 1fr);
+			}
+		}
+
+		/* ביטול highlight בלחיצה */
+		* {
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		/* תיקון גובה viewport ב-iOS */
+		.main-container {
+			min-height: 100vh;
+			min-height: -webkit-fill-available;
+		}
+		/* === Pull to Refresh === */
+		.pull-to-refresh {
+			position: fixed;
+			top: -60px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 40px;
+			height: 40px;
+			background: white;
+			border-radius: 50%;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: top 0.3s;
+			z-index: 90;
+			font-size: 20px;
+		}
+
+		.pull-to-refresh.show {
+			top: 70px;
+		}
+
+		.pull-to-refresh.refreshing {
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			from { transform: translateX(-50%) rotate(0deg); }
+			to { transform: translateX(-50%) rotate(360deg); }
+		}
+		/* === Smooth Animations === */
+		.tab-content {
+			animation: fadeIn 0.3s ease-in-out;
+		}
+
+		@keyframes fadeIn {
+			from { 
+				opacity: 0; 
+				transform: translateY(10px); 
+			}
+			to { 
+				opacity: 1; 
+				transform: translateY(0); 
+			}
+		}
+
+		/* Active states for mobile */
+		button:active, .btn:active {
+			transform: scale(0.98);
+		}
+
+		.stat-card:active {
+			transform: scale(0.98);
+			box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+		}
     </style>
 </head>
 <body>
+	<!-- Pull to refresh indicator -->
+	<div class="pull-to-refresh" id="pullToRefresh">↻</div>
     <div class="loading" id="loadingSpinner">טוען נתונים...</div>
     
     <div class="login-container" id="loginScreen">
@@ -507,6 +701,8 @@
                 <h2>דוח ליקוטים</h2>
                 <div id="pickingsTableContainer"></div>
             </div>
+			<!-- Floating Action Button -->
+			<button class="fab" id="fabButton" onclick="showQuickActions()" style="display: none;">➕</button>
         </div>
         
         <!-- מודל עריכת וריאנט -->
@@ -794,7 +990,10 @@
                 <h3 style="text-align:center;margin-top:0;">עריכת רשימת ליקוט</h3>
                 <div id="editPickingListArea"></div>
             </div>
-        </div>    
+        </div>
+		<nav class="bottom-nav" id="bottomNav" style="display: none;">
+		<!-- הכפתורים יתווספו דינמית לפי הרשאות -->
+		</nav>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -810,6 +1009,97 @@
             appId: "1:165204980655:web:f7c5a78a0ae11f7191355a",
             measurementId: "G-E8EK3N3DLE"
         };
+		// === Mobile Detection ===
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+		// === Mobile Features Initialization ===
+		function initMobileFeatures() {
+			if (!isMobile) return; // חוזרים לבדיקה הרגילה
+    
+			console.log('initMobileFeatures called');
+			console.log('currentUser:', currentUser);
+			// הצג ניווט תחתון
+			const bottomNav = document.getElementById('bottomNav');
+			if (bottomNav) {
+				bottomNav.style.display = 'flex';
+				bottomNav.innerHTML = ''; 
+				
+				// בנה את הכפתורים רק אם יש משתמש מחובר
+				if (currentUser && currentUser.permissions) {
+					bottomNav.innerHTML = '';
+					
+					// מלאי - תמיד מוצג למי שיש הרשאת צפייה
+					if (currentUser.permissions.includes('view_inventory')) {
+						bottomNav.innerHTML += `
+							<button class="bottom-nav-item active" onclick="quickNav('inventory')">
+								<span>📦</span>
+								<span>מלאי</span>
+							</button>
+						`;
+					}
+					
+					// רישום תנועה
+					if (currentUser.permissions.includes('add_transaction')) {
+						bottomNav.innerHTML += `
+							<button class="bottom-nav-item" onclick="quickNav('transaction')">
+								<span>➕</span>
+								<span>רישום</span>
+							</button>
+						`;
+					}
+					
+					// תנועות
+					if (currentUser.permissions.includes('view_movements')) {
+						bottomNav.innerHTML += `
+							<button class="bottom-nav-item" onclick="quickNav('movements')">
+								<span>📊</span>
+								<span>תנועות</span>
+							</button>
+						`;
+					}
+					
+					// דוחות
+					if (currentUser.permissions.includes('view_reports')) {
+						bottomNav.innerHTML += `
+							<button class="bottom-nav-item" onclick="quickNav('reports')">
+								<span>📈</span>
+								<span>דוחות</span>
+							</button>
+						`;
+					}
+				}
+			}
+			
+			    // התאם גובה למובייל
+			const setVH = () => {
+				const vh = window.innerHeight * 0.01;
+				document.documentElement.style.setProperty('--vh', `${vh}px`);
+			};
+			setVH();
+			window.addEventListener('resize', setVH);
+			
+			// הצג כפתור FAB
+			const fab = document.getElementById('fabButton');
+			if (fab) {
+				fab.style.display = 'flex';
+			}
+			
+			// אתחל Pull to Refresh
+			initPullToRefresh();
+		}
+		// === Quick Navigation for Bottom Nav ===
+		function quickNav(tabName) {
+			// הסר active מכל הכפתורים
+			document.querySelectorAll('.bottom-nav-item').forEach(item => {
+				item.classList.remove('active');
+			});
+			
+			// הוסף active לכפתור הנוכחי
+			event.currentTarget.classList.add('active');
+			
+			// הצג את הטאב
+			showTab(tabName);
+		}
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 		// אתחול Firebase Auth
@@ -848,6 +1138,59 @@
 				// לא לזרוק שגיאה - לאפשר למערכת לעבוד גם בלי Auth
 				return null;
 			}
+		}
+		
+		// === Pull to Refresh ===
+		let touchStartY = 0;
+		let pullDistance = 0;
+
+		function initPullToRefresh() {
+			if (!isMobile) return;
+			
+			document.addEventListener('touchstart', (e) => {
+				touchStartY = e.touches[0].clientY;
+			}, { passive: true });
+			
+			document.addEventListener('touchmove', (e) => {
+				if (window.scrollY === 0 && e.touches[0].clientY > touchStartY) {
+					pullDistance = e.touches[0].clientY - touchStartY;
+					
+					if (pullDistance > 50) {
+						document.getElementById('pullToRefresh').classList.add('show');
+						
+						if (pullDistance > 100) {
+							document.getElementById('pullToRefresh').classList.add('refreshing');
+						}
+					}
+				}
+			}, { passive: true });
+			
+			document.addEventListener('touchend', async (e) => {
+				if (pullDistance > 100) {
+					await refreshData();
+				}
+				
+				document.getElementById('pullToRefresh').classList.remove('show', 'refreshing');
+				pullDistance = 0;
+			}, { passive: true });
+		}
+
+		async function refreshData() {
+			showToast('מרענן נתונים...', 'info');
+			await loadAllData();
+			updateStats();
+			
+			// רענן את התצוגה הנוכחית
+			const activeTab = document.querySelector('.tab-content.active');
+			if (activeTab) {
+				const tabId = activeTab.id;
+				if (tabId === 'inventory') displayInventory();
+				else if (tabId === 'movements') displayMovements();
+				else if (tabId === 'users') displayUsers();
+				else if (tabId === 'pickings') displayPickings();
+			}
+			
+			showToast('הנתונים רועננו!', 'success');
 		}
 
 		/*
@@ -1052,11 +1395,11 @@
         }
 
         async function saveUser(user) {
-            try {
-                await db.collection('users').doc(user.username).set(user);
-				if (user.password) {
-					await createOrUpdateAuthUser(user.username, user.password);
-				}
+			try {
+				await db.collection('users').doc(user.username).set(user);
+				// if (user.password && auth) {
+				//     await createOrUpdateAuthUser(user.username, user.password);
+				// }
 				
 			} catch (error) {
 				console.error('Error saving user:', error);
@@ -1064,7 +1407,6 @@
 				throw error;
 			}
 		}
-
 
         async function deleteUserFromDB(username) {
             try {
@@ -1384,7 +1726,10 @@
             document.getElementById('currentUserName').textContent = currentUser.fullName;
             document.getElementById('currentUserRole').textContent = currentUser.role;
             updateTabsVisibility();
-            
+			// אתחל תכונות מובייל אם צריך
+			if (isMobile) {
+				initMobileFeatures();
+			}
             // הצגת טאב הראשון המורשה
             const firstAllowedTab = document.querySelector('.tab:not(.disabled)');
             if (firstAllowedTab) {
@@ -1423,6 +1768,9 @@
         }
 
         window.addEventListener('load', async function() {
+			if (isMobile) {
+				initMobileFeatures();
+			}
             try {
                 const savedUser = localStorage.getItem('currentUser');
                 if (savedUser) {
@@ -1444,6 +1792,9 @@
 
         // --- TAB HANDLERS ---
         window.showTab = async function(e, tabName) {
+			if (isMobile) {
+				window.scrollTo(0, 0); // גלול למעלה בכל מעבר טאב
+			}
 			let tabElement = null;
 
 			// טיפול נכון בפרמטרים
@@ -1587,12 +1938,15 @@
                 row.classList.add('summary-row');
                 row.innerHTML = `
                     <td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
-                    <td>${item.name}</td>
+					<td>
+						${isMobile ? `<strong>${item.name}</strong><br><small>${item.category}</small>` : item.name}
+					</td>
+					<td>${isMobile ? item.category : item.category}</td>
                     <td>${item.category}</td>
                     <td>
-                        ${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
-                        ${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
-                    </td>
+						${totalPacks} ${isMobile ? 'חב\'' : getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+						${looseUnits > 0 ? `${isMobile ? '<br>' : '+ '}${looseUnits} ${isMobile ? 'יח\'' : getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+					</td>
                     <td>${item.minPacks || 0} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
                     <td>${earliestExpiry ? formatDate(earliestExpiry) : '-'}</td>
                     <td>${getGlobalStatus(totalPacks, item.minPacks || 0, earliestExpiry)}</td>
@@ -1926,7 +2280,7 @@
                     <input type="text" class="transNotesInput" placeholder="הערות">
                 </div>
                 <div class="form-group">
-                    <button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger">❌</button>
+                    <button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger" style="${isMobile ? 'width: 100%; margin-top: 10px;' : ''}">❌ הסר</button>
                 </div>
             `;
             container.appendChild(row);
@@ -1940,35 +2294,37 @@
             const variantDiv = document.createElement('div');
             variantDiv.className = 'form-row';
             variantDiv.innerHTML = `
-                <div class="form-group">
-                    <label>כמות חבילות</label>
-                    <input type="number" class="variant-quantityPacks" min="0" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label>כמות יחידות בודדות</label>
-                    <input type="number" class="variant-quantityUnits" min="0" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label>מיקום</label>
-                    <select class="variant-location" required>
-                        <option value="">בחר מחסן</option>
-                        <option value="מחסן שתיה">מחסן שתיה</option>
-                        <option value="מחסן אולם 1">מחסן אולם 1</option>
-                        <option value="מטבח VIP">מטבח VIP</option>
-                        <option value="מחסן מיכלים">מחסן מיכלים</option>
-                        <option value="טכני">טכני</option>
-                        <option value="מחסן גלידות">מחסן גלידות</option>
-                        <option value="ממד מנקים">ממד מנקים</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>תאריך תפוגה</label>
-                    <input type="date" class="variant-expiry">
-                </div>
-                <div class="form-group">
-                    <button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger">מחק</button>
-                </div>
-            `;
+				${isMobile ? '<div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px;">' : ''}
+				<div class="form-group">
+					<label>כמות חבילות</label>
+					<input type="number" class="variant-quantityPacks" min="0" value="0" required>
+				</div>
+				<div class="form-group">
+					<label>כמות יחידות בודדות</label>
+					<input type="number" class="variant-quantityUnits" min="0" value="0" required>
+				</div>
+				<div class="form-group">
+					<label>מיקום</label>
+					<select class="variant-location" required>
+						<option value="">בחר מחסן</option>
+						<option value="מחסן שתיה">מחסן שתיה</option>
+						<option value="מחסן אולם 1">מחסן אולם 1</option>
+						<option value="מטבח VIP">מטבח VIP</option>
+						<option value="מחסן מיכלים">מחסן מיכלים</option>
+						<option value="טכני">טכני</option>
+						<option value="מחסן גלידות">מחסן גלידות</option>
+						<option value="ממד מנקים">ממד מנקים</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>תאריך תפוגה</label>
+					<input type="date" class="variant-expiry">
+				</div>
+				<div class="form-group">
+					<button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger" style="width: 100%;">הסר פריט</button>
+				</div>
+				${isMobile ? '</div>' : ''}
+			`;
             container.appendChild(variantDiv);
         }
 
@@ -4350,6 +4706,15 @@
 				
 			}, 60000); // כל 60 שניות
 		}
+		
+		// === Quick Actions Menu ===
+		function showQuickActions() {
+			if (confirm('מה תרצה לעשות?\n\nOK - הוסף מוצר חדש\nCancel - רשום תנועה')) {
+				showTab('addItem');
+			} else {
+				showTab('transaction');
+			}
+		}
 
 		function stopStatsRefresh() {
 			if (statsInterval) {
@@ -4383,6 +4748,49 @@
 				checkRealtimePermissions();
 			}
 		}, 300000); // 300000ms = 5 דקות
+		
+		// PWA Support
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/sw.js').catch(() => {
+				// Service worker registration failed
+			});
+		}
+
+		// Add to home screen prompt
+		let deferredPrompt;
+		window.addEventListener('beforeinstallprompt', (e) => {
+			e.preventDefault();
+			deferredPrompt = e;
+		});
+		
+		// === Create Service Worker File ===
+		function createServiceWorker() {
+			const swContent = `
+		// Service Worker for offline support
+		const CACHE_NAME = 'cinema-inventory-v1';
+		const urlsToCache = [
+		  '/',
+		  '/index.html',
+		  '/pick.html'
+		];
+
+		self.addEventListener('install', event => {
+		  event.waitUntil(
+			caches.open(CACHE_NAME)
+			  .then(cache => cache.addAll(urlsToCache))
+		  );
+		});
+
+		self.addEventListener('fetch', event => {
+		  event.respondWith(
+			caches.match(event.request)
+			  .then(response => response || fetch(event.request))
+		  );
+		});`;
+			
+			console.log('Service Worker code:', swContent);
+			console.log('צור קובץ בשם sw.js והעתק את הקוד מה-console');
+		}
     </script>
 
     <footer style="text-align:center; padding:20px 0; color:#666; background:transparent; font-size:14px;">
