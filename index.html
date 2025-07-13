@@ -813,7 +813,8 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 		// אתחול Firebase Auth
-		const auth = firebase.auth();
+		// const auth = firebase.auth();
+		const auth = null
 
 		// פונקציה ליצירת/עדכון משתמש ב-Auth
 		async function createOrUpdateAuthUser(username, password, email = null) {
@@ -849,14 +850,19 @@
 			}
 		}
 
-		// האזן לשינויי מצב אימות
+		/*
 		auth.onAuthStateChanged((firebaseUser) => {
 			if (firebaseUser) {
 				console.log('User authenticated:', firebaseUser.email);
 			} else {
 				console.log('User not authenticated');
+				const savedUser = localStorage.getItem('currentUser');
+				if (savedUser && window.location.pathname !== '/pick.html') {
+					// logout();
+				}
 			}
 		});
+		*/
 
 		// פונקציה לבדיקת הרשאות בזמן אמת
 		async function checkRealtimePermissions() {
@@ -1327,48 +1333,43 @@
 			}
 		}
         // --- LOGIN & BOOT ---
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // החלף את כל ה-event listener של loginForm בקוד הבא:
+		document.getElementById('loginForm').addEventListener('submit', async function(e) {
 			e.preventDefault();
 			const username = document.getElementById('username').value;
 			const password = document.getElementById('password').value;
 			
 			try {
 				showLoading(true);
-				
-				// טען את נתוני המשתמשים
 				await loadAllData();
-				
-				// בדוק אם המשתמש קיים במערכת
-				const user = users.find(u => u.username === username && u.password === password);
-				if (!user) {
-					showToast('שם משתמש או סיסמה שגויים', 'error');
-					return;
-				}
-				
-				// נסה להתחבר ל-Firebase Auth
-				try {
-					const userEmail = `${username}@cinema-city-hadera.local`;
-					await auth.signInWithEmailAndPassword(userEmail, password);
-				} catch (authError) {
-					console.warn('Auth error:', authError);
-					// אם נכשל, נסה ליצור משתמש חדש
-					if (authError.code === 'auth/user-not-found') {
-						try {
-							await createOrUpdateAuthUser(username, password);
-						} catch (createError) {
-							console.error('Failed to create auth user:', createError);
-							// המשך בכל זאת - המערכת תעבוד עם הרשאות מוגבלות
-						}
-					}
-					// המשך גם אם היה כשלון - המערכת תעבוד במצב לא מאומת
-				}
-				
-				currentUser = user;
-				localStorage.setItem('currentUser', JSON.stringify(user));
 				updateStats();
-				showMainScreen();
-				showToast(`ברוך הבא, ${user.fullName}!`, 'success');
 				
+				const user = users.find(u => u.username === username && u.password === password);
+				if (user) {
+					currentUser = user;
+					localStorage.setItem('currentUser', JSON.stringify(user));
+					
+					// נסה להתחבר ל-Firebase Auth (אופציונלי)
+					try {
+						const userEmail = `${username}@cinema-city-hadera.local`;
+						await auth.signInWithEmailAndPassword(userEmail, password);
+					} catch (authError) {
+						// אם נכשל, נסה ליצור משתמש
+						if (authError.code === 'auth/user-not-found') {
+							try {
+								await auth.createUserWithEmailAndPassword(userEmail, password);
+							} catch (createError) {
+								console.log('Auth is optional, continuing without it');
+							}
+						}
+						// ממשיכים גם בלי Auth - זה אופציונלי
+					}
+					
+					showMainScreen();
+					showToast(`ברוך הבא, ${user.fullName}!`, 'success');
+				} else {
+					showToast('שם משתמש או סיסמה שגויים', 'error');
+				}
 			} catch (error) {
 				console.error('Login error:', error);
 				showToast('שגיאה בהתחברות. נסה שוב.', 'error');
@@ -1407,9 +1408,10 @@
         }
 
         function logout() {
-			if (auth) {
-				auth.signOut().catch(error => console.error('Error signing out:', error));
-			}		
+			// התנתק מ-Firebase Auth - מבוטל זמנית
+			// if (auth) {
+			//     auth.signOut().catch(error => console.error('Error signing out:', error));
+			// }
             const modals = document.querySelectorAll('.modal');
             modals.forEach(modal => modal.style.display = 'none');
             
@@ -4377,7 +4379,7 @@
 		
 		// בדוק הרשאות כל 5 דקות
 		setInterval(() => {
-			if (currentUser && auth && auth.currentUser) {
+			if (currentUser) {
 				checkRealtimePermissions();
 			}
 		}, 300000); // 300000ms = 5 דקות
