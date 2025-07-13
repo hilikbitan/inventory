@@ -900,7 +900,46 @@
                 showLoading(false);
             }
         }
+				// משתנה גלובלי לשמירת ה-interval
+		let autoRefreshInterval = null;
 
+		// פונקציה לרענון אוטומטי
+		async function startAutoRefresh() {
+			// עצור רענון קודם אם קיים
+			if (autoRefreshInterval) {
+				clearInterval(autoRefreshInterval);
+			}
+			
+			// הגדר רענון כל 45 שניות
+			autoRefreshInterval = setInterval(async () => {
+				try {
+					console.log('רענון אוטומטי של הנתונים...');
+					await loadAllData();
+					updateStats();
+					
+					// רענן את התצוגה הנוכחית
+					const activeTab = document.querySelector('.tab-content.active');
+					if (activeTab) {
+						const tabId = activeTab.id;
+						if (tabId === 'inventory') displayInventory();
+						else if (tabId === 'movements') displayMovements();
+						else if (tabId === 'users') displayUsers();
+						else if (tabId === 'pickings') displayPickings();
+					}
+				} catch (error) {
+					console.error('שגיאה ברענון אוטומטי:', error);
+				}
+			}, 30000); // 45 שניות
+		}
+
+		// פונקציה לעצירת הרענון האוטומטי
+		function stopAutoRefresh() {
+			if (autoRefreshInterval) {
+				clearInterval(autoRefreshInterval);
+				autoRefreshInterval = null;
+			}
+		}
+		
         async function loadMovementsOnly() {
             try {
                 movements = [];
@@ -1305,66 +1344,78 @@
         });
 
         // --- TAB HANDLERS ---
-        window.showTab = function(e, tabName) {
-            let tabElement = null;
+        window.showTab = async function(e, tabName) {
+			let tabElement = null;
 
-            // טיפול נכון בפרמטרים
-            if (typeof e === 'string') {
-                // אם הפרמטר הראשון הוא מחרוזת, זה שם הטאב
-                tabName = e;
-                e = null;
-            } else if (e && e.target) {
-                // אם זה אירוע מה-DOM
-                e.preventDefault();
-                tabElement = e.target;
-            } else if (e && !e.target && typeof tabName === 'undefined') {
-                // אם קיבלנו רק פרמטר אחד שאינו מחרוזת ואינו אירוע
-                tabName = e;
-                e = null;
-            }
+			// טיפול נכון בפרמטרים
+			if (typeof e === 'string') {
+				tabName = e;
+				e = null;
+			} else if (e && e.target) {
+				e.preventDefault();
+				tabElement = e.target;
+			} else if (e && !e.target && typeof tabName === 'undefined') {
+				tabName = e;
+				e = null;
+			}
 
-            // בדיקת הרשאות
-            if (tabElement) {
-                const permission = tabElement.getAttribute('data-permission');
-                if (permission && !currentUser.permissions.includes(permission)) {
-                    showToast('אין לך הרשאה לגשת לתפריט זה', 'error');
-                    return;
-                }
-            }
+			// בדיקת הרשאות
+			if (tabElement) {
+				const permission = tabElement.getAttribute('data-permission');
+				if (permission && !currentUser.permissions.includes(permission)) {
+					showToast('אין לך הרשאה לגשת לתפריט זה', 'error');
+					return;
+				}
+			}
 
-            // ניקוי טאבים
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+			// הצג אינדיקטור טעינה
+			showLoading(true);
+			
+			try {
+				// רענן נתונים מ-Firebase
+				await loadAllData();
+				updateStats();
+				
+				// ניקוי טאבים
+				document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+				document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-            // הפעלת טאב
-            if (tabElement) tabElement.classList.add('active');
-            else {
-                const targetTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
-                if (targetTab) targetTab.classList.add('active');
-            }
+				// הפעלת טאב
+				if (tabElement) tabElement.classList.add('active');
+				else {
+					const targetTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+					if (targetTab) targetTab.classList.add('active');
+				}
 
-            const tabContent = document.getElementById(tabName);
-            if (tabContent) tabContent.classList.add('active');
+				const tabContent = document.getElementById(tabName);
+				if (tabContent) tabContent.classList.add('active');
 
-            // טעינת תוכן דינמי
-            if (tabName === 'inventory') displayInventory();
-            else if (tabName === 'movements') displayMovements();
-            else if (tabName === 'transaction') {
-                const cont = document.getElementById('multiTransactionRows');
-                if (cont) {
-                    cont.innerHTML = '';
-                    addTransactionRow();
-                }
-            }
-            else if (tabName === 'users') displayUsers();
-            else if (tabName === 'addItem') {
-                populateUnitsSelect(document.getElementById('baseUnitSingular'), baseUnitsSingularList);
-                populateUnitsSelect(document.getElementById('baseUnitPlural'), baseUnitsPluralList);
-                populateUnitsSelect(document.getElementById('packUnitSingular'), packUnitsSingularList);
-                populateUnitsSelect(document.getElementById('packUnitPlural'), packUnitsPluralList);
-            }
-            else if (tabName === 'pickings') displayPickings();
-        };
+				// טעינת תוכן דינמי
+				if (tabName === 'inventory') displayInventory();
+				else if (tabName === 'movements') displayMovements();
+				else if (tabName === 'transaction') {
+					const cont = document.getElementById('multiTransactionRows');
+					if (cont) {
+						cont.innerHTML = '';
+						addTransactionRow();
+					}
+				}
+				else if (tabName === 'users') displayUsers();
+				else if (tabName === 'addItem') {
+					populateUnitsSelect(document.getElementById('baseUnitSingular'), baseUnitsSingularList);
+					populateUnitsSelect(document.getElementById('baseUnitPlural'), baseUnitsPluralList);
+					populateUnitsSelect(document.getElementById('packUnitSingular'), packUnitsSingularList);
+					populateUnitsSelect(document.getElementById('packUnitPlural'), packUnitsPluralList);
+				}
+				else if (tabName === 'pickings') displayPickings();
+				
+			} catch (error) {
+				console.error('שגיאה בטעינת הטאב:', error);
+				showToast('שגיאה בטעינת הנתונים', 'error');
+			} finally {
+				showLoading(false);
+			}
+		};
 
         // --- תצוגת מלאי ---
         function displayInventory() {
