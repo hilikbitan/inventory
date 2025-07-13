@@ -7,6 +7,7 @@
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <style>
         /* Modal styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
@@ -811,6 +812,71 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+		// אתחול Firebase Auth
+		const auth = firebase.auth();
+
+		// פונקציה ליצירת/עדכון משתמש ב-Auth
+		async function createOrUpdateAuthUser(username, password, email = null) {
+			try {
+				const userEmail = email || `${username}@cinema-city-hadera.local`;
+				
+				try {
+					// נסה להתחבר קודם (בדוק אם המשתמש קיים)
+					const userCredential = await auth.signInWithEmailAndPassword(userEmail, password);
+					
+					// אם הצליח, עדכן סיסמה אם שונה
+					if (password && password !== '1234') { // אל תעדכן סיסמה ברירת מחדל
+						await userCredential.user.updatePassword(password);
+					}
+					
+					return userCredential.user;
+				} catch (error) {
+					if (error.code === 'auth/user-not-found') {
+						// משתמש לא קיים, צור חדש
+						const userCredential = await auth.createUserWithEmailAndPassword(userEmail, password);
+						return userCredential.user;
+					} else if (error.code === 'auth/wrong-password') {
+						// סיסמה שגויה - זה בסדר, המשתמש קיים
+						return { uid: username }; // החזר uid זמני
+					} else {
+						throw error;
+					}
+				}
+			} catch (error) {
+				console.error('Error with auth user:', error);
+				// לא לזרוק שגיאה - לאפשר למערכת לעבוד גם בלי Auth
+				return null;
+			}
+		}
+
+		// האזן לשינויי מצב אימות
+		auth.onAuthStateChanged((firebaseUser) => {
+			if (firebaseUser) {
+				console.log('User authenticated:', firebaseUser.email);
+			} else {
+				console.log('User not authenticated');
+			}
+		});
+
+		// פונקציה לבדיקת הרשאות בזמן אמת
+		async function checkRealtimePermissions() {
+			if (!currentUser) return false;
+			
+			try {
+				const userDoc = await db.collection('users').doc(currentUser.username).get();
+				if (userDoc.exists) {
+					const userData = userDoc.data();
+					currentUser.permissions = userData.permissions || [];
+					currentUser.role = userData.role;
+					localStorage.setItem('currentUser', JSON.stringify(currentUser));
+					updateTabsVisibility();
+					return true;
+				}
+			} catch (error) {
+				console.error('Error checking permissions:', error);
+			}
+			return false;
+		}
 
         // --- משתנים גלובליים ---
         let users = [];
@@ -982,12 +1048,17 @@
         async function saveUser(user) {
             try {
                 await db.collection('users').doc(user.username).set(user);
-            } catch (error) {
-                console.error('Error saving user:', error);
-                showToast('שגיאה בשמירת המשתמש: ' + error.message, 'error');
-                throw error;
-            }
-        }
+				if (user.password) {
+					await createOrUpdateAuthUser(user.username, user.password);
+				}
+				
+			} catch (error) {
+				console.error('Error saving user:', error);
+				showToast('שגיאה בשמירת המשתמש: ' + error.message, 'error');
+				throw error;
+			}
+		}
+
 
         async function deleteUserFromDB(username) {
             try {
@@ -1257,31 +1328,54 @@
 		}
         // --- LOGIN & BOOT ---
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                showLoading(true);
-                await loadAllData();
-                updateStats();
-                
-                const user = users.find(u => u.username === username && u.password === password);
-                if (user) {
-                    currentUser = user;
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    showMainScreen();
-                    showToast(`ברוך הבא, ${user.fullName}!`, 'success');
-                } else {
-                    showToast('שם משתמש או סיסמה שגויים', 'error');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showToast('שגיאה בהתחברות. נסה שוב.', 'error');
-            } finally {
-                showLoading(false);
-            }
-        });
+			e.preventDefault();
+			const username = document.getElementById('username').value;
+			const password = document.getElementById('password').value;
+			
+			try {
+				showLoading(true);
+				
+				// טען את נתוני המשתמשים
+				await loadAllData();
+				
+				// בדוק אם המשתמש קיים במערכת
+				const user = users.find(u => u.username === username && u.password === password);
+				if (!user) {
+					showToast('שם משתמש או סיסמה שגויים', 'error');
+					return;
+				}
+				
+				// נסה להתחבר ל-Firebase Auth
+				try {
+					const userEmail = `${username}@cinema-city-hadera.local`;
+					await auth.signInWithEmailAndPassword(userEmail, password);
+				} catch (authError) {
+					console.warn('Auth error:', authError);
+					// אם נכשל, נסה ליצור משתמש חדש
+					if (authError.code === 'auth/user-not-found') {
+						try {
+							await createOrUpdateAuthUser(username, password);
+						} catch (createError) {
+							console.error('Failed to create auth user:', createError);
+							// המשך בכל זאת - המערכת תעבוד עם הרשאות מוגבלות
+						}
+					}
+					// המשך גם אם היה כשלון - המערכת תעבוד במצב לא מאומת
+				}
+				
+				currentUser = user;
+				localStorage.setItem('currentUser', JSON.stringify(user));
+				updateStats();
+				showMainScreen();
+				showToast(`ברוך הבא, ${user.fullName}!`, 'success');
+				
+			} catch (error) {
+				console.error('Login error:', error);
+				showToast('שגיאה בהתחברות. נסה שוב.', 'error');
+			} finally {
+				showLoading(false);
+			}
+		});
 
         function showMainScreen() {
             document.getElementById('loginScreen').style.display = 'none';
@@ -1313,6 +1407,9 @@
         }
 
         function logout() {
+			if (auth) {
+				auth.signOut().catch(error => console.error('Error signing out:', error));
+			}		
             const modals = document.querySelectorAll('.modal');
             modals.forEach(modal => modal.style.display = 'none');
             
@@ -4277,7 +4374,13 @@
 		window.addEventListener('beforeunload', () => {
 			stopStatsRefresh();
 		});
-
+		
+		// בדוק הרשאות כל 5 דקות
+		setInterval(() => {
+			if (currentUser && auth && auth.currentUser) {
+				checkRealtimePermissions();
+			}
+		}, 300000); // 300000ms = 5 דקות
     </script>
 
     <footer style="text-align:center; padding:20px 0; color:#666; background:transparent; font-size:14px;">
