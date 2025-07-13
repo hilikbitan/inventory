@@ -27,14 +27,21 @@
         font-size: 2.1rem;
     }
     .picking-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 26px;
-        background: #f2f7ff;
-        border-radius: 8px;
-        overflow: hidden;
-        font-size: 1.08em;
-    }
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: 26px;
+		background: #f2f7ff;
+		border-radius: 8px;
+		overflow: hidden;
+		font-size: 1.08em;
+		table-layout: auto;
+	}
+	input[type="radio"] {
+		width: 20px;
+		height: 20px;
+		cursor: pointer;
+		margin: 0;
+	}
     .picking-table th, .picking-table td {
         border: none;
         padding: 10px 6px;
@@ -110,12 +117,108 @@
         font-weight: bold;
     }
     @media (max-width: 600px) {
-        .pick-container { padding: 12px 2px 12px; }
-        .picking-table th, .picking-table td { font-size: 0.98em; padding: 7px 2px; }
-        h2 { font-size: 1.2rem; }
-        button, .btn-main { padding: 8px 12px; font-size: 1em; }
-        input[type="text"] { width: 99%; }
-    }
+		.pick-container { 
+			padding: 20px 12px;
+			margin: 20px auto 0;
+		}
+		
+		.picking-table { 
+			font-size: 0.9em;
+			display: block;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			white-space: nowrap;
+		}
+		
+		.picking-table th, 
+		.picking-table td { 
+			font-size: 0.9em; 
+			padding: 8px 6px;
+			min-width: auto;
+		}
+		
+		/* עמודות ספציפיות */
+		.picking-table th:nth-child(1),
+		.picking-table td:nth-child(1) { 
+			/* מוצר */
+			min-width: 120px;
+			white-space: normal;
+		}
+		
+		.picking-table th:nth-child(2),
+		.picking-table td:nth-child(2) { 
+			/* כמות */
+			min-width: 80px;
+		}
+		
+		.picking-table th:nth-child(3),
+		.picking-table td:nth-child(3) { 
+			/* מיקום */
+			min-width: 90px;
+		}
+		
+		.picking-table th:nth-child(4),
+		.picking-table td:nth-child(4) { 
+			/* תוקף */
+			min-width: 80px;
+		}
+		
+		.picking-table th:nth-child(5),
+		.picking-table td:nth-child(5),
+		.picking-table th:nth-child(6),
+		.picking-table td:nth-child(6) { 
+			/* כפתורי רדיו */
+			min-width: 50px;
+			text-align: center;
+		}
+		
+		h2 { 
+			font-size: 1.6rem; 
+			margin-bottom: 15px;
+		}
+		
+		button, .btn-main { 
+			padding: 12px 20px; 
+			font-size: 1.05em;
+			width: 100%;
+			margin-top: 15px;
+		}
+		
+		input[type="text"] { 
+			width: 100%;
+			padding: 10px;
+			font-size: 1.05em;
+		}
+		
+		/* שיפור נגישות לכפתורי רדיו */
+		input[type="radio"] {
+			width: 24px;
+			height: 24px;
+			margin: 4px;
+		}
+		
+		/* הגדלת אזור הלחיצה */
+		.picking-table td:nth-child(5),
+		.picking-table td:nth-child(6) {
+			padding: 8px 4px;
+		}
+		
+		label {
+			font-size: 1.05em;
+		}
+		
+		/* הודעות */
+		#resultMsg {
+			font-size: 1.05em;
+			padding: 10px;
+		}
+		
+		.success, .error, .warning {
+			padding: 10px;
+			border-radius: 6px;
+			margin: 10px 0;
+		}
+	}
     </style>
 </head>
 <body>
@@ -133,6 +236,61 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script>
+	function isMobileDevice() {
+		return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+			|| window.innerWidth <= 600;
+	}
+	function enhanceMobileExperience() {
+		if (!isMobileDevice()) return;
+		
+		// הוסף כפתורי עזר לסימון מהיר
+		const listArea = document.getElementById('listArea');
+		if (listArea && !document.getElementById('quickButtons')) {
+			const quickButtonsHtml = `
+				<div id="quickButtons" style="margin: 15px 0; text-align: center;">
+					<button type="button" onclick="markAllAs('ok')" style="margin: 5px; padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 1em;">
+						✓ סמן הכל כנלקח
+					</button>
+					<button type="button" onclick="markAllAs('no')" style="margin: 5px; padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; font-size: 1em;">
+						✗ סמן הכל כלא נמצא
+					</button>
+					<button type="button" onclick="clearAllMarks()" style="margin: 5px; padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 6px; font-size: 1em;">
+						↺ נקה הכל
+					</button>
+				</div>
+			`;
+			listArea.insertAdjacentHTML('afterend', quickButtonsHtml);
+		}
+		
+		// הגדל את אזור הלחיצה עבור כפתורי רדיו
+		document.querySelectorAll('input[type="radio"]').forEach(radio => {
+			const td = radio.closest('td');
+			if (td) {
+				td.style.cursor = 'pointer';
+				td.onclick = function() {
+					radio.checked = true;
+				};
+			}
+		});
+	}
+	function markAllAs(status) {
+		pickDoc.plan.forEach((row, i) => {
+			if (row.location !== 'חסר במלאי') {
+				const radio = document.querySelector(`input[name="status${i}"][value="${status}"]`);
+				if (radio && !radio.disabled) {
+					radio.checked = true;
+				}
+			}
+		});
+		showToast(status === 'ok' ? 'כל הפריטים סומנו כנלקחו' : 'כל הפריטים סומנו כלא נמצאו', 'info');
+	}
+
+	function clearAllMarks() {
+		document.querySelectorAll('input[type="radio"]').forEach(radio => {
+			radio.checked = false;
+		});
+		showToast('כל הסימונים נוקו', 'info');
+	}
     // --- הגדרות פיירבייס ---
     const firebaseConfig = {
         apiKey: "AIzaSyAg4keZ42SfFHhwjhkYbl7TdJnuN0WsuUc",
@@ -209,33 +367,86 @@
     }
 
     function renderPickingList(plan) {
-        let html = `<table class="picking-table"><tr>
-        <th>מוצר</th><th>כמות</th><th>מיקום</th><th>תוקף</th><th>נלקח ✓</th><th>לא נמצא ✗</th></tr>`;
-        
-        plan.forEach((row, i) => {
-            const rowClass = row.location === 'חסר במלאי' ? 'missing-stock' : '';
-            const disabled = row.location === 'חסר במלאי' ? 'disabled' : '';
-            
-            html += `<tr class="${rowClass}">
-                <td>${row.productName}</td>
-                <td>${row.takePacks} חב'${row.takeUnits ? ' + ' + row.takeUnits + ' יחידות' : ''}</td>
-                <td>${row.location}</td>
-                <td>${row.expiry ? formatDate(row.expiry) : ''}</td>
-                <td style="text-align:center"><input type="radio" name="status${i}" value="ok" ${disabled}></td>
-                <td style="text-align:center"><input type="radio" name="status${i}" value="no" ${disabled}></td>
-            </tr>`;
-        });
-        html += `</table>`;
-        
-        // הוסף הודעה אם יש חוסרים
-        const hasMissingItems = plan.some(row => row.location === 'חסר במלאי');
-        if (hasMissingItems) {
-            html += '<div class="warning" style="margin-top: 10px;">⚠️ ישנם פריטים החסרים במלאי</div>';
-        }
-        
-        document.getElementById('listArea').innerHTML = html;
-    }
+		let html = `<table class="picking-table">
+			<thead>
+				<tr>
+					<th>מוצר</th>
+					<th>כמות</th>
+					<th>מיקום</th>
+					<th>תוקף</th>
+					<th>✓</th>
+					<th>✗</th>
+				</tr>
+			</thead>
+			<tbody>`;
+		
+		plan.forEach((row, i) => {
+			const rowClass = row.location === 'חסר במלאי' ? 'missing-stock' : '';
+			const disabled = row.location === 'חסר במלאי' ? 'disabled' : '';
+			
+			// פורמט כמות מקוצר למובייל
+			let quantityText = `${row.takePacks} חב'`;
+			if (row.takeUnits) {
+				quantityText += isMobileDevice() ? ` +${row.takeUnits}` : ` + ${row.takeUnits} יחידות`;
+			}
+			
+			html += `<tr class="${rowClass}">
+				<td>${row.productName}</td>
+				<td>${quantityText}</td>
+				<td>${row.location}</td>
+				<td>${row.expiry ? formatDate(row.expiry) : '-'}</td>
+				<td style="text-align:center; padding: 8px;">
+					<input type="radio" name="status${i}" value="ok" ${disabled} id="ok${i}">
+				</td>
+				<td style="text-align:center; padding: 8px;">
+					<input type="radio" name="status${i}" value="no" ${disabled} id="no${i}">
+				</td>
+			</tr>`;
+		});
+		html += `</tbody></table>`;
+		
+		// הוסף הודעה אם יש חוסרים
+		const hasMissingItems = plan.some(row => row.location === 'חסר במלאי');
+		if (hasMissingItems) {
+			html += '<div class="warning" style="margin-top: 10px; padding: 10px; text-align: center;">⚠️ ישנם פריטים החסרים במלאי</div>';
+		}
+		
+		document.getElementById('listArea').innerHTML = html;
+		
+		// הפעל שיפורים למובייל
+		enhanceMobileExperience();
+	}
 
+	// הוסף toast notification פשוט
+	function showToast(message, type = 'info') {
+		const existingToast = document.getElementById('toast');
+		if (existingToast) existingToast.remove();
+		
+		const toast = document.createElement('div');
+		toast.id = 'toast';
+		toast.textContent = message;
+		toast.style.cssText = `
+			position: fixed;
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			padding: 12px 24px;
+			background: ${type === 'error' ? '#e74c3c' : type === 'info' ? '#3498db' : '#27ae60'};
+			color: white;
+			border-radius: 6px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+			z-index: 1000;
+			font-size: 1em;
+			max-width: 90%;
+			text-align: center;
+		`;
+		
+		document.body.appendChild(toast);
+		
+		setTimeout(() => {
+			toast.remove();
+		}, 3000);
+	}
     function formatDate(dateStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr);
@@ -368,7 +579,14 @@
     }
 
     // טען את הליקוט בעת טעינת הדף
-    window.addEventListener('load', loadPicking);
+    window.addEventListener('load', () => {
+		loadPicking();
+		
+		// הוסף תמיכה ב-PWA
+		if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+			navigator.serviceWorker.register('/sw.js').catch(() => {});
+		}
+	});
   </script>
 </body>
 </html>
