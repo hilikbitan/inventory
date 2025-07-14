@@ -998,34 +998,18 @@
 			}
 		}
 		@media (max-width: 768px) {
-			/* טבלאות כלליות */
-			table {
-				font-size: 0.85rem !important;
+			/* הקטנת גודל הטבלה */
+			#inventoryTable {
+				font-size: 0.75rem;
 			}
 			
-			th, td {
-				padding: 6px 4px !important;
-				font-size: 0.85rem !important;
+			#inventoryTable th,
+			#inventoryTable td {
+				padding: 6px 2px !important;
+				font-size: 0.75rem;
 			}
 			
-			/* כותרות טבלה */
-			th {
-				font-size: 0.9rem !important;
-				font-weight: 600 !important;
-				white-space: nowrap;
-			}
-			
-			/* התאמות ספציפיות לטבלת מלאי */
-			#inventoryTable th:nth-child(1),
-			#inventoryTable td:nth-child(1) {
-				width: 30px; /* כפתור הרחבה */
-			}
-			
-			#inventoryTable th:nth-child(2) {
-				min-width: 100px; /* שם מוצר */
-			}
-			
-			/* הסתר עמודות פחות חשובות במובייל */
+			/* הסתרת עמודות לא חיוניות במובייל */
 			#inventoryTable th:nth-child(3), /* קטגוריה */
 			#inventoryTable td:nth-child(3),
 			#inventoryTable th:nth-child(5), /* מינימום */
@@ -1033,33 +1017,67 @@
 				display: none;
 			}
 			
-			/* טבלת תנועות - הסתרת עמודות */
-			#movementsTable th:nth-child(2), /* שעה */
-			#movementsTable td:nth-child(2),
-			#movementsTable th:nth-child(6), /* מיקום */
-			#movementsTable td:nth-child(6) {
-				display: none;
+			/* עמודת הסטטוס - וודא שהיא מוצגת */
+			#inventoryTable th:nth-child(7),
+			#inventoryTable td:nth-child(7) {
+				display: table-cell !important;
+				text-align: center;
 			}
 			
-			/* כפתורי פעולה קטנים יותר */
-			.btn-small {
-				padding: 4px 8px !important;
-				font-size: 0.8rem !important;
+			/* כותרות קטנות יותר */
+			#inventoryTable th {
+				font-size: 0.7rem !important;
+				font-weight: 600;
 			}
 			
-			/* קיצור טקסטים ארוכים */
-			td {
-				max-width: 150px;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
+			/* עיצוב מיוחד לעמודות במובייל */
+			#inventoryTable th:nth-child(1),
+			#inventoryTable td:nth-child(1) {
+				width: 28px;
 			}
 			
-			/* הצגת מידע קריטי בשורה נפרדת */
-			.mobile-extra-info {
-				font-size: 0.75rem;
-				color: #666;
-				margin-top: 2px;
+			#inventoryTable th:nth-child(4),
+			#inventoryTable td:nth-child(4) {
+				text-align: center;
+			}
+			
+			#inventoryTable th:nth-child(6),
+			#inventoryTable td:nth-child(6) {
+				font-size: 0.7rem;
+			}
+			
+			/* כפתורים קטנים יותר */
+			#inventoryTable .btn-small {
+				padding: 2px;
+				background: transparent;
+				border: none;
+			}
+		}
+		@media (max-width: 768px) {
+			/* כפתור הרחבה נראה אבל קומפקטי */
+			#inventoryTable .expand-btn {
+				width: 22px !important;
+				height: 22px !important;
+				padding: 0 !important;
+				font-size: 14px !important;
+				line-height: 22px !important;
+				border: 1px solid #ddd !important;
+				background: #fff !important;
+				border-radius: 3px !important;
+				font-weight: bold !important;
+				cursor: pointer;
+				color: #333 !important;
+				display: inline-flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+			}
+			
+			/* עמודת כפתור ההרחבה */
+			#inventoryTable th:nth-child(1),
+			#inventoryTable td:nth-child(1) {
+				width: 26px !important;
+				padding: 2px !important;
+				text-align: center;
 			}
 		}
     </style>
