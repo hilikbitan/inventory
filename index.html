@@ -280,7 +280,120 @@
 			transform: scale(0.9);
 			box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 		}
+		/* === FAB Menu === */
+		.fab-menu {
+			position: fixed;
+			bottom: 0;
+			right: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 98;
+			pointer-events: none;
+		}
 
+		.fab-backdrop {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.3);
+			opacity: 0;
+			transition: opacity 0.3s;
+			pointer-events: none;
+		}
+
+		.fab-menu.show .fab-backdrop {
+			opacity: 1;
+			pointer-events: all;
+		}
+
+		.fab-menu-items {
+			position: absolute;
+			bottom: 150px;
+			right: 20px;
+			display: flex;
+			flex-direction: column-reverse;
+			gap: 12px;
+			transform: scale(0);
+			transform-origin: bottom right;
+			transition: transform 0.3s;
+		}
+
+		.fab-menu.show .fab-menu-items {
+			transform: scale(1);
+		}
+
+		.fab-menu-item {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 12px;
+			transform: translateX(20px);
+			opacity: 0;
+			transition: all 0.3s;
+		}
+
+		.fab-menu.show .fab-menu-item {
+			transform: translateX(0);
+			opacity: 1;
+		}
+
+		.fab-menu-item:nth-child(1) { transition-delay: 0.05s; }
+		.fab-menu-item:nth-child(2) { transition-delay: 0.1s; }
+		.fab-menu-item:nth-child(3) { transition-delay: 0.15s; }
+
+		.fab-menu-label {
+			background: white;
+			padding: 8px 16px;
+			border-radius: 20px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+			font-size: 14px;
+			font-weight: 500;
+			white-space: nowrap;
+		}
+
+		.fab-menu-button {
+			width: 48px;
+			height: 48px;
+			border-radius: 50%;
+			border: none;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+			cursor: pointer;
+			font-size: 20px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: transform 0.2s;
+		}
+
+		.fab-menu-button:active {
+			transform: scale(0.9);
+		}
+
+		.fab-menu-button.transaction {
+			background: #27ae60;
+			color: white;
+		}
+
+		.fab-menu-button.product {
+			background: #e74c3c;
+			color: white;
+		}
+
+		.fab-menu-button.user {
+			background: #f39c12;
+			color: white;
+		}
+
+		/* אנימציה לכפתור הראשי */
+		.fab.menu-open {
+			transform: rotate(45deg);
+			background: #e74c3c;
+		}
+		.fab {
+			transition: all 0.3s;
+		}
 		@media (min-width: 768px) {
 			.fab {
 				display: none !important;
@@ -702,7 +815,14 @@
                 <div id="pickingsTableContainer"></div>
             </div>
 			<!-- Floating Action Button -->
-			<button class="fab" id="fabButton" onclick="showQuickActions()" style="display: none;">➕</button>
+			<button class="fab" id="fabButton" onclick="toggleFabMenu()" style="display: none;">➕</button>
+			<!-- FAB Menu -->
+			<div class="fab-menu" id="fabMenu" style="display: none;">
+				<div class="fab-backdrop" onclick="closeFabMenu()"></div>
+				<div class="fab-menu-items" id="fabMenuItems">
+					<!-- הפריטים יתווספו דינמית לפי הרשאות -->
+				</div>
+			</div>
         </div>
         
         <!-- מודל עריכת וריאנט -->
@@ -1080,8 +1200,17 @@
 			
 			// הצג כפתור FAB
 			const fab = document.getElementById('fabButton');
-			if (fab) {
-				fab.style.display = 'flex';
+			if (fab && currentUser && currentUser.permissions) {
+				const hasRelevantPermissions = 
+					currentUser.permissions.includes('add_transaction') ||
+					currentUser.permissions.includes('add_item') ||
+					currentUser.permissions.includes('manage_users');
+				
+				if (hasRelevantPermissions) {
+					fab.style.display = 'flex';
+				} else {
+					fab.style.display = 'none';
+				}
 			}
 			
 			// אתחל Pull to Refresh
@@ -4707,14 +4836,105 @@
 			}, 60000); // כל 60 שניות
 		}
 		
-		// === Quick Actions Menu ===
-		function showQuickActions() {
-			if (confirm('מה תרצה לעשות?\n\nOK - הוסף מוצר חדש\nCancel - רשום תנועה')) {
-				showTab('addItem');
+		// === FAB Menu Functions ===
+		function toggleFabMenu() {
+			const fabMenu = document.getElementById('fabMenu');
+			const fabButton = document.getElementById('fabButton');
+			
+			if (fabMenu.classList.contains('show')) {
+				closeFabMenu();
 			} else {
-				showTab('transaction');
+				openFabMenu();
 			}
 		}
+
+		function openFabMenu() {
+			const fabMenu = document.getElementById('fabMenu');
+			const fabButton = document.getElementById('fabButton');
+			const fabMenuItems = document.getElementById('fabMenuItems');
+			
+			// בנה את התפריט לפי הרשאות
+			fabMenuItems.innerHTML = '';
+			
+			// רישום תנועה
+			if (currentUser.permissions.includes('add_transaction')) {
+				const item = createFabMenuItem('📝', 'רישום תנועה', 'transaction', () => {
+					closeFabMenu();
+					showTab('transaction');
+				});
+				fabMenuItems.appendChild(item);
+			}
+			
+			// הוספת מוצר
+			if (currentUser.permissions.includes('add_item')) {
+				const item = createFabMenuItem('📦', 'מוצר חדש', 'product', () => {
+					closeFabMenu();
+					showTab('addItem');
+				});
+				fabMenuItems.appendChild(item);
+			}
+			
+			// הוספת משתמש
+			if (currentUser.permissions.includes('manage_users')) {
+				const item = createFabMenuItem('👤', 'משתמש חדש', 'user', () => {
+					closeFabMenu();
+					showTab('users');
+					// גלול לטופס הוספת משתמש
+					setTimeout(() => {
+						document.getElementById('addUserForm').scrollIntoView({ behavior: 'smooth' });
+					}, 300);
+				});
+				fabMenuItems.appendChild(item);
+			}
+			
+			// הצג את התפריט
+			fabMenu.style.display = 'block';
+			fabButton.classList.add('menu-open');
+			
+			// הוסף את המחלקה show עם delay קטן לאנימציה
+			setTimeout(() => {
+				fabMenu.classList.add('show');
+			}, 10);
+		}
+
+		function closeFabMenu() {
+			const fabMenu = document.getElementById('fabMenu');
+			const fabButton = document.getElementById('fabButton');
+			
+			fabMenu.classList.remove('show');
+			fabButton.classList.remove('menu-open');
+			
+			// הסתר לגמרי אחרי האנימציה
+			setTimeout(() => {
+				fabMenu.style.display = 'none';
+			}, 300);
+		}
+
+		function createFabMenuItem(icon, label, className, onClick) {
+			const item = document.createElement('div');
+			item.className = 'fab-menu-item';
+			
+			const labelEl = document.createElement('span');
+			labelEl.className = 'fab-menu-label';
+			labelEl.textContent = label;
+			
+			const button = document.createElement('button');
+			button.className = `fab-menu-button ${className}`;
+			button.innerHTML = icon;
+			button.onclick = onClick;
+			
+			item.appendChild(labelEl);
+			item.appendChild(button);
+			
+			return item;
+		}
+
+		// סגור תפריט בלחיצה על ESC
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				closeFabMenu();
+			}
+		});
 
 		function stopStatsRefresh() {
 			if (statsInterval) {
