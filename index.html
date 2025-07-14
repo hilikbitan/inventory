@@ -401,10 +401,6 @@
 		}
 
 		/* אנימציה לכפתור הראשי */
-		.fab.menu-open {
-			transform: rotate(45deg);
-			background: #e74c3c;
-		}
 		.fab {
 			transition: all 0.3s;
 		}
@@ -1557,18 +1553,13 @@
 		}
 		/* === FAB Menu Enhanced Animations === */
 		.fab {
-			transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+			transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 		}
-
-		.fab:hover {
-			transform: scale(1.1);
-			box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-		}
-
 		.fab.menu-open {
-			transform: rotate(135deg) scale(1.1);
-			background: #e74c3c;
+			transform: rotate(180deg) scale(1) !important;
+			background: #e74c3c !important;
 		}
+		
 
 		/* FAB Menu backdrop animation */
 		.fab-menu {
@@ -1637,31 +1628,8 @@
 				box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
 			}
 		}
-
-		.fab:not(.menu-open) {
-			animation: fabPulse 2s ease-in-out infinite;
-		}
-
 		/* Ripple effect on FAB click */
-		.fab::after {
-			content: '';
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			width: 0;
-			height: 0;
-			border-radius: 50%;
-			background: rgba(255, 255, 255, 0.5);
-			transform: translate(-50%, -50%);
-			transition: width 0.6s, height 0.6s, opacity 0.6s;
-			opacity: 0;
-		}
 
-		.fab:active::after {
-			width: 100px;
-			height: 100px;
-			opacity: 0;
-		}
 		/* Ripple effect for menu buttons */
 		.fab-menu-button {
 			position: relative;
@@ -6658,6 +6626,9 @@
 			const fabButton = document.getElementById('fabButton');
 			const fabMenuItems = document.getElementById('fabMenuItems');
 			
+			// שנה את התוכן ל-X
+			fabButton.innerHTML = '✕';
+			
 			// בנה את התפריט לפי הרשאות
 			fabMenuItems.innerHTML = '';
 			
@@ -6705,6 +6676,9 @@
 		function closeFabMenu() {
 			const fabMenu = document.getElementById('fabMenu');
 			const fabButton = document.getElementById('fabButton');
+			
+			// החזר את התוכן ל-+
+			fabButton.innerHTML = '➕';
 			
 			// הסר את המחלקות לאנימציית סגירה
 			fabButton.classList.remove('menu-open');
