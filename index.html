@@ -318,10 +318,12 @@
 			transform: scale(0);
 			transform-origin: bottom right;
 			transition: transform 0.3s;
+			pointer-events: none;
 		}
 
 		.fab-menu.show .fab-menu-items {
 			transform: scale(1);
+			pointer-events: all;
 		}
 
 		.fab-menu-item {
@@ -332,6 +334,8 @@
 			transform: translateX(20px);
 			opacity: 0;
 			transition: all 0.3s;
+			pointer-events: all;
+			z-index: 99;
 		}
 
 		.fab-menu.show .fab-menu-item {
@@ -351,8 +355,15 @@
 			font-size: 14px;
 			font-weight: 500;
 			white-space: nowrap;
+			pointer-events: all;
+		}
+		.fab-menu-item:hover .fab-menu-label {
+			background: #f5f5f5;
 		}
 
+		.fab-menu-item:active .fab-menu-label {
+			background: #e0e0e0;
+		}
 		.fab-menu-button {
 			width: 48px;
 			height: 48px;
@@ -365,6 +376,9 @@
 			align-items: center;
 			justify-content: center;
 			transition: transform 0.2s;
+			pointer-events: all;
+			position: relative;
+			z-index: 100;
 		}
 
 		.fab-menu-button:active {
@@ -4911,10 +4925,11 @@
 		}
 
 		function createFabMenuItem(icon, label, className, onClick) {
-			console.log('Creating menu item:', label); // הוסף את זה
+			console.log('Creating menu item:', label);
 			
 			const item = document.createElement('div');
 			item.className = 'fab-menu-item';
+			item.style.cursor = 'pointer';
 			
 			const labelEl = document.createElement('span');
 			labelEl.className = 'fab-menu-label';
@@ -4923,12 +4938,21 @@
 			const button = document.createElement('button');
 			button.className = `fab-menu-button ${className}`;
 			button.innerHTML = icon;
-			button.onclick = (e) => {  // שנה את זה
+			button.type = 'button'; // הוסף את זה
+			
+			// פונקציית הלחיצה
+			const handleClick = function(e) {
+				console.log('Click triggered for:', label);
 				e.preventDefault();
 				e.stopPropagation();
-				console.log('Button clicked:', label);
 				onClick();
 			};
+			
+			// הוסף אירוע לחיצה לכל השורה
+			item.addEventListener('click', handleClick);
+			
+			// הוסף גם לכפתור עצמו
+			button.addEventListener('click', handleClick);
 			
 			item.appendChild(labelEl);
 			item.appendChild(button);
