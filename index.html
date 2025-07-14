@@ -4911,6 +4911,8 @@
 		}
 
 		function createFabMenuItem(icon, label, className, onClick) {
+			console.log('Creating menu item:', label); // הוסף את זה
+			
 			const item = document.createElement('div');
 			item.className = 'fab-menu-item';
 			
@@ -4921,7 +4923,12 @@
 			const button = document.createElement('button');
 			button.className = `fab-menu-button ${className}`;
 			button.innerHTML = icon;
-			button.onclick = onClick;
+			button.onclick = (e) => {  // שנה את זה
+				e.preventDefault();
+				e.stopPropagation();
+				console.log('Button clicked:', label);
+				onClick();
+			};
 			
 			item.appendChild(labelEl);
 			item.appendChild(button);
