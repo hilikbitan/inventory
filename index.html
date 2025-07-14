@@ -171,275 +171,391 @@
             margin: 0 auto 10px auto;
             min-width: 0;
         }
-		
-		/* === Dark Mode Support - גישה פשוטה ונקייה === */
-		/* Light mode - ברירת מחדל */
-		body {
-			background-color: #f5f5f5;
-			color: #333;
+		/* === Dark Mode Support === */
+		/* CSS Variables for theming */
+		:root {
+			/* Light mode colors (default) */
+			--bg-primary: #f5f5f5;
+			--bg-secondary: #ffffff;
+			--bg-nav: #2c3e50;
+			--bg-modal: #fefefe;
+			
+			--text-primary: #333333;
+			--text-secondary: #666666;
+			--text-nav: #ffffff;
+			
+			--border-color: #dddddd;
+			--border-light: #eeeeee;
+			
+			--shadow-light: rgba(0, 0, 0, 0.1);
+			--shadow-medium: rgba(0, 0, 0, 0.2);
+			
+			--accent-primary: #3498db;
+			--accent-hover: #2980b9;
+			--accent-danger: #e74c3c;
+			--accent-success: #27ae60;
+			--accent-warning: #f39c12;
+			
+			/* Table colors */
+			--table-header-bg: #34495e;
+			--table-header-text: #ffffff;
+			--table-row-even: #f8f9fa;
+			--table-row-hover: #e8f4fd;
+			
+			/* Status colors */
+			--status-danger-bg: #ffebee;
+			--status-danger-text: #c62828;
+			--status-warning-bg: #fff3e0;
+			--status-warning-text: #ef6c00;
+			--status-success-bg: #e8f5e9;
+			--status-success-text: #2e7d32;
 		}
 
-		.main-container {
-			background-color: #f5f5f5;
-		}
-
-		.tab-content {
-			background: white;
-			color: #333;
-		}
-
-		.stat-card {
-			background: white;
-			color: #333;
-		}
-
-		.modal-content {
-			background: white;
-			color: #333;
-		}
-
-		input, select, textarea {
-			background: white;
-			color: #333;
-			border-color: #ddd;
-		}
-
-		table {
-			background: white;
-		}
-
-		th {
-			background: #34495e;
-			color: white;
-		}
-
-		td {
-			background: white;
-			color: #333;
-		}
-
-		/* Dark Mode */
-		@media (prefers-color-scheme: dark) {
-			body {
-				background-color: #1a1a1a !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.main-container {
-				background-color: #1a1a1a !important;
-			}
-			
-			.container {
-				color: #e0e0e0 !important;
-			}
-			
-			.tab-content {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.stat-card {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.stat-card h3 {
-				color: #a0a0a0 !important;
-			}
-			
-			.stat-card .value {
-				color: #e0e0e0 !important;
-			}
-			
-			.modal-content {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.modal-header h2 {
-				color: #e0e0e0 !important;
-			}
-			
-			input, select, textarea {
-				background: #1a1a1a !important;
-				color: #e0e0e0 !important;
-				border-color: #404040 !important;
-			}
-			
-			label {
-				color: #e0e0e0 !important;
-			}
-			
-			table {
-				background: #2d2d2d !important;
-			}
-			
-			th {
-				background: #1a1a1a !important;
-				color: #e0e0e0 !important;
-			}
-			
-			td {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-				border-color: #404040 !important;
-			}
-			
-			tr:nth-child(even) {
-				background: #252525 !important;
-			}
-			
-			tr:hover {
-				background: #333 !important;
-			}
-			
-			.tab {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-				border-color: #404040 !important;
-			}
-			
-			.tab:hover {
-				background: #333 !important;
-			}
-			
-			.tab.active {
-				background: #4fc3f7 !important;
-				color: white !important;
-			}
-			
-			.expand-btn {
-				background: #333 !important;
-				border-color: #404040 !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.user-card {
-				background: #333 !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.close {
-				color: #a0a0a0 !important;
-			}
-			
-			.close:hover {
-				color: #e0e0e0 !important;
-			}
-			
-			/* Alerts in dark mode */
-			.alert-warning {
-				background: rgba(255, 152, 0, 0.2) !important;
-				color: #ffb74d !important;
-				border-color: #ff9800 !important;
-			}
-			
-			.alert-danger {
-				background: rgba(244, 67, 54, 0.2) !important;
-				color: #ff8a80 !important;
-				border-color: #f44336 !important;
-			}
-			
-			.alert-success {
-				background: rgba(76, 175, 80, 0.2) !important;
-				color: #81c784 !important;
-				border-color: #4caf50 !important;
-			}
-			
-			/* Bottom nav */
-			.bottom-nav {
-				background: #2d2d2d !important;
-				border-top-color: #404040 !important;
-			}
-			
-			.bottom-nav-item {
-				color: #a0a0a0 !important;
-			}
-			
-			.bottom-nav-item.active {
-				color: #4fc3f7 !important;
-			}
-			
-			/* Empty state */
-			.empty-state {
-				color: #a0a0a0 !important;
-			}
-			
-			/* Report content */
-			#reportContent {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-			}
-			
-			/* Picking tables */
-			.picking-table {
-				background: #2d2d2d !important;
-			}
-			
-			.picking-table th {
-				background: #1a1a1a !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.picking-table td {
-				color: #e0e0e0 !important;
-				border-color: #404040 !important;
-			}
-			
-			/* Skeleton loaders */
-			.skeleton-loader {
-				background: linear-gradient(90deg, #2d2d2d 25%, #404040 50%, #2d2d2d 75%) !important;
-			}
-			
-			.skeleton-stat-card {
-				background: #2d2d2d !important;
-			}
-			
-			/* Login box */
-			.login-box {
-				background: #2d2d2d !important;
-				color: #e0e0e0 !important;
-			}
-			
-			.login-box h1 {
-				color: #e0e0e0 !important;
-			}
-			
-			/* Footer */
-			footer {
-				background: transparent !important;
-				color: #a0a0a0 !important;
-			}
-		}
-
-		/* Smooth transition when switching themes */
-		* {
-			transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-		}
-		
-		/* Manual theme overrides */
+		/* Dark mode colors */
 		[data-theme="dark"] {
 			--bg-primary: #1a1a1a;
 			--bg-secondary: #2d2d2d;
 			--bg-nav: #1a1a1a;
+			--bg-modal: #2d2d2d;
+			
 			--text-primary: #e0e0e0;
 			--text-secondary: #a0a0a0;
+			--text-nav: #e0e0e0;
+			
 			--border-color: #404040;
-			--accent: #4fc3f7;
+			--border-light: #333333;
+			
+			--shadow-light: rgba(0, 0, 0, 0.3);
+			--shadow-medium: rgba(0, 0, 0, 0.5);
+			
+			--accent-primary: #4fc3f7;
 			--accent-hover: #29b6f6;
-			--shadow: rgba(0, 0, 0, 0.3);
+			--accent-danger: #ef5350;
+			--accent-success: #66bb6a;
+			--accent-warning: #ffa726;
+			
+			/* Table colors */
+			--table-header-bg: #1a1a1a;
+			--table-header-text: #e0e0e0;
+			--table-row-even: #252525;
+			--table-row-hover: #333333;
+			
+			/* Status colors */
+			--status-danger-bg: rgba(244, 67, 54, 0.2);
+			--status-danger-text: #ff8a80;
+			--status-warning-bg: rgba(255, 152, 0, 0.2);
+			--status-warning-text: #ffb74d;
+			--status-success-bg: rgba(76, 175, 80, 0.2);
+			--status-success-text: #81c784;
 		}
 
-		[data-theme="light"] {
-			--bg-primary: #f5f5f5;
-			--bg-secondary: #ffffff;
-			--bg-nav: #2c3e50;
-			--text-primary: #333333;
-			--text-secondary: #666666;
-			--border-color: #dddddd;
-			--accent: #3498db;
-			--accent-hover: #2980b9;
-			--shadow: rgba(0, 0, 0, 0.1);
+		/* Auto theme - follows system */
+		@media (prefers-color-scheme: dark) {
+			:root:not([data-theme="light"]) {
+				--bg-primary: #1a1a1a;
+				--bg-secondary: #2d2d2d;
+				--bg-nav: #1a1a1a;
+				--bg-modal: #2d2d2d;
+				
+				--text-primary: #e0e0e0;
+				--text-secondary: #a0a0a0;
+				--text-nav: #e0e0e0;
+				
+				--border-color: #404040;
+				--border-light: #333333;
+				
+				--shadow-light: rgba(0, 0, 0, 0.3);
+				--shadow-medium: rgba(0, 0, 0, 0.5);
+				
+				--accent-primary: #4fc3f7;
+				--accent-hover: #29b6f6;
+				--accent-danger: #ef5350;
+				--accent-success: #66bb6a;
+				--accent-warning: #ffa726;
+				
+				--table-header-bg: #1a1a1a;
+				--table-header-text: #e0e0e0;
+				--table-row-even: #252525;
+				--table-row-hover: #333333;
+				
+				--status-danger-bg: rgba(244, 67, 54, 0.2);
+				--status-danger-text: #ff8a80;
+				--status-warning-bg: rgba(255, 152, 0, 0.2);
+				--status-warning-text: #ffb74d;
+				--status-success-bg: rgba(76, 175, 80, 0.2);
+				--status-success-text: #81c784;
+			}
+		}
+
+		/* Apply CSS variables to elements */
+		body {
+			background-color: var(--bg-primary);
+			color: var(--text-primary);
+		}
+
+		.main-container {
+			background-color: var(--bg-primary);
+		}
+
+		.top-nav {
+			background: var(--bg-nav);
+			color: var(--text-nav);
+		}
+
+		.container {
+			color: var(--text-primary);
+		}
+
+		/* Tabs */
+		.tab {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+			border-color: var(--border-color);
+		}
+
+		.tab:hover {
+			background: var(--table-row-hover);
+		}
+
+		.tab.active {
+			background: var(--accent-primary);
+			color: white;
+			border-color: var(--accent-primary);
+		}
+
+		/* Content areas */
+		.tab-content {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+			box-shadow: 0 2px 10px var(--shadow-light);
+		}
+
+		.stat-card {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+			box-shadow: 0 2px 5px var(--shadow-light);
+		}
+
+		.stat-card h3 {
+			color: var(--text-secondary);
+		}
+
+		.stat-card .value {
+			color: var(--text-primary);
+		}
+
+		/* Forms */
+		input, select, textarea {
+			background: var(--bg-primary);
+			color: var(--text-primary);
+			border-color: var(--border-color);
+		}
+
+		input:focus, select:focus, textarea:focus {
+			border-color: var(--accent-primary);
+			box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+		}
+
+		label {
+			color: var(--text-primary);
+		}
+
+		/* Tables */
+		table {
+			background: var(--bg-secondary);
+		}
+
+		th {
+			background: var(--table-header-bg);
+			color: var(--table-header-text);
+		}
+
+		td {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+			border-color: var(--border-color);
+		}
+
+		tr:nth-child(even) {
+			background: var(--table-row-even);
+		}
+
+		tr:hover {
+			background: var(--table-row-hover);
+		}
+
+		/* Status rows */
+		.low-stock {
+			background-color: var(--status-danger-bg) !important;
+			color: var(--status-danger-text);
+		}
+
+		.expiring-soon {
+			background-color: var(--status-warning-bg) !important;
+			color: var(--status-warning-text);
+		}
+
+		.expiring-warning {
+			background-color: var(--status-warning-bg) !important;
+			color: var(--status-warning-text);
+		}
+
+		.expiring-critical {
+			background-color: var(--status-danger-bg) !important;
+			color: var(--status-danger-text);
+		}
+
+		/* Modals */
+		.modal-content {
+			background: var(--bg-modal);
+			color: var(--text-primary);
+		}
+
+		.modal-header h2 {
+			color: var(--text-primary);
+		}
+
+		.close {
+			color: var(--text-secondary);
+		}
+
+		.close:hover {
+			color: var(--text-primary);
+		}
+
+		/* Buttons */
+		button {
+			background: var(--accent-primary);
+			color: white;
+		}
+
+		button:hover {
+			background: var(--accent-hover);
+		}
+
+		.btn-danger {
+			background: var(--accent-danger);
+		}
+
+		.btn-danger:hover {
+			background: #c0392b;
+		}
+
+		.btn-edit {
+			background: var(--accent-warning);
+		}
+
+		.btn-edit:hover {
+			background: #e67e22;
+		}
+
+		/* Alerts */
+		.alert-warning {
+			background: var(--status-warning-bg);
+			color: var(--status-warning-text);
+			border-color: var(--accent-warning);
+		}
+
+		.alert-danger {
+			background: var(--status-danger-bg);
+			color: var(--status-danger-text);
+			border-color: var(--accent-danger);
+		}
+
+		.alert-success {
+			background: var(--status-success-bg);
+			color: var(--status-success-text);
+			border-color: var(--accent-success);
+		}
+
+		/* Other elements */
+		.user-card {
+			background: var(--table-row-even);
+			color: var(--text-primary);
+		}
+
+		.expand-btn {
+			background: var(--bg-primary);
+			border-color: var(--border-color);
+			color: var(--text-primary);
+		}
+
+		.expand-btn:hover {
+			background: var(--table-row-hover);
+		}
+
+		.empty-state {
+			color: var(--text-secondary);
+		}
+
+		.skeleton-loader {
+			background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%);
+		}
+
+		.skeleton-stat-card {
+			background: var(--bg-secondary);
+		}
+
+		/* Login box */
+		.login-box {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+		}
+
+		.login-box h1 {
+			color: var(--text-primary);
+		}
+
+		/* Bottom navigation */
+		.bottom-nav {
+			background: var(--bg-secondary);
+			border-top-color: var(--border-color);
+		}
+
+		.bottom-nav-item {
+			color: var(--text-secondary);
+		}
+
+		.bottom-nav-item.active {
+			color: var(--accent-primary);
+		}
+
+		/* FAB elements */
+		.fab {
+			background: var(--accent-primary);
+		}
+
+		.fab.menu-open {
+			background: var(--accent-danger);
+		}
+
+		.fab-menu-label {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+		}
+
+		/* Theme toggle button */
+		#themeToggle {
+			background: transparent !important;
+			border: 1px solid rgba(255,255,255,0.3) !important;
+			color: var(--text-nav) !important;
+		}
+
+		#themeToggle:hover {
+			background: rgba(255,255,255,0.1) !important;
+		}
+
+		/* Smooth transitions */
+		* {
+			transition: background-color 0.3s ease, 
+						color 0.3s ease, 
+						border-color 0.3s ease,
+						box-shadow 0.3s ease;
+		}
+
+		/* Prevent transition on page load */
+		.no-transition * {
+			transition: none !important;
 		}
 
         .toast {
@@ -1920,6 +2036,305 @@
 				transform: scale(4);
 				opacity: 0;
 			}
+		}
+		/* תיקון צבעי טקסט בסיסיים */
+		body {
+			background-color: var(--bg-primary) !important;
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון כותרות הטבלאות */
+		th {
+			background: var(--table-header-bg) !important;
+			color: var(--table-header-text) !important;
+		}
+
+		/* תיקון רקע הטבלאות */
+		table {
+			background: var(--bg-secondary) !important;
+		}
+
+		td {
+			background: inherit !important;
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון צבעי טקסט בטפסים */
+		input, select, textarea {
+			background: var(--bg-primary) !important;
+			color: var(--text-primary) !important;
+			border-color: var(--border-color) !important;
+		}
+
+		/* תיקון labels */
+		label {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון כותרות */
+		h1, h2, h3, h4, h5, h6 {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון מודאלים */
+		.modal-content {
+			background: var(--bg-modal) !important;
+			color: var(--text-primary) !important;
+		}
+
+		.modal-header h2 {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון טאבים */
+		.tab {
+			background: var(--bg-secondary) !important;
+			color: var(--text-primary) !important;
+			border-color: var(--border-color) !important;
+		}
+
+		/* תיקון כרטיסי סטטיסטיקה */
+		.stat-card {
+			background: var(--bg-secondary) !important;
+			color: var(--text-primary) !important;
+		}
+
+		.stat-card h3 {
+			color: var(--text-secondary) !important;
+		}
+
+		.stat-card .value {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון כרטיסי משתמשים */
+		.user-card {
+			background: var(--table-row-even) !important;
+			color: var(--text-primary) !important;
+		}
+
+		.user-details {
+			color: var(--text-primary) !important;
+		}
+
+		.user-details div {
+			color: var(--text-secondary) !important;
+		}
+
+		/* תיקון FAB menu */
+		.fab-menu-label {
+			background: var(--bg-secondary) !important;
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון כפתור ההרחבה */
+		.expand-btn {
+			background: var(--bg-primary) !important;
+			border-color: var(--border-color) !important;
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון alerts wrapper */
+		.alerts-wrapper {
+			background: var(--bg-secondary) !important;
+			border-color: var(--border-color) !important;
+		}
+
+		.alerts-header {
+			background: var(--table-row-even) !important;
+			border-bottom-color: var(--border-color) !important;
+		}
+
+		.alerts-title {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון empty state */
+		.empty-state {
+			color: var(--text-secondary) !important;
+		}
+
+		/* תיקון permission items */
+		.permission-item {
+			background: var(--table-row-even) !important;
+			color: var(--text-primary) !important;
+		}
+
+		.permission-item label {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון צבעי טקסט ב-inline styles */
+		[style*="color: #333"] {
+			color: var(--text-primary) !important;
+		}
+
+		[style*="color: #666"] {
+			color: var(--text-secondary) !important;
+		}
+
+		[style*="color:#666"] {
+			color: var(--text-secondary) !important;
+		}
+
+		[style*="color:#333"] {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון צבעי רקע */
+		[style*="background: white"],
+		[style*="background: #fff"],
+		[style*="background:#fff"],
+		[style*="background-color: white"],
+		[style*="background-color: #fff"] {
+			background: var(--bg-secondary) !important;
+		}
+
+		[style*="background: #f5f5f5"],
+		[style*="background:#f5f5f5"],
+		[style*="background-color: #f5f5f5"] {
+			background: var(--table-row-even) !important;
+		}
+
+		[style*="background: #f8f9fa"],
+		[style*="background:#f8f9fa"] {
+			background: var(--table-row-even) !important;
+		}
+
+		/* תיקון דוחות */
+		#reportContent table {
+			background: var(--bg-secondary) !important;
+		}
+
+		#reportContent th {
+			background: var(--table-header-bg) !important;
+			color: var(--table-header-text) !important;
+		}
+
+		#reportContent td {
+			color: var(--text-primary) !important;
+			border-color: var(--border-color) !important;
+		}
+
+		/* תיקון קלט ב-edit picking modal */
+		#editPickingListArea input[type="text"] {
+			background: var(--bg-primary) !important;
+			color: var(--text-primary) !important;
+			border-color: var(--border-color) !important;
+		}
+
+		/* תיקון footer */
+		footer {
+			color: var(--text-secondary) !important;
+		}
+
+		/* תיקון toast */
+		.toast {
+			background: var(--bg-nav) !important;
+			color: var(--text-nav) !important;
+		}
+
+		/* תיקון צבעי סטטוס - שמור על הצבעים המקוריים */
+		.low-stock,
+		.expiring-soon,
+		.expiring-warning,
+		.expiring-critical,
+		.alert-warning,
+		.alert-danger,
+		.alert-success {
+			/* אלה ישארו עם הצבעים המקוריים שלהם */
+		}
+
+		/* תיקון Bottom Navigation */
+		.bottom-nav {
+			background: var(--bg-secondary) !important;
+			border-top-color: var(--border-color) !important;
+		}
+
+		.bottom-nav-item {
+			color: var(--text-secondary) !important;
+		}
+
+		.bottom-nav-item.active {
+			color: var(--accent-primary) !important;
+		}
+
+		/* תיקון variant rows */
+		.variant-row {
+			background-color: var(--table-row-even) !important;
+		}
+
+		/* תיקון קישורים */
+		a {
+			color: var(--accent-primary) !important;
+		}
+
+		/* הסר transitions בזמן החלפת theme */
+		html.theme-transition,
+		html.theme-transition *,
+		html.theme-transition *:before,
+		html.theme-transition *:after {
+			transition: none !important;
+		}
+
+		/* וודא שהכפתורים נשארים עם הצבעים שלהם */
+		button:not(.bottom-nav-item):not(.expand-btn):not(.alerts-toggle-btn) {
+			/* כפתורים רגילים ישמרו על הצבע הכחול שלהם */
+		}
+
+		.btn-danger,
+		.logout-btn {
+			/* כפתורי מחיקה/יציאה ישמרו על הצבע האדום */
+		}
+
+		.btn-edit {
+			/* כפתורי עריכה ישמרו על הצבע הכתום */
+		}
+
+		/* תיקון skeleton loaders */
+		.skeleton-loader {
+			background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%) !important;
+		}
+
+		.skeleton-stat-card {
+			background: var(--bg-secondary) !important;
+		}
+
+		/* תיקון picking list container */
+		#pickingListContainer {
+			color: var(--text-primary) !important;
+		}
+
+		/* תיקון multi transaction rows */
+		#multiTransactionRows .form-row {
+			background: var(--table-row-even) !important;
+		}
+
+		/* תיקון variants container במובייל */
+		#variantsContainer > div {
+			background: var(--table-row-even) !important;
+		}
+
+		/* תיקון loading spinner */
+		#loadingSpinner {
+			background: var(--bg-primary) !important;
+		}
+
+		/* תיקון מיוחד לטבלת דוחות */
+		#reportContent tr[style*="background: #ecf0f1"] {
+			background: var(--table-header-bg) !important;
+			color: var(--table-header-text) !important;
+		}
+
+		#reportContent td[style*="background: #3498db"] {
+			background: var(--accent-primary) !important;
+			color: white !important;
+		}
+
+		/* תיקון pull to refresh */
+		.pull-to-refresh {
+			background: var(--bg-secondary) !important;
+			box-shadow: 0 2px 8px var(--shadow-medium) !important;
 		}
     </style>
 </head>
@@ -7019,22 +7434,27 @@
 			}
 		}
 		
-		// Theme Toggle Function
 		function toggleTheme() {
-			const root = document.documentElement;
-			const currentTheme = localStorage.getItem('theme') || 'auto';
-			let newTheme;
+			const html = document.documentElement;
+			const currentTheme = html.getAttribute('data-theme');
 			
-			if (currentTheme === 'auto') {
-				newTheme = 'dark';
-			} else if (currentTheme === 'dark') {
-				newTheme = 'light';
+			// הוסף class למניעת transitions
+			html.classList.add('theme-transition');
+			
+			if (currentTheme === 'dark') {
+				html.setAttribute('data-theme', 'light');
+				localStorage.setItem('theme', 'light');
+				document.getElementById('themeIcon').textContent = '🌙';
 			} else {
-				newTheme = 'auto';
+				html.setAttribute('data-theme', 'dark');
+				localStorage.setItem('theme', 'dark');
+				document.getElementById('themeIcon').textContent = '☀️';
 			}
 			
-			localStorage.setItem('theme', newTheme);
-			applyTheme(newTheme);
+			// הסר את ה-class אחרי קצת זמן
+			setTimeout(() => {
+				html.classList.remove('theme-transition');
+			}, 100);
 		}
 
 		function applyTheme(theme) {
@@ -7055,8 +7475,23 @@
 
 		// Apply saved theme on load
 		window.addEventListener('DOMContentLoaded', () => {
-			const savedTheme = localStorage.getItem('theme') || 'auto';
-			applyTheme(savedTheme);
+			const savedTheme = localStorage.getItem('theme');
+			
+			// הוסף class למניעת transitions בטעינה ראשונית
+			document.documentElement.classList.add('theme-transition');
+			
+			if (savedTheme === 'dark') {
+				document.documentElement.setAttribute('data-theme', 'dark');
+				document.getElementById('themeIcon').textContent = '☀️';
+			} else {
+				document.documentElement.setAttribute('data-theme', 'light');
+				document.getElementById('themeIcon').textContent = '🌙';
+			}
+			
+			// הסר את ה-class אחרי הטעינה
+			setTimeout(() => {
+				document.documentElement.classList.remove('theme-transition');
+			}, 100);
 		});
 
 		// עדכן את showMainScreen להפעיל רענון אוטומטי
