@@ -1427,6 +1427,261 @@
 		.counter-animate {
 			animation: countUp 0.5s ease-out;
 		}
+		/* Table Row Animations */
+		.table-row-enter {
+			animation: tableRowEnter 0.3s ease-out;
+		}
+
+		@keyframes tableRowEnter {
+			from {
+				opacity: 0;
+				transform: translateX(-20px);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		/* Table hover effects */
+		#inventoryTable tr,
+		#movementsBody tr {
+			transition: all 0.2s ease;
+		}
+
+		#inventoryTable tr:hover,
+		#movementsBody tr:hover {
+			transform: translateX(5px);
+			box-shadow: -3px 0 10px rgba(0,0,0,0.1);
+		}
+
+		/* Expand/Collapse animation for variants */
+		.variant-row {
+			overflow: hidden;
+			transition: all 0.3s ease;
+		}
+
+		.variant-row.collapsed {
+			opacity: 0;
+			transform: translateY(-10px);
+			height: 0;
+		}
+
+		/* Delete row animation */
+		@keyframes rowDelete {
+			to {
+				opacity: 0;
+				transform: translateX(100%);
+				height: 0;
+				padding: 0;
+				margin: 0;
+			}
+		}
+
+		.row-delete {
+			animation: rowDelete 0.3s ease-out forwards;
+		}
+
+		/* Sort animation */
+		.sorting {
+			position: relative;
+		}
+
+		.sorting::after {
+			content: '';
+			position: absolute;
+			right: -20px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 0;
+			height: 0;
+			border-left: 6px solid transparent;
+			border-right: 6px solid transparent;
+			border-bottom: 8px solid #3498db;
+			opacity: 0;
+			transition: all 0.3s ease;
+		}
+
+		.sorting.asc::after {
+			opacity: 1;
+			border-bottom-color: #3498db;
+		}
+
+		.sorting.desc::after {
+			opacity: 1;
+			transform: translateY(-50%) rotate(180deg);
+			border-bottom-color: #3498db;
+		}
+
+		/* Button ripple effect */
+		.btn-ripple {
+			position: relative;
+			overflow: hidden;
+		}
+
+		.btn-ripple::before {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 0;
+			height: 0;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.3);
+			transform: translate(-50%, -50%);
+			transition: width 0.6s, height 0.6s;
+		}
+
+		.btn-ripple:active::before {
+			width: 300px;
+			height: 300px;
+		}
+
+		/* Empty state animation */
+		.empty-state {
+			text-align: center;
+			padding: 60px 20px;
+			color: #95a5a6;
+			animation: fadeIn 0.5s ease-out;
+		}
+
+		.empty-state-icon {
+			font-size: 64px;
+			margin-bottom: 20px;
+			animation: bounce 2s ease-in-out infinite;
+		}
+
+		@keyframes bounce {
+			0%, 100% { transform: translateY(0); }
+			50% { transform: translateY(-20px); }
+		}
+		/* === FAB Menu Enhanced Animations === */
+		.fab {
+			transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		}
+
+		.fab:hover {
+			transform: scale(1.1);
+			box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+		}
+
+		.fab.menu-open {
+			transform: rotate(135deg) scale(1.1);
+			background: #e74c3c;
+		}
+
+		/* FAB Menu backdrop animation */
+		.fab-menu {
+			transition: visibility 0.3s;
+		}
+
+		.fab-backdrop {
+			transition: opacity 0.3s ease;
+		}
+
+		/* FAB Menu Items enhanced animation */
+		.fab-menu-items {
+			transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		}
+
+		.fab-menu.show .fab-menu-items {
+			transform: scale(1);
+		}
+
+		/* Individual menu items animation */
+		.fab-menu-item {
+			transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		}
+
+		.fab-menu.show .fab-menu-item {
+			transform: translateX(0);
+			opacity: 1;
+		}
+
+		/* Stagger delays for smooth cascade effect */
+		.fab-menu.show .fab-menu-item:nth-child(1) { 
+			transition-delay: 0.05s; 
+		}
+		.fab-menu.show .fab-menu-item:nth-child(2) { 
+			transition-delay: 0.1s; 
+		}
+		.fab-menu.show .fab-menu-item:nth-child(3) { 
+			transition-delay: 0.15s; 
+		}
+
+		/* Menu button hover effects */
+		.fab-menu-button {
+			transition: all 0.2s ease;
+		}
+
+		.fab-menu-button:hover {
+			transform: scale(1.15);
+			box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+		}
+
+		/* Label hover effect */
+		.fab-menu-item:hover .fab-menu-label {
+			transform: translateX(-5px);
+			box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+		}
+
+		/* Pulse animation for FAB button */
+		@keyframes fabPulse {
+			0% {
+				box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+			}
+			50% {
+				box-shadow: 0 4px 20px rgba(52, 152, 219, 0.6);
+			}
+			100% {
+				box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+			}
+		}
+
+		.fab:not(.menu-open) {
+			animation: fabPulse 2s ease-in-out infinite;
+		}
+
+		/* Ripple effect on FAB click */
+		.fab::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 0;
+			height: 0;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.5);
+			transform: translate(-50%, -50%);
+			transition: width 0.6s, height 0.6s, opacity 0.6s;
+			opacity: 0;
+		}
+
+		.fab:active::after {
+			width: 100px;
+			height: 100px;
+			opacity: 0;
+		}
+		/* Ripple effect for menu buttons */
+		.fab-menu-button {
+			position: relative;
+			overflow: hidden;
+		}
+
+		.ripple {
+			position: absolute;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.6);
+			transform: scale(0);
+			animation: ripple-animation 0.6s ease-out;
+		}
+
+		@keyframes ripple-animation {
+			to {
+				transform: scale(4);
+				opacity: 0;
+			}
+		}
     </style>
 </head>
 <body>
@@ -3466,14 +3721,30 @@
 				});
 			}
 
-			filtered.forEach(item => {
+			// בדוק אם יש תוצאות
+			if (filtered.length === 0) {
+				tbody.innerHTML = `
+					<tr>
+						<td colspan="8" class="empty-state">
+							<div class="empty-state-icon">📦</div>
+							<div>לא נמצאו מוצרים${inventorySearch || categoryFilter ? ' התואמים לחיפוש' : ''}</div>
+						</td>
+					</tr>
+				`;
+				return;
+			}
+
+			// הוסף את השורות עם אנימציה
+			filtered.forEach((item, itemIndex) => {  // שינוי: הוספנו itemIndex כפרמטר
 				const [totalPacks, looseUnits] = totalPacksAndUnits(item);
 				const earliestExpiry = getEarliestExpiry(item);
 				
 				const row = tbody.insertRow();
-				row.classList.add('summary-row');
+				row.classList.add('summary-row', 'table-row-enter');
+				row.style.animationDelay = `${itemIndex * 0.02}s`; // שינוי: השתמש ב-itemIndex
+				
 				row.innerHTML = `
-					<td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
+					<td><button class="expand-btn btn-ripple" onclick="toggleVariants(this)">+</button></td>
 					<td>${item.name}</td>
 					<td>${item.category}</td>
 					<td>
@@ -3486,12 +3757,12 @@
 					<td>
 						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
 						? `${isMobile 
-							? `<button class="btn-small" onclick="editProduct('${item.name}')" title="ערוך" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">✏️</button>
-							   <button class="btn-small" onclick="openAddVariantModal('${item.name}')" title="הוסף וריאנט" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">➕</button>
-							   <button class="btn-small" onclick="deleteProduct('${item.name}')" title="מחק מוצר" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">🗑️</button>`
-							: `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
-							   <button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">➕ הוסף</button>
-							   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
+							? `<button class="btn-small btn-ripple" onclick="editProduct('${item.name}')" title="ערוך" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">✏️</button>
+							   <button class="btn-small btn-ripple" onclick="openAddVariantModal('${item.name}')" title="הוסף וריאנט" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">➕</button>
+							   <button class="btn-small btn-ripple" onclick="deleteProductWithAnimation('${item.name}')" title="מחק מוצר" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">🗑️</button>`
+							: `<button class="btn-small btn-edit btn-ripple" onclick="editProduct('${item.name}')">ערוך</button>
+							   <button class="btn-small btn-edit btn-ripple" onclick="openAddVariantModal('${item.name}')">➕ הוסף</button>
+							   <button class="btn-small btn-danger btn-ripple" onclick="deleteProductWithAnimation('${item.name}')">מחק</button>`
 						  }`
 						: ''}
 					</td>
@@ -3549,18 +3820,67 @@
 				});
 			});
 		}
+		
+		window.deleteProductWithAnimation = async function(productName) {
+			if (!confirm(`האם אתה בטוח שברצונך למחוק את המוצר "${productName}"?`)) {
+				return;
+			}
+			
+			// מצא את השורה
+			const rows = document.querySelectorAll('#inventoryBody tr');
+			let targetRow = null;
+			let variantRows = [];
+			
+			rows.forEach(row => {
+				if (row.cells[1] && row.cells[1].textContent === productName) {
+					targetRow = row;
+				} else if (targetRow && row.classList.contains('variant-row')) {
+					variantRows.push(row);
+				} else if (targetRow && !row.classList.contains('variant-row')) {
+					// הגענו למוצר הבא
+					return;
+				}
+			});
+			
+			// הוסף אנימציית מחיקה
+			if (targetRow) {
+				targetRow.classList.add('row-delete');
+				variantRows.forEach(row => row.classList.add('row-delete'));
+				
+				// חכה לסיום האנימציה
+				await new Promise(resolve => setTimeout(resolve, 300));
+			}
+			
+			// המשך עם המחיקה הרגילה
+			await deleteProduct(productName);
+		};
 
         function toggleVariants(button) {
-            const row = button.closest('tr');
-            let nextRow = row.nextElementSibling;
-            const isOpen = button.textContent === '-';
-            button.textContent = isOpen ? '+' : '-';
+			const row = button.closest('tr');
+			let nextRow = row.nextElementSibling;
+			const isOpen = button.textContent === '-';
+			
+			// אנימציית סיבוב לכפתור
+			button.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+			button.style.transition = 'transform 0.3s ease';
+			button.textContent = isOpen ? '+' : '-';
 
-            while (nextRow && nextRow.classList.contains('variant-row')) {
-                nextRow.style.display = isOpen ? 'none' : '';
-                nextRow = nextRow.nextElementSibling;
-            }
-        }
+			// אנימציה לשורות הווריאנטים
+			let delay = 0;
+			while (nextRow && nextRow.classList.contains('variant-row')) {
+				if (isOpen) {
+					nextRow.style.display = 'none';
+					nextRow.classList.add('collapsed');
+				} else {
+					nextRow.style.display = '';
+					nextRow.classList.remove('collapsed');
+					nextRow.classList.add('table-row-enter');
+					nextRow.style.animationDelay = `${delay * 0.05}s`;
+					delay++;
+				}
+				nextRow = nextRow.nextElementSibling;
+			}
+		}
 
         // --- תצוגת תנועות ---
 		function displayMovements() {
@@ -6364,7 +6684,6 @@
 				const item = createFabMenuItem('👤', 'משתמש חדש', 'user', () => {
 					closeFabMenu();
 					showTab('users');
-					// גלול לטופס הוספת משתמש
 					setTimeout(() => {
 						document.getElementById('addUserForm').scrollIntoView({ behavior: 'smooth' });
 					}, 300);
@@ -6374,30 +6693,32 @@
 			
 			// הצג את התפריט
 			fabMenu.style.display = 'block';
-			fabButton.classList.add('menu-open');
+			fabMenu.style.visibility = 'visible';
 			
-			// הוסף את המחלקה show עם delay קטן לאנימציה
-			setTimeout(() => {
+			// הוסף אנימציה עם delay קטן
+			requestAnimationFrame(() => {
+				fabButton.classList.add('menu-open');
 				fabMenu.classList.add('show');
-			}, 10);
+			});
 		}
 
 		function closeFabMenu() {
 			const fabMenu = document.getElementById('fabMenu');
 			const fabButton = document.getElementById('fabButton');
 			
-			fabMenu.classList.remove('show');
+			// הסר את המחלקות לאנימציית סגירה
 			fabButton.classList.remove('menu-open');
+			fabMenu.classList.remove('show');
 			
 			// הסתר לגמרי אחרי האנימציה
 			setTimeout(() => {
+				fabMenu.style.visibility = 'hidden';
 				fabMenu.style.display = 'none';
 			}, 300);
 		}
 
+		// עדכן את createFabMenuItem להוסיף אפקט hover
 		function createFabMenuItem(icon, label, className, onClick) {
-			console.log('Creating menu item:', label);
-			
 			const item = document.createElement('div');
 			item.className = 'fab-menu-item';
 			item.style.cursor = 'pointer';
@@ -6409,20 +6730,32 @@
 			const button = document.createElement('button');
 			button.className = `fab-menu-button ${className}`;
 			button.innerHTML = icon;
-			button.type = 'button'; // הוסף את זה
+			button.type = 'button';
+			
+			// אפקט ripple על לחיצה
+			button.addEventListener('click', function(e) {
+				const ripple = document.createElement('span');
+				ripple.className = 'ripple';
+				this.appendChild(ripple);
+				
+				const rect = this.getBoundingClientRect();
+				const x = e.clientX - rect.left;
+				const y = e.clientY - rect.top;
+				
+				ripple.style.left = x + 'px';
+				ripple.style.top = y + 'px';
+				
+				setTimeout(() => ripple.remove(), 600);
+			});
 			
 			// פונקציית הלחיצה
 			const handleClick = function(e) {
-				console.log('Click triggered for:', label);
 				e.preventDefault();
 				e.stopPropagation();
 				onClick();
 			};
 			
-			// הוסף אירוע לחיצה לכל השורה
 			item.addEventListener('click', handleClick);
-			
-			// הוסף גם לכפתור עצמו
 			button.addEventListener('click', handleClick);
 			
 			item.appendChild(labelEl);
@@ -6430,13 +6763,6 @@
 			
 			return item;
 		}
-
-		// סגור תפריט בלחיצה על ESC
-		document.addEventListener('keydown', (e) => {
-			if (e.key === 'Escape') {
-				closeFabMenu();
-			}
-		});
 
 		function stopStatsRefresh() {
 			if (statsInterval) {
