@@ -2879,9 +2879,14 @@
 					<td>${getGlobalStatus(totalPacks, item.minPacks || 0, earliestExpiry)}</td>
 					<td>
 						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
-						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
-						   <button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">➕ הוסף</button>
-						   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
+						? `${isMobile 
+							? `<button class="btn-small" onclick="editProduct('${item.name}')" title="ערוך" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">✏️</button>
+							   <button class="btn-small" onclick="openAddVariantModal('${item.name}')" title="הוסף וריאנט" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">➕</button>
+							   <button class="btn-small" onclick="deleteProduct('${item.name}')" title="מחק מוצר" style="background: transparent; border: none; font-size: 1.2em; padding: 4px;">🗑️</button>`
+							: `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
+							   <button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">➕ הוסף</button>
+							   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
+						  }`
 						: ''}
 					</td>
 				`;
@@ -2922,11 +2927,15 @@
 						</td>
 						<td>-</td>
 						<td>${formatDate(variant.expiry) || '-'}</td>
-						${!isMobile ? '<td>' + expiryStatus + '</td>' : ''}
+						<td>${expiryStatus}</td>
 						<td>
 							${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
-								? `<button class="btn-small btn-edit" onclick="editVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">ערוך</button>
-								   ${!isMobile ? `<button class="btn-small btn-danger" onclick="deleteVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">מחק</button>` : ''}`
+								? `${isMobile 
+									? `<button class="btn-small" onclick="editVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})" title="ערוך" style="background: transparent; border: none; font-size: 1.1em; padding: 4px;">✏️</button>
+									   <button class="btn-small" onclick="deleteVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})" title="מחק" style="background: transparent; border: none; font-size: 1.1em; padding: 4px;">🗑️</button>`
+									: `<button class="btn-small btn-edit" onclick="editVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">ערוך</button>
+									   <button class="btn-small btn-danger" onclick="deleteVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">מחק</button>`
+								  }`
 								: ''}
 						</td>
 					`;
