@@ -13,6 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         /* Modal styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
@@ -80,101 +81,11 @@
         .permission-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:20px;}
         .permission-item {display:flex;align-items:center;gap:10px;}
         
-        /* Checkbox styles - better visibility */
-        input[type="checkbox"] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s;
-        }
-        input[type="checkbox"]:checked {
-            background-color: #3498db;
-            border-color: #3498db;
-        }
-        input[type="checkbox"]:checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        input[type="checkbox"]:hover {
-            border-color: #3498db;
-        }
-        
-        .expiring-critical {
-            background-color: #ffcdd2 !important;
-            color: #b71c1c;
-            font-weight: bold;
-        }
-        .expiring-soon {
-            background-color: #ffe0b2 !important;
-            color: #e65100;
-        }
-        .expiring-warning {
-            background-color: #fff9c4 !important;
-            color: #f57f17;
-        }
-        
-        .variant-row {
-            background-color: #f9f9f9;
-        }
-        .expand-btn {
-            cursor: pointer;
-            padding: 2px 6px;
-            background: #ecf0f1;
-            border: 1px solid #bdc3c7;
-            border-radius: 3px;
-            font-weight: bold;
-        }
-        .expand-btn:hover {
-            background: #d5dbdb;
-        }
-        
-        #editPickingListArea {
-            max-height: 340px;
-            overflow-y: auto;
-            margin-bottom: 18px;
-        }
-	
-        
-        .modal-content .btn-main {
-            min-width: 120px;
-            width: auto;
-            padding: 7px 22px;
-            font-size: 1em;
-            margin: 7px 6px 0 6px;
-            display: inline-block;
-            box-sizing: border-box;
-        }
-        
-        .picking-table th, .picking-table td {
-            padding: 6px 8px;
-            font-size: 1em;
-            white-space: nowrap;
-            max-width: 140px;
-            text-overflow: ellipsis;
-            overflow: hidden;
-        }
-        
-        .picking-table {
-            width: auto;
-            margin: 0 auto 10px auto;
-            min-width: 0;
-        }
-		/* === Dark Mode Support === */
-		/* CSS Variables for theming */
+        /* ========================================
+		   1. CSS Variables & Root Settings
+		   ======================================== */
 		:root {
-			/* Light mode colors (default) */
+			/* Colors - Light Theme (Default) */
 			--bg-primary: #f5f5f5;
 			--bg-secondary: #ffffff;
 			--bg-nav: #2c3e50;
@@ -196,22 +107,40 @@
 			--accent-success: #27ae60;
 			--accent-warning: #f39c12;
 			
-			/* Table colors */
+			/* Table Colors */
 			--table-header-bg: #34495e;
 			--table-header-text: #ffffff;
 			--table-row-even: #f8f9fa;
 			--table-row-hover: #e8f4fd;
 			
-			/* Status colors */
+			/* Status Colors */
 			--status-danger-bg: #ffebee;
 			--status-danger-text: #c62828;
 			--status-warning-bg: #fff3e0;
 			--status-warning-text: #ef6c00;
 			--status-success-bg: #e8f5e9;
 			--status-success-text: #2e7d32;
+			
+			/* Spacing */
+			--spacing-xs: 5px;
+			--spacing-sm: 10px;
+			--spacing-md: 15px;
+			--spacing-lg: 20px;
+			--spacing-xl: 30px;
+			
+			/* Border Radius */
+			--radius-sm: 4px;
+			--radius-md: 8px;
+			--radius-lg: 12px;
+			--radius-round: 50%;
+			
+			/* Z-index Layers */
+			--z-nav: 100;
+			--z-modal: 1000;
+			--z-toast: 2000;
 		}
 
-		/* Dark mode colors */
+		/* Dark Theme */
 		[data-theme="dark"] {
 			--bg-primary: #1a1a1a;
 			--bg-secondary: #2d2d2d;
@@ -234,13 +163,11 @@
 			--accent-success: #66bb6a;
 			--accent-warning: #ffa726;
 			
-			/* Table colors */
 			--table-header-bg: #1a1a1a;
 			--table-header-text: #e0e0e0;
 			--table-row-even: #252525;
 			--table-row-hover: #333333;
 			
-			/* Status colors */
 			--status-danger-bg: rgba(244, 67, 54, 0.2);
 			--status-danger-text: #ff8a80;
 			--status-warning-bg: rgba(255, 152, 0, 0.2);
@@ -249,72 +176,173 @@
 			--status-success-text: #81c784;
 		}
 
-		/* Auto theme - follows system */
+		/* Auto Dark Theme */
 		@media (prefers-color-scheme: dark) {
 			:root:not([data-theme="light"]) {
 				--bg-primary: #1a1a1a;
 				--bg-secondary: #2d2d2d;
-				--bg-nav: #1a1a1a;
-				--bg-modal: #2d2d2d;
-				
 				--text-primary: #e0e0e0;
 				--text-secondary: #a0a0a0;
-				--text-nav: #e0e0e0;
-				
-				--border-color: #404040;
-				--border-light: #333333;
-				
-				--shadow-light: rgba(0, 0, 0, 0.3);
-				--shadow-medium: rgba(0, 0, 0, 0.5);
-				
-				--accent-primary: #4fc3f7;
-				--accent-hover: #29b6f6;
-				--accent-danger: #ef5350;
-				--accent-success: #66bb6a;
-				--accent-warning: #ffa726;
-				
-				--table-header-bg: #1a1a1a;
-				--table-header-text: #e0e0e0;
-				--table-row-even: #252525;
-				--table-row-hover: #333333;
-				
-				--status-danger-bg: rgba(244, 67, 54, 0.2);
-				--status-danger-text: #ff8a80;
-				--status-warning-bg: rgba(255, 152, 0, 0.2);
-				--status-warning-text: #ffb74d;
-				--status-success-bg: rgba(76, 175, 80, 0.2);
-				--status-success-text: #81c784;
+				/* ... (כל שאר המשתנים של dark theme) */
 			}
 		}
 
-		/* Apply CSS variables to elements */
+		/* ========================================
+		   2. Base Styles & Reset
+		   ======================================== */
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		html {
+			height: 100%;
+			-webkit-text-size-adjust: 100%;
+		}
+
 		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
 			background-color: var(--bg-primary);
+			color: var(--text-primary);
+			line-height: 1.6;
+			min-height: 100vh;
+			min-height: -webkit-fill-available;
+			direction: rtl;
+			overflow-x: hidden;
+		}
+
+		/* ========================================
+		   3. Layout Components
+		   ======================================== */
+
+		/* Login Screen */
+		.login-container {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		}
+
+		.login-box {
+			background: var(--bg-secondary);
+			padding: 40px;
+			border-radius: var(--radius-lg);
+			box-shadow: 0 15px 35px var(--shadow-medium);
+			width: 90%;
+			max-width: 400px;
+		}
+
+		.login-box h1 {
+			text-align: center;
+			margin-bottom: var(--spacing-xl);
 			color: var(--text-primary);
 		}
 
+		/* Main Container */
 		.main-container {
+			display: none;
+			min-height: 100vh;
 			background-color: var(--bg-primary);
 		}
 
+		/* Top Navigation */
 		.top-nav {
 			background: var(--bg-nav);
 			color: var(--text-nav);
+			padding: var(--spacing-md) var(--spacing-lg);
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			box-shadow: 0 2px 5px var(--shadow-light);
+			z-index: var(--z-nav);
 		}
 
-		.container {
-			color: var(--text-primary);
+		.nav-brand {
+			font-size: 20px;
+			font-weight: bold;
+			display: flex;
+			align-items: center;
+			gap: var(--spacing-sm);
 		}
+
+		.nav-user {
+			display: flex;
+			align-items: center;
+			gap: var(--spacing-md);
+		}
+
+		.user-info {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			font-size: 14px;
+		}
+
+		.user-role {
+			font-size: 12px;
+			opacity: 0.8;
+		}
+
+		/* Container */
+		.container {
+			max-width: 1400px;
+			margin: 0 auto;
+			padding: var(--spacing-lg);
+		}
+
+		/* ========================================
+		   4. Navigation Components
+		   ======================================== */
 
 		/* Tabs */
+		.tabs {
+			display: flex;
+			gap: var(--spacing-xs);
+			margin-bottom: var(--spacing-lg);
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: var(--spacing-xs);
+			scrollbar-width: none;
+		}
+
+		.tabs::-webkit-scrollbar {
+			display: none;
+		}
+
 		.tab {
+			padding: 12px 20px;
 			background: var(--bg-secondary);
 			color: var(--text-primary);
-			border-color: var(--border-color);
+			border: 2px solid var(--border-color);
+			border-radius: var(--radius-md);
+			cursor: pointer;
+			transition: all 0.3s;
+			font-weight: 500;
+			white-space: nowrap;
+			flex-shrink: 0;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.tab::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 50%;
+			width: 0;
+			height: 3px;
+			background: var(--accent-primary);
+			transition: all 0.3s ease;
+			transform: translateX(-50%);
 		}
 
 		.tab:hover {
 			background: var(--table-row-hover);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px var(--shadow-light);
 		}
 
 		.tab.active {
@@ -323,114 +351,182 @@
 			border-color: var(--accent-primary);
 		}
 
-		/* Content areas */
+		.tab.active::after {
+			width: 100%;
+		}
+
+		.tab.disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+			display: none;
+		}
+
+		/* Tab Content */
 		.tab-content {
+			display: none;
 			background: var(--bg-secondary);
-			color: var(--text-primary);
+			padding: var(--spacing-lg);
+			border-radius: var(--radius-md);
 			box-shadow: 0 2px 10px var(--shadow-light);
+			animation: fadeIn 0.3s ease-in-out;
+		}
+
+		.tab-content.active {
+			display: block;
+		}
+
+		/* ========================================
+		   5. UI Components
+		   ======================================== */
+
+		/* Stat Cards */
+		.stats {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: var(--spacing-md);
+			margin-bottom: var(--spacing-xl);
 		}
 
 		.stat-card {
 			background: var(--bg-secondary);
-			color: var(--text-primary);
+			padding: var(--spacing-lg);
+			border-radius: var(--radius-md);
 			box-shadow: 0 2px 5px var(--shadow-light);
+			text-align: center;
+			transition: all 0.3s;
+		}
+
+		.stat-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 		}
 
 		.stat-card h3 {
 			color: var(--text-secondary);
+			font-size: 14px;
+			margin-bottom: var(--spacing-sm);
 		}
 
 		.stat-card .value {
+			font-size: 28px;
+			font-weight: bold;
 			color: var(--text-primary);
+			transition: all 0.3s ease;
+		}
+
+		.stat-card:hover .value {
+			transform: scale(1.05);
+			color: var(--accent-primary);
 		}
 
 		/* Forms */
-		input, select, textarea {
-			background: var(--bg-primary);
-			color: var(--text-primary);
-			border-color: var(--border-color);
+		.form-group {
+			margin-bottom: var(--spacing-lg);
 		}
 
-		input:focus, select:focus, textarea:focus {
+		.form-row {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: var(--spacing-lg);
+		}
+
+		label {
+			display: block;
+			margin-bottom: var(--spacing-xs);
+			font-weight: 600;
+			color: var(--text-primary);
+		}
+
+		input,
+		select,
+		textarea {
+			width: 100%;
+			padding: 12px;
+			border: 1px solid var(--border-color);
+			border-radius: var(--radius-sm);
+			font-size: 16px;
+			background: var(--bg-primary);
+			color: var(--text-primary);
+			-webkit-appearance: none;
+			transition: all 0.3s;
+		}
+
+		input:focus,
+		select:focus,
+		textarea:focus {
+			outline: none;
 			border-color: var(--accent-primary);
 			box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 		}
 
-		label {
-			color: var(--text-primary);
+		/* Checkboxes */
+		input[type="checkbox"] {
+			appearance: none;
+			width: 20px;
+			height: 20px;
+			border: 2px solid var(--border-color);
+			border-radius: var(--radius-sm);
+			background-color: var(--bg-secondary);
+			cursor: pointer;
+			position: relative;
+			transition: all 0.3s;
 		}
 
-		/* Tables */
-		table {
-			background: var(--bg-secondary);
+		input[type="checkbox"]:checked {
+			background-color: var(--accent-primary);
+			border-color: var(--accent-primary);
 		}
 
-		th {
-			background: var(--table-header-bg);
-			color: var(--table-header-text);
+		input[type="checkbox"]:checked::after {
+			content: '✓';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: white;
+			font-size: 14px;
+			font-weight: bold;
 		}
 
-		td {
-			background: var(--bg-secondary);
-			color: var(--text-primary);
-			border-color: var(--border-color);
-		}
-
-		tr:nth-child(even) {
-			background: var(--table-row-even);
-		}
-
-		tr:hover {
-			background: var(--table-row-hover);
-		}
-
-		/* Status rows */
-		.low-stock {
-			background-color: var(--status-danger-bg) !important;
-			color: var(--status-danger-text);
-		}
-
-		.expiring-soon {
-			background-color: var(--status-warning-bg) !important;
-			color: var(--status-warning-text);
-		}
-
-		.expiring-warning {
-			background-color: var(--status-warning-bg) !important;
-			color: var(--status-warning-text);
-		}
-
-		.expiring-critical {
-			background-color: var(--status-danger-bg) !important;
-			color: var(--status-danger-text);
-		}
-
-		/* Modals */
-		.modal-content {
-			background: var(--bg-modal);
-			color: var(--text-primary);
-		}
-
-		.modal-header h2 {
-			color: var(--text-primary);
-		}
-
-		.close {
-			color: var(--text-secondary);
-		}
-
-		.close:hover {
-			color: var(--text-primary);
+		input[type="checkbox"]:hover {
+			border-color: var(--accent-primary);
 		}
 
 		/* Buttons */
 		button {
 			background: var(--accent-primary);
 			color: white;
+			padding: 12px 30px;
+			border: none;
+			border-radius: var(--radius-sm);
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 600;
+			transition: all 0.3s;
+			position: relative;
+			overflow: hidden;
 		}
 
 		button:hover {
 			background: var(--accent-hover);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px var(--shadow-light);
+		}
+
+		button:active {
+			transform: scale(0.98);
+		}
+
+		button:disabled {
+			background: #95a5a6;
+			cursor: not-allowed;
+			transform: none;
+		}
+
+		/* Button Variants */
+		.btn-small {
+			padding: 6px 15px;
+			font-size: 14px;
 		}
 
 		.btn-danger {
@@ -449,1026 +545,195 @@
 			background: #e67e22;
 		}
 
-		/* Alerts */
-		.alert-warning {
-			background: var(--status-warning-bg);
-			color: var(--status-warning-text);
-			border-color: var(--accent-warning);
+		.logout-btn {
+			background: var(--accent-danger);
+			color: white;
+			border: none;
+			padding: 8px 20px;
+			border-radius: var(--radius-sm);
+			cursor: pointer;
+			font-size: 14px;
 		}
 
-		.alert-danger {
-			background: var(--status-danger-bg);
-			color: var(--status-danger-text);
-			border-color: var(--accent-danger);
+		.logout-btn:hover {
+			background: #c0392b;
 		}
 
-		.alert-success {
-			background: var(--status-success-bg);
-			color: var(--status-success-text);
-			border-color: var(--accent-success);
+		/* ========================================
+		   6. Tables
+		   ======================================== */
+		.table-wrapper {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
 		}
 
-		/* Other elements */
-		.user-card {
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: var(--spacing-lg);
+			min-width: 600px;
+			background: var(--bg-secondary);
+		}
+
+		th, td {
+			padding: 12px;
+			text-align: right;
+			border: 1px solid var(--border-color);
+		}
+
+		th {
+			background: var(--table-header-bg);
+			color: var(--table-header-text);
+			font-weight: 600;
+			position: sticky;
+			top: 0;
+			z-index: 10;
+			cursor: pointer;
+		}
+
+		tr {
+			transition: all 0.2s ease;
+		}
+
+		tr:nth-child(even) {
 			background: var(--table-row-even);
-			color: var(--text-primary);
+		}
+
+		tr:hover {
+			background: var(--table-row-hover);
+			transform: translateX(5px);
+			box-shadow: -3px 0 10px var(--shadow-light);
+		}
+
+		/* Table Status Rows */
+		.low-stock {
+			background-color: var(--status-danger-bg) !important;
+			color: var(--status-danger-text);
+			font-weight: bold;
+		}
+
+		.expiring-soon {
+			background-color: var(--status-warning-bg) !important;
+			color: var(--status-warning-text);
+		}
+
+		.expiring-warning {
+			background-color: var(--status-warning-bg) !important;
+			color: var(--status-warning-text);
+		}
+
+		.expiring-critical {
+			background-color: var(--status-danger-bg) !important;
+			color: var(--status-danger-text);
+			font-weight: bold;
+		}
+
+		.variant-row {
+			background-color: var(--table-row-even);
 		}
 
 		.expand-btn {
+			cursor: pointer;
+			padding: 2px 6px;
 			background: var(--bg-primary);
-			border-color: var(--border-color);
+			border: 1px solid var(--border-color);
+			border-radius: 3px;
+			font-weight: bold;
 			color: var(--text-primary);
+			transition: all 0.3s;
 		}
 
 		.expand-btn:hover {
 			background: var(--table-row-hover);
 		}
 
-		.empty-state {
-			color: var(--text-secondary);
-		}
-
-		.skeleton-loader {
-			background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%);
-		}
-
-		.skeleton-stat-card {
-			background: var(--bg-secondary);
-		}
-
-		/* Login box */
-		.login-box {
-			background: var(--bg-secondary);
-			color: var(--text-primary);
-		}
-
-		.login-box h1 {
-			color: var(--text-primary);
-		}
-
-		/* Bottom navigation */
-		.bottom-nav {
-			background: var(--bg-secondary);
-			border-top-color: var(--border-color);
-		}
-
-		.bottom-nav-item {
-			color: var(--text-secondary);
-		}
-
-		.bottom-nav-item.active {
-			color: var(--accent-primary);
-		}
-
-		/* FAB elements */
-		.fab {
-			background: var(--accent-primary);
-		}
-
-		.fab.menu-open {
-			background: var(--accent-danger);
-		}
-
-		.fab-menu-label {
-			background: var(--bg-secondary);
-			color: var(--text-primary);
-		}
-
-		/* Theme toggle button */
-		#themeToggle {
-			background: transparent !important;
-			border: 1px solid rgba(255,255,255,0.3) !important;
-			color: var(--text-nav) !important;
-		}
-
-		#themeToggle:hover {
-			background: rgba(255,255,255,0.1) !important;
-		}
-
-		/* Smooth transitions */
-		* {
-			transition: background-color 0.3s ease, 
-						color 0.3s ease, 
-						border-color 0.3s ease,
-						box-shadow 0.3s ease;
-		}
-
-		/* Prevent transition on page load */
-		.no-transition * {
-			transition: none !important;
-		}
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #333;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all .3s;
-            z-index: 1000;
-        }
-        
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        .loading {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            z-index: 2000;
-        }
-        
-        .error-message {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        /* === Bottom Navigation === */
-		.bottom-nav {
+		/* ========================================
+		   7. Modals
+		   ======================================== */
+		.modal {
+			display: none;
 			position: fixed;
-			bottom: 0;
+			z-index: var(--z-modal);
 			left: 0;
-			right: 0;
-			background: white;
-			box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-			display: flex;
-			justify-content: space-around;
-			padding: 8px 0;
-			z-index: 100;
-		}
-
-		.bottom-nav-item {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 4px;
-			padding: 8px;
-			cursor: pointer;
-			background: transparent;
-			border: none;
-			color: #7f8c8d;
-			font-family: inherit;
-		}
-
-		.bottom-nav-item.active {
-			color: #3498db;
-		}
-
-		.bottom-nav-item span:first-child {
-			font-size: 20px;
-		}
-
-		.bottom-nav-item span:last-child {
-			font-size: 11px;
-			font-weight: 500;
-		}
-
-		@media (max-width: 767px) {
-			.main-container {
-				padding-bottom: 70px;
-			}
-		}
-		/* === Floating Action Button === */
-		.fab {
-			position: fixed;
-			bottom: 80px; /* מעל הניווט התחתון */
-			right: 20px;
-			width: 56px;
-			height: 56px;
-			border-radius: 50%;
-			background: #3498db;
-			color: white;
-			border: none;
-			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-			font-size: 24px;
-			cursor: pointer;
-			z-index: 99;
-			transition: all 0.3s;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-
-		.fab:active {
-			transform: scale(0.9);
-			box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-		}
-		/* === FAB Menu === */
-		.fab-menu {
-			position: fixed;
-			bottom: 0;
-			right: 0;
-			width: 100%;
-			height: 100%;
-			z-index: 98;
-			pointer-events: none;
-		}
-
-		.fab-backdrop {
-			position: absolute;
 			top: 0;
-			left: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(0, 0, 0, 0.3);
-			opacity: 0;
-			transition: opacity 0.3s;
-			pointer-events: none;
+			background-color: rgba(0, 0, 0, 0.4);
 		}
 
-		.fab-menu.show .fab-backdrop {
-			opacity: 1;
-			pointer-events: all;
-		}
-
-		.fab-menu-items {
-			position: absolute;
-			bottom: 150px;
-			right: 20px;
-			display: flex;
-			flex-direction: column-reverse;
-			gap: 12px;
-			transform: scale(0);
-			transform-origin: bottom right;
-			transition: transform 0.3s;
-			pointer-events: none;
-		}
-
-		.fab-menu.show .fab-menu-items {
-			transform: scale(1);
-			pointer-events: all;
-		}
-
-		.fab-menu-item {
-			display: flex;
-			align-items: center;
-			justify-content: flex-end;
-			gap: 12px;
-			transform: translateX(20px);
-			opacity: 0;
-			transition: all 0.3s;
-			pointer-events: all;
-			z-index: 99;
-		}
-
-		.fab-menu.show .fab-menu-item {
-			transform: translateX(0);
-			opacity: 1;
-		}
-
-		.fab-menu-item:nth-child(1) { transition-delay: 0.05s; }
-		.fab-menu-item:nth-child(2) { transition-delay: 0.1s; }
-		.fab-menu-item:nth-child(3) { transition-delay: 0.15s; }
-
-		.fab-menu-label {
-			background: white;
-			padding: 8px 16px;
-			border-radius: 20px;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-			font-size: 14px;
-			font-weight: 500;
-			white-space: nowrap;
-			pointer-events: all;
-		}
-		.fab-menu-item:hover .fab-menu-label {
-			background: #f5f5f5;
-		}
-
-		.fab-menu-item:active .fab-menu-label {
-			background: #e0e0e0;
-		}
-		.fab-menu-button {
-			width: 48px;
-			height: 48px;
-			border-radius: 50%;
-			border: none;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-			cursor: pointer;
-			font-size: 20px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			transition: transform 0.2s;
-			pointer-events: all;
+		.modal-content {
+			background-color: var(--bg-modal);
+			color: var(--text-primary);
+			margin: 5% auto;
+			padding: 20px;
+			border: 1px solid #888;
+			width: 90%;
+			max-width: 600px;
+			border-radius: var(--radius-md);
 			position: relative;
-			z-index: 100;
 		}
 
-		.fab-menu-button:active {
-			transform: scale(0.9);
+		.modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: var(--spacing-lg);
 		}
 
-		.fab-menu-button.transaction {
-			background: #27ae60;
-			color: white;
+		.modal-header h2 {
+			margin: 0;
+			color: var(--text-primary);
 		}
 
-		.fab-menu-button.product {
-			background: #e74c3c;
-			color: white;
+		.close {
+			color: var(--text-secondary);
+			font-size: 28px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: color 0.3s;
 		}
 
-		.fab-menu-button.user {
-			background: #f39c12;
-			color: white;
+		.close:hover,
+		.close:focus {
+			color: var(--text-primary);
 		}
 
-		/* אנימציה לכפתור הראשי */
-		.fab {
-			transition: all 0.3s;
-		}
-		@media (min-width: 768px) {
-			.fab {
-				display: none !important;
-			}
-			.bottom-nav {
-				display: none !important;
-			}
-		}
-        @media (max-width:768px){
-            .container{padding:10px;}
-            .tabs{margin-bottom:15px;}
-            .tab{padding:10px 15px;font-size:14px;}
-            .tab-content{padding:15px;}
-            .stats{grid-template-columns:1fr 1fr;gap:10px;}
-            .stat-card{padding:15px;}
-            .stat-card .value{font-size:24px;}
-            table{font-size:14px;}
-            th,td{padding:8px 6px;}
-            .nav-brand{font-size:16px;}
-            .user-info{display:none;}
-            .form-row{grid-template-columns:1fr;}
-        }
-        
-        @media (max-width:480px){
-            .stats{grid-template-columns:1fr;}
-            .login-box{padding:30px 20px;}
-        }
-		
-		/* === Mobile Optimizations === */
-		@media (max-width: 768px) {
-			/* הסתר מידע משני במובייל */
-			.user-info {
-				display: none;
-			}
-			
-			/* הגדל אזורי לחיצה */
-			button, .btn-small {
-				min-height: 44px;
-				min-width: 44px;
-			}
-			
-			/* התאם טאבים למובייל */
-			.tabs {
-				overflow-x: auto;
-				-webkit-overflow-scrolling: touch;
-				scrollbar-width: none;
-			}
-			
-			.tabs::-webkit-scrollbar {
-				display: none;
-			}
-			
-			/* טבלאות עם גלילה */
-			.table-wrapper {
-				margin: 0 -15px;
-				padding: 0 15px;
-			}
-			
-			/* טפסים מותאמים */
-			input, select {
-				font-size: 16px; /* מונע זום אוטומטי */
-			}
-			
-			/* כרטיסי סטטיסטיקה */
-			.stats {
-				grid-template-columns: repeat(2, 1fr);
-			}
-		}
-
-		/* ביטול highlight בלחיצה */
-		* {
-			-webkit-tap-highlight-color: transparent;
-		}
-
-		/* תיקון גובה viewport ב-iOS */
-		.main-container {
-			min-height: 100vh;
-			min-height: -webkit-fill-available;
-		}
-		/* === Pull to Refresh === */
-		.pull-to-refresh {
-			position: fixed;
-			top: -60px;
-			left: 50%;
-			transform: translateX(-50%);
-			width: 40px;
-			height: 40px;
-			background: white;
-			border-radius: 50%;
-			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+		/* ========================================
+		   8. Alerts & Notifications
+		   ======================================== */
+		.alert {
+			padding: 15px;
+			margin-bottom: 20px;
+			border-radius: var(--radius-sm);
 			display: flex;
 			align-items: center;
-			justify-content: center;
-			transition: top 0.3s;
-			z-index: 90;
-			font-size: 20px;
+			gap: 10px;
 		}
 
-		.pull-to-refresh.show {
-			top: 70px;
+		.alert-warning {
+			background: var(--status-warning-bg);
+			color: var(--status-warning-text);
+			border: 1px solid var(--accent-warning);
 		}
 
-		.pull-to-refresh.refreshing {
-			animation: spin 1s linear infinite;
+		.alert-danger {
+			background: var(--status-danger-bg);
+			color: var(--status-danger-text);
+			border: 1px solid var(--accent-danger);
 		}
 
-		@keyframes spin {
-			from { transform: translateX(-50%) rotate(0deg); }
-			to { transform: translateX(-50%) rotate(360deg); }
-		}
-		/* === Smooth Animations === */
-		.tab-content {
-			animation: fadeIn 0.3s ease-in-out;
+		.alert-success {
+			background: var(--status-success-bg);
+			color: var(--status-success-text);
+			border: 1px solid var(--accent-success);
 		}
 
-		@keyframes fadeIn {
-			from { 
-				opacity: 0; 
-				transform: translateY(10px); 
-			}
-			to { 
-				opacity: 1; 
-				transform: translateY(0); 
-			}
-		}
-
-		/* Active states for mobile */
-		button:active, .btn:active {
-			transform: scale(0.98);
-		}
-
-		.stat-card:active {
-			transform: scale(0.98);
-			box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-		}
-		/* === Mobile Modal Optimizations === */
-		@media (max-width: 768px) {
-			/* התאמת מודאלים למובייל */
-			.modal-content {
-				width: 95% !important;
-				max-width: none !important;
-				margin: 10px auto !important;
-				max-height: 90vh;
-				overflow-y: auto;
-				padding: 15px !important;
-				border-radius: 12px;
-			}
-			
-			/* כותרת מודאל */
-			.modal-header {
-				position: sticky;
-				top: -15px;
-				background: white;
-				z-index: 10;
-				padding-bottom: 10px;
-				margin-bottom: 15px !important;
-				border-bottom: 1px solid #eee;
-			}
-			
-			.modal-header h2 {
-				font-size: 1.3rem !important;
-			}
-			
-			/* כפתור סגירה גדול יותר */
-			.close {
-				font-size: 32px !important;
-				width: 44px;
-				height: 44px;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				margin: -10px;
-			}
-			
-			/* שדות טופס במודאל */
-			.modal-content .form-row {
-				grid-template-columns: 1fr !important;
-				gap: 15px !important;
-			}
-			
-			.modal-content .form-group {
-				margin-bottom: 15px !important;
-			}
-			
-			.modal-content label {
-				font-size: 0.95rem !important;
-				margin-bottom: 8px !important;
-			}
-			
-			.modal-content input,
-			.modal-content select {
-				height: 48px !important;
-				font-size: 16px !important; /* מונע זום אוטומטי */
-				padding: 12px !important;
-			}
-			
-			/* כפתורים במודאל */
-			.modal-content button {
-				min-height: 48px !important;
-				font-size: 1.05rem !important;
-				margin-top: 10px !important;
-			}
-			
-			/* רשת הרשאות */
-			.permission-grid {
-				grid-template-columns: 1fr !important;
-				gap: 12px !important;
-			}
-			
-			.permission-item {
-				background: #f5f5f5;
-				padding: 12px;
-				border-radius: 8px;
-				display: flex;
-				align-items: center;
-				gap: 12px;
-			}
-			
-			.permission-item input[type="checkbox"] {
-				width: 24px !important;
-				height: 24px !important;
-				flex-shrink: 0;
-			}
-			
-			.permission-item label {
-				margin: 0 !important;
-				flex: 1;
-				font-size: 1rem !important;
-			}
-			
-			/* גלילה חלקה */
-			.modal-content {
-				-webkit-overflow-scrolling: touch;
-				scroll-behavior: smooth;
-			}
-			
-			/* מרווח תחתון לגלילה */
-			.modal-content form {
-				padding-bottom: 20px;
-			}
-		}
-
-		/* === טאב הוספת פריט === */
-		@media (max-width: 768px) {
-			#addItem .form-row {
-				display: flex;
-				flex-direction: column;
-				gap: 15px;
-			}
-			
-			/* כותרת "פריטים" */
-			#addItem h3 {
-				margin: 25px 0 15px;
-				font-size: 1.2rem;
-				color: #273c75;
-			}
-			
-			/* מיכל וריאנטים */
-			#variantsContainer {
-				background: #f8f9fa;
-				padding: 10px;
-				border-radius: 8px;
-				margin-bottom: 20px;
-			}
-			
-			/* כל וריאנט */
-			#variantsContainer .form-row {
-				background: white;
-				padding: 15px;
-				border-radius: 8px;
-				margin-bottom: 10px;
-				border: 1px solid #e0e0e0;
-			}
-			
-			/* כפתור הסרת וריאנט */
-			#variantsContainer .btn-danger {
-				width: 100%;
-				margin-top: 10px;
-			}
-			
-			/* כפתורי פעולה */
-			#addItem button[type="button"],
-			#addItem button[type="submit"] {
-				width: 100%;
-				margin: 5px 0;
-			}
-		}
-		/* === טבלאות רספונסיביות בדוחות === */
-		@media (max-width: 768px) {
-			/* מיכל הדוחות */
-			#reportContent {
-				margin: 0 -10px;
-				padding: 0 10px;
-			}
-			
-			/* כותרות דוחות */
-			#reportContent h3 {
-				font-size: 1.2rem;
-				margin-bottom: 15px;
-				text-align: center;
-			}
-			
-			/* טבלאות בדוחות - הפוך לכרטיסים */
-			#reportContent table {
-				display: block;
-				border: none !important;
-			}
-			
-			#reportContent thead {
-				display: none; /* הסתר כותרות */
-			}
-			
-			#reportContent tbody {
-				display: block;
-			}
-			
-			#reportContent tr {
-				display: block;
-				margin-bottom: 15px;
-				background: white;
-				border: 1px solid #ddd;
-				border-radius: 8px;
-				padding: 15px;
-				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			}
-			
-			#reportContent td {
-				display: block;
-				border: none !important;
-				padding: 8px 0 !important;
-				position: relative;
-				padding-right: 35% !important;
-			}
-			
-			/* הוסף תוויות לפני כל שדה */
-			#reportContent td:before {
-				content: attr(data-label);
-				position: absolute;
-				right: 0;
-				width: 30%;
-				font-weight: bold;
-				color: #666;
-			}
-			
-			/* סטטוסים וצבעים */
-			#reportContent tr[style*="background: #ffebee"] {
-				border-right: 4px solid #f44336;
-			}
-			
-			#reportContent tr[style*="background: #fff3e0"] {
-				border-right: 4px solid #ff9800;
-			}
-			
-			#reportContent tr[style*="background: #e8f5e9"] {
-				border-right: 4px solid #4caf50;
-			}
-			
-			/* כפתורי דוחות */
-			#reports .form-row {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 10px;
-			}
-			
-			#reports .btn-small {
-				width: 100%;
-				padding: 12px 10px;
-				font-size: 0.9rem;
-			}
-			
-			/* כפתורי ייצוא והדפסה */
-			#reportContent button {
-				width: 48%;
-				margin: 10px 1%;
-			}
-		}
-
-		/* === סגנון מיוחד לדוח מלאי === */
-		@media (max-width: 768px) {
-			/* checkbox להצגת וריאנטים */
-			#reportContent input[type="checkbox"] {
-				width: 20px;
-				height: 20px;
-				margin-left: 10px;
-			}
-			
-			/* טבלת מלאי עם וריאנטים */
-			#reportContent tr[style*="background: #ecf0f1"] {
-				background: #2c3e50 !important;
-				color: white;
-				font-weight: bold;
-				margin-bottom: 5px;
-				border-radius: 8px 8px 0 0;
-			}
-			
-			/* שורות וריאנטים */
-			#reportContent tr td[style*="padding-right: 20px"] {
-				background: #f8f9fa;
-				margin-top: 0;
-				border-radius: 0;
-				margin-bottom: 2px;
-			}
-		}
-		/* === טופס רישום תנועה במובייל === */
-		@media (max-width: 768px) {
-			/* שורות תנועה */
-			#multiTransactionRows .form-row {
-				background: #f5f5f5;
-				padding: 15px;
-				border-radius: 8px;
-				margin-bottom: 15px;
-				position: relative;
-			}
-			
-			#multiTransactionRows .form-group {
-				margin-bottom: 15px;
-			}
-			
-			/* כפתור הסרה */
-			#multiTransactionRows .btn-danger {
-				position: absolute;
-				top: 10px;
-				left: 10px;
-				width: auto;
-				padding: 5px 10px;
-				font-size: 0.9rem;
-			}
-			
-			/* כפתורי פעולה */
-			#transaction button[type="button"],
-			#transaction button[type="submit"] {
-				width: 100%;
-				margin: 5px 0;
-			}
-			
-			/* הודעת ליקוט */
-			#pickingListContainer {
-				margin: 20px 0;
-				padding: 15px;
-				background: #f8f9fa;
-				border-radius: 8px;
-			}
-			
-			#pickingListContainer .btn-main {
-				width: 100%;
-				margin: 5px 0;
-			}
-		}
-
-		/* === טבלת מלאי נוכחי במובייל === */
-		@media (max-width: 768px) {
-			/* חיפוש וסינון */
-			#inventory > div:first-child {
-				flex-direction: column;
-				gap: 10px;
-			}
-			
-			#inventorySearch {
-				width: 100% !important;
-			}
-			
-			#categoryFilter {
-				width: 100% !important;
-			}
-			
-			/* טבלת מלאי - תצוגת כרטיסים */
-			@media (max-width: 768px) {
-				/* הקטנת גודל הטבלה */
-				#inventoryTable {
-					font-size: 0.85rem;
-				}
-				
-				#inventoryTable th,
-				#inventoryTable td {
-					padding: 6px 4px !important;
-					font-size: 0.85rem;
-				}
-				
-				/* הסתרת עמודת הסטטוס הטקסטי */
-				#inventoryTable th:nth-child(7),
-				#inventoryTable td:nth-child(7) {
-					display: none;
-				}
-				
-				/* כפתורים קטנים יותר */
-				#inventoryTable .btn-small {
-					padding: 4px 8px;
-					font-size: 0.8rem;
-				}
-			}
-
-		/* === טבלת תנועות במובייל === */
-		@media (max-width: 768px) {
-			#movementsBody tr {
-				font-size: 0.9rem;
-			}
-			
-			#movementsBody td {
-				padding: 8px 4px !important;
-			}
-			
-			/* הסתר עמודות פחות חשובות */
-			#movementsTable th:nth-child(2), /* שעה */
-			#movementsTable td:nth-child(2),
-			#movementsTable th:nth-child(7), /* הערות */
-			#movementsTable td:nth-child(7) {
-				display: none;
-			}
-		}
-
-		/* === התראות במובייל === */
-		@media (max-width: 768px) {
-			.alert {
-				font-size: 0.9rem;
-				padding: 12px;
-				margin-bottom: 10px;
-			}
-			
-			#alerts {
-				margin: 0 -10px 20px -10px;
-				padding: 0 10px;
-			}
-		}
-
-		/* === חלון משתמשים במובייל === */
-		@media (max-width: 768px) {
-			.user-card {
-				flex-direction: column;
-				align-items: stretch;
-				padding: 15px;
-			}
-			
-			.user-details {
-				margin-bottom: 15px;
-			}
-			
-			.user-actions {
-				display: flex;
-				gap: 10px;
-			}
-			
-			.user-actions button {
-				flex: 1;
-			}
-		}
-
-		/* === שיפורי נגישות כלליים === */
-		@media (max-width: 768px) {
-			/* הגדל אזורי לחיצה */
-			a, button, input[type="submit"], input[type="button"] {
-				min-height: 44px;
-				min-width: 44px;
-			}
-			
-			/* מרווחים בין אלמנטים */
-			.form-group + .form-group {
-				margin-top: 15px;
-			}
-			
-			/* גודל טקסט קריא */
-			body {
-				font-size: 16px;
-			}
-			
-			/* מניעת גלילה אופקית */
-			body {
-				overflow-x: hidden;
-			}
-			
-			.container {
-				overflow-x: hidden;
-			}
-		}
-
-		/* === אנימציות חלקות === */
-		@media (max-width: 768px) {
-			* {
-				-webkit-transition: none !important;
-				transition: none !important;
-			}
-			
-			/* השאר רק אנימציות קריטיות */
-			.fab-menu,
-			.fab-menu-items,
-			.toast {
-				-webkit-transition: all 0.3s ease !important;
-				transition: all 0.3s ease !important;
-			}
-		}
-		@media (max-width: 768px) {
-			/* הקטנת גודל הטבלה */
-			#inventoryTable {
-				font-size: 0.75rem;
-			}
-			
-			#inventoryTable th,
-			#inventoryTable td {
-				padding: 6px 2px !important;
-				font-size: 0.75rem;
-			}
-			
-			/* הסתרת עמודות לא חיוניות במובייל */
-			#inventoryTable th:nth-child(3), /* קטגוריה */
-			#inventoryTable td:nth-child(3),
-			#inventoryTable th:nth-child(5), /* מינימום */
-			#inventoryTable td:nth-child(5) {
-				display: none;
-			}
-			
-			/* עמודת הסטטוס - וודא שהיא מוצגת */
-			#inventoryTable th:nth-child(7),
-			#inventoryTable td:nth-child(7) {
-				display: table-cell !important;
-				text-align: center;
-			}
-			
-			/* כותרות קטנות יותר */
-			#inventoryTable th {
-				font-size: 0.7rem !important;
-				font-weight: 600;
-			}
-			
-			/* עיצוב מיוחד לעמודות במובייל */
-			#inventoryTable th:nth-child(1),
-			#inventoryTable td:nth-child(1) {
-				width: 28px;
-			}
-			
-			#inventoryTable th:nth-child(4),
-			#inventoryTable td:nth-child(4) {
-				text-align: center;
-			}
-			
-			#inventoryTable th:nth-child(6),
-			#inventoryTable td:nth-child(6) {
-				font-size: 0.7rem;
-			}
-			
-			/* כפתורים קטנים יותר */
-			#inventoryTable .btn-small {
-				padding: 2px;
-				background: transparent;
-				border: none;
-			}
-		}
-		@media (max-width: 768px) {
-			/* כפתור הרחבה נראה אבל קומפקטי */
-			#inventoryTable .expand-btn {
-				width: 22px !important;
-				height: 22px !important;
-				padding: 0 !important;
-				font-size: 14px !important;
-				line-height: 22px !important;
-				border: 1px solid #ddd !important;
-				background: #fff !important;
-				border-radius: 3px !important;
-				font-weight: bold !important;
-				cursor: pointer;
-				color: #333 !important;
-				display: inline-flex !important;
-				align-items: center !important;
-				justify-content: center !important;
-			}
-			
-			/* עמודת כפתור ההרחבה */
-			#inventoryTable th:nth-child(1),
-			#inventoryTable td:nth-child(1) {
-				width: 26px !important;
-				padding: 2px !important;
-				text-align: center;
-			}
-		}
-		/* Collapsible Alerts Styles */
+		/* Alerts Wrapper */
 		.alerts-wrapper {
 			margin-bottom: 20px;
-			border: 1px solid #ddd;
-			border-radius: 8px;
-			background: #f9f9f9;
+			border: 1px solid var(--border-color);
+			border-radius: var(--radius-md);
+			background: var(--bg-secondary);
 			overflow: hidden;
 		}
 
@@ -1477,21 +742,21 @@
 			justify-content: space-between;
 			align-items: center;
 			padding: 12px 15px;
-			background: #f0f0f0;
-			border-bottom: 1px solid #ddd;
+			background: var(--table-row-even);
+			border-bottom: 1px solid var(--border-color);
 		}
 
 		.alerts-title {
 			font-size: 16px;
-			color: #333;
+			color: var(--text-primary);
 		}
 
 		.alerts-toggle-btn {
-			background: #3498db;
+			background: var(--accent-primary);
 			color: white;
 			border: none;
 			padding: 6px 15px;
-			border-radius: 4px;
+			border-radius: var(--radius-sm);
 			cursor: pointer;
 			font-size: 14px;
 			display: flex;
@@ -1501,12 +766,7 @@
 		}
 
 		.alerts-toggle-btn:hover {
-			background: #2980b9;
-		}
-
-		.toggle-icon {
-			font-size: 12px;
-			transition: transform 0.3s;
+			background: var(--accent-hover);
 		}
 
 		.alerts-list {
@@ -1524,45 +784,7 @@
 			border-bottom: none;
 		}
 
-		.alerts-hidden {
-			animation: slideDown 0.3s ease-out;
-		}
-
-		@keyframes slideDown {
-			from {
-				opacity: 0;
-				transform: translateY(-10px);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		/* Mobile optimization for alerts */
-		@media (max-width: 768px) {
-			.alerts-header {
-				flex-direction: column;
-				gap: 10px;
-				text-align: center;
-			}
-			
-			.alerts-toggle-btn {
-				width: 100%;
-				justify-content: center;
-			}
-			
-			.alerts-list {
-				max-height: 400px;
-			}
-		}
-		/* Alert badges */
-		.alerts-summary {
-			display: inline-flex;
-			gap: 8px;
-			margin-right: 10px;
-		}
-
+		/* Badges */
 		.badge {
 			padding: 2px 8px;
 			border-radius: 12px;
@@ -1571,76 +793,358 @@
 		}
 
 		.badge-danger {
-			background: #e74c3c;
+			background: var(--accent-danger);
 			color: white;
 		}
 
 		.badge-warning {
-			background: #f39c12;
+			background: var(--accent-warning);
 			color: white;
 		}
 
-		/* Smooth transitions */
-		.alerts-hidden {
-			transition: all 0.3s ease-out;
+		/* Toast */
+		.toast {
+			position: fixed;
+			bottom: 20px;
+			right: 20px;
+			background: #333;
+			color: white;
+			padding: 15px 25px;
+			border-radius: var(--radius-sm);
+			box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+			transform: translateY(100px);
+			opacity: 0;
+			transition: all 0.3s;
+			z-index: var(--z-toast);
 		}
 
-		/* Alert type indicators */
-		.alert-danger {
-			border-right: 4px solid #e74c3c;
+		.toast.show {
+			transform: translateY(0);
+			opacity: 1;
 		}
 
-		.alert-warning {
-			border-right: 4px solid #f39c12;
+		/* ========================================
+		   9. User Management
+		   ======================================== */
+		.user-list {
+			margin-top: 20px;
 		}
 
-		.alert-info {
-			border-right: 4px solid #3498db;
-		}
-		/* Dark Mode Support */
-		@media (prefers-color-scheme: dark) {
-			:root {
-				--bg-primary: #1a1a1a;
-				--bg-secondary: #2d2d2d;
-				--text-primary: #e0e0e0;
-				--accent: #4fc3f7;
-			}
-		}
-
-		/* Animations */
-		.card-enter {
-			animation: slideIn 0.3s ease-out;
+		.user-card {
+			background: var(--table-row-even);
+			padding: 15px;
+			border-radius: var(--radius-md);
+			margin-bottom: 10px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 10px;
 		}
 
-		@keyframes slideIn {
-			from {
-				opacity: 0;
-				transform: translateY(20px);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
+		.user-details {
+			flex: 1;
+			color: var(--text-primary);
 		}
 
-		/* Skeleton Loading Styles */
+		.user-actions {
+			display: flex;
+			gap: 10px;
+		}
+
+		.permission-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 15px;
+			margin-top: 20px;
+		}
+
+		.permission-item {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			background: var(--table-row-even);
+			padding: 10px;
+			border-radius: var(--radius-sm);
+		}
+
+		/* ========================================
+		   10. Utility Classes
+		   ======================================== */
+		.empty-state {
+			text-align: center;
+			padding: 60px 20px;
+			color: var(--text-secondary);
+			animation: fadeIn 0.5s ease-out;
+		}
+
+		.empty-state-icon {
+			font-size: 64px;
+			margin-bottom: 20px;
+			animation: bounce 2s ease-in-out infinite;
+		}
+
+		.loading {
+			display: none;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: rgba(0,0,0,0.8);
+			color: white;
+			padding: 20px;
+			border-radius: var(--radius-md);
+			z-index: var(--z-toast);
+		}
+
+		.error-message {
+			color: var(--accent-danger);
+			font-size: 14px;
+			margin-top: 5px;
+		}
+
+		/* ========================================
+		   11. Mobile Specific Components
+		   ======================================== */
+
+		/* Bottom Navigation */
+		.bottom-nav {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			background: var(--bg-secondary);
+			box-shadow: 0 -2px 10px var(--shadow-light);
+			display: none;
+			justify-content: space-around;
+			padding: 8px 0;
+			z-index: var(--z-nav);
+			border-top: 1px solid var(--border-color);
+		}
+
+		.bottom-nav-item {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 4px;
+			padding: 8px;
+			cursor: pointer;
+			background: transparent;
+			border: none;
+			color: var(--text-secondary);
+			font-family: inherit;
+		}
+
+		.bottom-nav-item.active {
+			color: var(--accent-primary);
+		}
+
+		.bottom-nav-item span:first-child {
+			font-size: 20px;
+		}
+
+		.bottom-nav-item span:last-child {
+			font-size: 11px;
+			font-weight: 500;
+		}
+
+		/* Floating Action Button */
+		.fab {
+			position: fixed;
+			bottom: 80px;
+			right: 20px;
+			width: 56px;
+			height: 56px;
+			border-radius: var(--radius-round);
+			background: var(--accent-primary);
+			color: white;
+			border: none;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			font-size: 24px;
+			cursor: pointer;
+			z-index: 99;
+			transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+			display: none;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.fab:active {
+			transform: scale(0.9);
+			box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+		}
+
+		.fab.menu-open {
+			transform: rotate(180deg) scale(1);
+			background: var(--accent-danger);
+		}
+
+		/* FAB Menu */
+		.fab-menu {
+			position: fixed;
+			bottom: 0;
+			right: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 98;
+			pointer-events: none;
+			transition: visibility 0.3s;
+		}
+
+		.fab-backdrop {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.3);
+			opacity: 0;
+			transition: opacity 0.3s ease;
+			pointer-events: none;
+		}
+
+		.fab-menu.show .fab-backdrop {
+			opacity: 1;
+			pointer-events: all;
+		}
+
+		.fab-menu-items {
+			position: absolute;
+			bottom: 150px;
+			right: 20px;
+			display: flex;
+			flex-direction: column-reverse;
+			gap: 12px;
+			transform: scale(0);
+			transform-origin: bottom right;
+			transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+			pointer-events: none;
+		}
+
+		.fab-menu.show .fab-menu-items {
+			transform: scale(1);
+			pointer-events: all;
+		}
+
+		.fab-menu-item {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 12px;
+			transform: translateX(20px);
+			opacity: 0;
+			transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+			pointer-events: all;
+			z-index: 99;
+		}
+
+		.fab-menu.show .fab-menu-item {
+			transform: translateX(0);
+			opacity: 1;
+		}
+
+		.fab-menu-item:nth-child(1) { transition-delay: 0.05s; }
+		.fab-menu-item:nth-child(2) { transition-delay: 0.1s; }
+		.fab-menu-item:nth-child(3) { transition-delay: 0.15s; }
+
+		.fab-menu-label {
+			background: var(--bg-secondary);
+			color: var(--text-primary);
+			padding: 8px 16px;
+			border-radius: 20px;
+			box-shadow: 0 2px 8px var(--shadow-medium);
+			font-size: 14px;
+			font-weight: 500;
+			white-space: nowrap;
+			pointer-events: all;
+			transition: all 0.3s;
+		}
+
+		.fab-menu-item:hover .fab-menu-label {
+			transform: translateX(-5px);
+			box-shadow: 0 3px 10px var(--shadow-medium);
+		}
+
+		.fab-menu-button {
+			width: 48px;
+			height: 48px;
+			border-radius: var(--radius-round);
+			border: none;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+			cursor: pointer;
+			font-size: 20px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.2s;
+			pointer-events: all;
+			position: relative;
+			z-index: 100;
+			overflow: hidden;
+		}
+
+		.fab-menu-button:active {
+			transform: scale(0.9);
+		}
+
+		.fab-menu-button:hover {
+			transform: scale(1.15);
+			box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+		}
+
+		.fab-menu-button.transaction {
+			background: var(--accent-success);
+			color: white;
+		}
+
+		.fab-menu-button.product {
+			background: var(--accent-danger);
+			color: white;
+		}
+
+		.fab-menu-button.user {
+			background: var(--accent-warning);
+			color: white;
+		}
+
+		/* Pull to Refresh */
+		.pull-to-refresh {
+			position: fixed;
+			top: -60px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 40px;
+			height: 40px;
+			background: var(--bg-secondary);
+			border-radius: var(--radius-round);
+			box-shadow: 0 2px 8px var(--shadow-medium);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: top 0.3s;
+			z-index: 90;
+			font-size: 20px;
+		}
+
+		.pull-to-refresh.show {
+			top: 70px;
+		}
+
+		.pull-to-refresh.refreshing {
+			animation: spin 1s linear infinite;
+		}
+
+		/* ========================================
+		   12. Loading & Skeletons
+		   ======================================== */
 		.skeleton-loader {
-			background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+			background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%);
 			background-size: 200% 100%;
 			animation: skeleton-loading 1.5s infinite;
-			border-radius: 4px;
+			border-radius: var(--radius-sm);
 		}
 
-		@keyframes skeleton-loading {
-			0% {
-				background-position: 200% 0;
-			}
-			100% {
-				background-position: -200% 0;
-			}
-		}
-
-		/* Skeleton Components */
 		.skeleton-table {
 			width: 100%;
 			margin-top: 20px;
@@ -1658,21 +1162,16 @@
 			flex: 1;
 		}
 
-		.skeleton-cell.small {
-			flex: 0.5;
-		}
-
-		.skeleton-cell.large {
-			flex: 2;
-		}
+		.skeleton-cell.small { flex: 0.5; }
+		.skeleton-cell.large { flex: 2; }
 
 		.skeleton-stat-card {
 			height: 100px;
 			margin-bottom: 15px;
 			padding: 20px;
-			background: white;
-			border-radius: 8px;
-			box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+			background: var(--bg-secondary);
+			border-radius: var(--radius-md);
+			box-shadow: 0 2px 5px var(--shadow-light);
 		}
 
 		.skeleton-stat-value {
@@ -1686,11 +1185,9 @@
 			width: 40%;
 		}
 
-		/* Fade in animation for content */
-		.fade-in {
-			animation: fadeIn 0.3s ease-in-out;
-		}
-
+		/* ========================================
+		   13. Animations
+		   ======================================== */
 		@keyframes fadeIn {
 			from {
 				opacity: 0;
@@ -1700,46 +1197,6 @@
 				opacity: 1;
 				transform: translateY(0);
 			}
-		}
-		/* Tab Transitions */
-		.tab {
-			position: relative;
-			overflow: hidden;
-			transition: all 0.3s ease;
-		}
-
-		.tab::after {
-			content: '';
-			position: absolute;
-			bottom: 0;
-			left: 50%;
-			width: 0;
-			height: 3px;
-			background: #3498db;
-			transition: all 0.3s ease;
-			transform: translateX(-50%);
-		}
-
-		.tab.active::after {
-			width: 100%;
-		}
-
-		.tab:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-		}
-
-		/* Tab Content Animations */
-		.tab-content {
-			opacity: 0;
-			transform: translateX(20px);
-			transition: all 0.3s ease;
-		}
-
-		.tab-content.active {
-			opacity: 1;
-			transform: translateX(0);
-			animation: slideIn 0.3s ease-out;
 		}
 
 		@keyframes slideIn {
@@ -1753,49 +1210,21 @@
 			}
 		}
 
-		/* Stat Cards Animations */
-		.stat-card {
-			transition: all 0.3s ease;
-			transform: translateY(0);
+		@keyframes bounce {
+			0%, 100% { transform: translateY(0); }
+			50% { transform: translateY(-20px); }
 		}
 
-		.stat-card:hover {
-			transform: translateY(-5px);
-			box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+		@keyframes spin {
+			from { transform: translateX(-50%) rotate(0deg); }
+			to { transform: translateX(-50%) rotate(360deg); }
 		}
 
-		.stat-card .value {
-			transition: all 0.3s ease;
+		@keyframes skeleton-loading {
+			0% { background-position: 200% 0; }
+			100% { background-position: -200% 0; }
 		}
 
-		.stat-card:hover .value {
-			transform: scale(1.05);
-			color: #3498db;
-		}
-
-		/* Stagger animation for cards */
-		.stats-enter {
-			animation: statsEnter 0.5s ease-out forwards;
-			opacity: 0;
-		}
-
-		.stats-enter:nth-child(1) { animation-delay: 0.1s; }
-		.stats-enter:nth-child(2) { animation-delay: 0.2s; }
-		.stats-enter:nth-child(3) { animation-delay: 0.3s; }
-		.stats-enter:nth-child(4) { animation-delay: 0.4s; }
-
-		@keyframes statsEnter {
-			from {
-				opacity: 0;
-				transform: translateY(20px);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		/* Number Counter Animation */
 		@keyframes countUp {
 			from {
 				opacity: 0;
@@ -1807,12 +1236,15 @@
 			}
 		}
 
-		.counter-animate {
-			animation: countUp 0.5s ease-out;
-		}
-		/* Table Row Animations */
-		.table-row-enter {
-			animation: tableRowEnter 0.3s ease-out;
+		@keyframes statsEnter {
+			from {
+				opacity: 0;
+				transform: translateY(20px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
 		}
 
 		@keyframes tableRowEnter {
@@ -1826,31 +1258,6 @@
 			}
 		}
 
-		/* Table hover effects */
-		#inventoryTable tr,
-		#movementsBody tr {
-			transition: all 0.2s ease;
-		}
-
-		#inventoryTable tr:hover,
-		#movementsBody tr:hover {
-			transform: translateX(5px);
-			box-shadow: -3px 0 10px rgba(0,0,0,0.1);
-		}
-
-		/* Expand/Collapse animation for variants */
-		.variant-row {
-			overflow: hidden;
-			transition: all 0.3s ease;
-		}
-
-		.variant-row.collapsed {
-			opacity: 0;
-			transform: translateY(-10px);
-			height: 0;
-		}
-
-		/* Delete row animation */
 		@keyframes rowDelete {
 			to {
 				opacity: 0;
@@ -1861,42 +1268,43 @@
 			}
 		}
 
+		@keyframes ripple-animation {
+			to {
+				transform: scale(4);
+				opacity: 0;
+			}
+		}
+
+		/* Animation Classes */
+		.fade-in {
+			animation: fadeIn 0.3s ease-in-out;
+		}
+
+		.table-row-enter {
+			animation: tableRowEnter 0.3s ease-out;
+		}
+
 		.row-delete {
 			animation: rowDelete 0.3s ease-out forwards;
 		}
 
-		/* Sort animation */
-		.sorting {
-			position: relative;
+		.counter-animate {
+			animation: countUp 0.5s ease-out;
 		}
 
-		.sorting::after {
-			content: '';
-			position: absolute;
-			right: -20px;
-			top: 50%;
-			transform: translateY(-50%);
-			width: 0;
-			height: 0;
-			border-left: 6px solid transparent;
-			border-right: 6px solid transparent;
-			border-bottom: 8px solid #3498db;
+		.stats-enter {
+			animation: statsEnter 0.5s ease-out forwards;
 			opacity: 0;
-			transition: all 0.3s ease;
 		}
 
-		.sorting.asc::after {
-			opacity: 1;
-			border-bottom-color: #3498db;
-		}
+		.stats-enter:nth-child(1) { animation-delay: 0.1s; }
+		.stats-enter:nth-child(2) { animation-delay: 0.2s; }
+		.stats-enter:nth-child(3) { animation-delay: 0.3s; }
+		.stats-enter:nth-child(4) { animation-delay: 0.4s; }
 
-		.sorting.desc::after {
-			opacity: 1;
-			transform: translateY(-50%) rotate(180deg);
-			border-bottom-color: #3498db;
-		}
-
-		/* Button ripple effect */
+		/* ========================================
+		   14. Ripple Effect
+		   ======================================== */
 		.btn-ripple {
 			position: relative;
 			overflow: hidden;
@@ -1920,109 +1328,6 @@
 			height: 300px;
 		}
 
-		/* Empty state animation */
-		.empty-state {
-			text-align: center;
-			padding: 60px 20px;
-			color: #95a5a6;
-			animation: fadeIn 0.5s ease-out;
-		}
-
-		.empty-state-icon {
-			font-size: 64px;
-			margin-bottom: 20px;
-			animation: bounce 2s ease-in-out infinite;
-		}
-
-		@keyframes bounce {
-			0%, 100% { transform: translateY(0); }
-			50% { transform: translateY(-20px); }
-		}
-		/* === FAB Menu Enhanced Animations === */
-		.fab {
-			transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-		}
-		.fab.menu-open {
-			transform: rotate(180deg) scale(1) !important;
-			background: #e74c3c !important;
-		}
-		
-
-		/* FAB Menu backdrop animation */
-		.fab-menu {
-			transition: visibility 0.3s;
-		}
-
-		.fab-backdrop {
-			transition: opacity 0.3s ease;
-		}
-
-		/* FAB Menu Items enhanced animation */
-		.fab-menu-items {
-			transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-		}
-
-		.fab-menu.show .fab-menu-items {
-			transform: scale(1);
-		}
-
-		/* Individual menu items animation */
-		.fab-menu-item {
-			transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-		}
-
-		.fab-menu.show .fab-menu-item {
-			transform: translateX(0);
-			opacity: 1;
-		}
-
-		/* Stagger delays for smooth cascade effect */
-		.fab-menu.show .fab-menu-item:nth-child(1) { 
-			transition-delay: 0.05s; 
-		}
-		.fab-menu.show .fab-menu-item:nth-child(2) { 
-			transition-delay: 0.1s; 
-		}
-		.fab-menu.show .fab-menu-item:nth-child(3) { 
-			transition-delay: 0.15s; 
-		}
-
-		/* Menu button hover effects */
-		.fab-menu-button {
-			transition: all 0.2s ease;
-		}
-
-		.fab-menu-button:hover {
-			transform: scale(1.15);
-			box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-		}
-
-		/* Label hover effect */
-		.fab-menu-item:hover .fab-menu-label {
-			transform: translateX(-5px);
-			box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-		}
-
-		/* Pulse animation for FAB button */
-		@keyframes fabPulse {
-			0% {
-				box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-			}
-			50% {
-				box-shadow: 0 4px 20px rgba(52, 152, 219, 0.6);
-			}
-			100% {
-				box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-			}
-		}
-		/* Ripple effect on FAB click */
-
-		/* Ripple effect for menu buttons */
-		.fab-menu-button {
-			position: relative;
-			overflow: hidden;
-		}
-
 		.ripple {
 			position: absolute;
 			border-radius: 50%;
@@ -2031,310 +1336,230 @@
 			animation: ripple-animation 0.6s ease-out;
 		}
 
-		@keyframes ripple-animation {
-			to {
-				transform: scale(4);
-				opacity: 0;
-			}
-		}
-		/* תיקון צבעי טקסט בסיסיים */
-		body {
-			background-color: var(--bg-primary) !important;
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון כותרות הטבלאות */
-		th {
-			background: var(--table-header-bg) !important;
-			color: var(--table-header-text) !important;
-		}
-
-		/* תיקון רקע הטבלאות */
-		table {
-			background: var(--bg-secondary) !important;
-		}
-
-		td {
-			background: inherit !important;
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון צבעי טקסט בטפסים */
-		input, select, textarea {
-			background: var(--bg-primary) !important;
-			color: var(--text-primary) !important;
-			border-color: var(--border-color) !important;
-		}
-
-		/* תיקון labels */
-		label {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון כותרות */
-		h1, h2, h3, h4, h5, h6 {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון מודאלים */
-		.modal-content {
-			background: var(--bg-modal) !important;
-			color: var(--text-primary) !important;
-		}
-
-		.modal-header h2 {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון טאבים */
-		.tab {
-			background: var(--bg-secondary) !important;
-			color: var(--text-primary) !important;
-			border-color: var(--border-color) !important;
-		}
-
-		/* תיקון כרטיסי סטטיסטיקה */
-		.stat-card {
-			background: var(--bg-secondary) !important;
-			color: var(--text-primary) !important;
-		}
-
-		.stat-card h3 {
-			color: var(--text-secondary) !important;
-		}
-
-		.stat-card .value {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון כרטיסי משתמשים */
-		.user-card {
-			background: var(--table-row-even) !important;
-			color: var(--text-primary) !important;
-		}
-
-		.user-details {
-			color: var(--text-primary) !important;
-		}
-
-		.user-details div {
-			color: var(--text-secondary) !important;
-		}
-
-		/* תיקון FAB menu */
-		.fab-menu-label {
-			background: var(--bg-secondary) !important;
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון כפתור ההרחבה */
-		.expand-btn {
-			background: var(--bg-primary) !important;
-			border-color: var(--border-color) !important;
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון alerts wrapper */
-		.alerts-wrapper {
-			background: var(--bg-secondary) !important;
-			border-color: var(--border-color) !important;
-		}
-
-		.alerts-header {
-			background: var(--table-row-even) !important;
-			border-bottom-color: var(--border-color) !important;
-		}
-
-		.alerts-title {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון empty state */
-		.empty-state {
-			color: var(--text-secondary) !important;
-		}
-
-		/* תיקון permission items */
-		.permission-item {
-			background: var(--table-row-even) !important;
-			color: var(--text-primary) !important;
-		}
-
-		.permission-item label {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון צבעי טקסט ב-inline styles */
-		[style*="color: #333"] {
-			color: var(--text-primary) !important;
-		}
-
-		[style*="color: #666"] {
-			color: var(--text-secondary) !important;
-		}
-
-		[style*="color:#666"] {
-			color: var(--text-secondary) !important;
-		}
-
-		[style*="color:#333"] {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון צבעי רקע */
-		[style*="background: white"],
-		[style*="background: #fff"],
-		[style*="background:#fff"],
-		[style*="background-color: white"],
-		[style*="background-color: #fff"] {
-			background: var(--bg-secondary) !important;
-		}
-
-		[style*="background: #f5f5f5"],
-		[style*="background:#f5f5f5"],
-		[style*="background-color: #f5f5f5"] {
-			background: var(--table-row-even) !important;
-		}
-
-		[style*="background: #f8f9fa"],
-		[style*="background:#f8f9fa"] {
-			background: var(--table-row-even) !important;
-		}
-
-		/* תיקון דוחות */
-		#reportContent table {
-			background: var(--bg-secondary) !important;
-		}
-
-		#reportContent th {
-			background: var(--table-header-bg) !important;
-			color: var(--table-header-text) !important;
-		}
-
-		#reportContent td {
-			color: var(--text-primary) !important;
-			border-color: var(--border-color) !important;
-		}
-
-		/* תיקון קלט ב-edit picking modal */
-		#editPickingListArea input[type="text"] {
-			background: var(--bg-primary) !important;
-			color: var(--text-primary) !important;
-			border-color: var(--border-color) !important;
-		}
-
-		/* תיקון footer */
-		footer {
-			color: var(--text-secondary) !important;
-		}
-
-		/* תיקון toast */
-		.toast {
-			background: var(--bg-nav) !important;
-			color: var(--text-nav) !important;
-		}
-
-		/* תיקון צבעי סטטוס - שמור על הצבעים המקוריים */
-		.low-stock,
-		.expiring-soon,
-		.expiring-warning,
-		.expiring-critical,
-		.alert-warning,
-		.alert-danger,
-		.alert-success {
-			/* אלה ישארו עם הצבעים המקוריים שלהם */
-		}
-
-		/* תיקון Bottom Navigation */
-		.bottom-nav {
-			background: var(--bg-secondary) !important;
-			border-top-color: var(--border-color) !important;
-		}
-
-		.bottom-nav-item {
-			color: var(--text-secondary) !important;
-		}
-
-		.bottom-nav-item.active {
-			color: var(--accent-primary) !important;
-		}
-
-		/* תיקון variant rows */
-		.variant-row {
-			background-color: var(--table-row-even) !important;
-		}
-
-		/* תיקון קישורים */
-		a {
-			color: var(--accent-primary) !important;
-		}
-
-		/* הסר transitions בזמן החלפת theme */
-		html.theme-transition,
-		html.theme-transition *,
-		html.theme-transition *:before,
-		html.theme-transition *:after {
+		/* ========================================
+		   15. Theme Transitions
+		   ======================================== */
+		.theme-transition * {
 			transition: none !important;
 		}
 
-		/* וודא שהכפתורים נשארים עם הצבעים שלהם */
-		button:not(.bottom-nav-item):not(.expand-btn):not(.alerts-toggle-btn) {
-			/* כפתורים רגילים ישמרו על הצבע הכחול שלהם */
+		/* Smooth theme transitions */
+		* {
+			transition: background-color 0.3s ease, 
+						color 0.3s ease, 
+						border-color 0.3s ease,
+						box-shadow 0.3s ease;
 		}
 
-		.btn-danger,
-		.logout-btn {
-			/* כפתורי מחיקה/יציאה ישמרו על הצבע האדום */
+		/* ========================================
+		   16. Responsive Design
+		   ======================================== */
+		@media (max-width: 768px) {
+			/* Layout Adjustments */
+			.container { 
+				padding: 10px; 
+			}
+			
+			.main-container {
+				padding-bottom: 70px;
+			}
+			
+			/* Navigation */
+			.nav-brand { 
+				font-size: 16px; 
+			}
+			
+			.user-info { 
+				display: none; 
+			}
+			
+			.bottom-nav {
+				display: flex;
+			}
+			
+			.fab {
+				display: flex;
+			}
+			
+			/* Tabs */
+			.tabs { 
+				margin-bottom: 15px; 
+			}
+			
+			.tab { 
+				padding: 10px 15px; 
+				font-size: 14px; 
+			}
+			
+			/* Content */
+			.tab-content { 
+				padding: 15px; 
+			}
+			
+			/* Stats Grid */
+			.stats { 
+				grid-template-columns: repeat(2, 1fr); 
+				gap: 10px; 
+			}
+			
+			.stat-card { 
+				padding: 15px; 
+			}
+			
+			.stat-card .value { 
+				font-size: 24px; 
+			}
+			
+			/* Forms */
+			.form-row { 
+				grid-template-columns: 1fr; 
+			}
+			
+			input, select {
+				font-size: 16px; /* Prevents zoom on iOS */
+			}
+			
+			/* Tables */
+			table { 
+				font-size: 14px; 
+			}
+			
+			th, td { 
+				padding: 8px 6px; 
+			}
+			
+			/* Modals */
+			.modal-content {
+				width: 95%;
+				margin: 10px auto;
+				max-height: 90vh;
+				overflow-y: auto;
+				padding: 15px;
+			}
+			
+			.modal-header {
+				position: sticky;
+				top: -15px;
+				background: var(--bg-modal);
+				z-index: 10;
+				padding-bottom: 10px;
+				margin-bottom: 15px;
+				border-bottom: 1px solid #eee;
+			}
+			
+			.modal-header h2 {
+				font-size: 1.3rem;
+			}
+			
+			.close {
+				font-size: 32px;
+				width: 44px;
+				height: 44px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: -10px;
+			}
+			
+			/* Alerts */
+			.alerts-header {
+				flex-direction: column;
+				gap: 10px;
+				text-align: center;
+			}
+			
+			.alerts-toggle-btn {
+				width: 100%;
+				justify-content: center;
+			}
+			
+			.alerts-list {
+				max-height: 400px;
+			}
+			
+			/* User Cards */
+			.user-card {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			
+			.user-details {
+				margin-bottom: 15px;
+			}
+			
+			.user-actions {
+				display: flex;
+				gap: 10px;
+			}
+			
+			.user-actions button {
+				flex: 1;
+			}
+			
+			/* Accessibility */
+			button, .btn {
+				min-height: 44px;
+				min-width: 44px;
+			}
+			
+			/* Theme Toggle */
+			#themeToggle {
+				padding: 6px 12px;
+				margin-left: 10px;
+				font-size: 14px;
+			}
 		}
 
-		.btn-edit {
-			/* כפתורי עריכה ישמרו על הצבע הכתום */
+		@media (max-width: 480px) {
+			.stats { 
+				grid-template-columns: 1fr; 
+			}
+			
+			.login-box { 
+				padding: 30px 20px; 
+			}
 		}
 
-		/* תיקון skeleton loaders */
-		.skeleton-loader {
-			background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%) !important;
+		/* Desktop specific - Hide mobile elements */
+		@media (min-width: 768px) {
+			.fab,
+			.bottom-nav {
+				display: none !important;
+			}
 		}
 
-		.skeleton-stat-card {
-			background: var(--bg-secondary) !important;
-		}
-
-		/* תיקון picking list container */
-		#pickingListContainer {
-			color: var(--text-primary) !important;
-		}
-
-		/* תיקון multi transaction rows */
-		#multiTransactionRows .form-row {
-			background: var(--table-row-even) !important;
-		}
-
-		/* תיקון variants container במובייל */
-		#variantsContainer > div {
-			background: var(--table-row-even) !important;
-		}
-
-		/* תיקון loading spinner */
-		#loadingSpinner {
-			background: var(--bg-primary) !important;
-		}
-
-		/* תיקון מיוחד לטבלת דוחות */
-		#reportContent tr[style*="background: #ecf0f1"] {
-			background: var(--table-header-bg) !important;
-			color: var(--table-header-text) !important;
-		}
-
-		#reportContent td[style*="background: #3498db"] {
-			background: var(--accent-primary) !important;
-			color: white !important;
-		}
-
-		/* תיקון pull to refresh */
-		.pull-to-refresh {
-			background: var(--bg-secondary) !important;
-			box-shadow: 0 2px 8px var(--shadow-medium) !important;
+		/* ========================================
+		   17. Print Styles
+		   ======================================== */
+		@media print {
+			body {
+				background: white;
+				color: black;
+			}
+			
+			.top-nav,
+			.tabs,
+			.bottom-nav,
+			.fab,
+			button,
+			.btn,
+			.modal {
+				display: none !important;
+			}
+			
+			.container {
+				max-width: 100%;
+				padding: 0;
+			}
+			
+			table {
+				border: 1px solid black;
+			}
+			
+			th, td {
+				border: 1px solid black;
+				padding: 5px;
+			}
 		}
     </style>
 </head>
@@ -7562,6 +6787,1380 @@
 			console.log('Service Worker code:', swContent);
 			console.log('צור קובץ בשם sw.js והעתק את הקוד מה-console');
 		}
+		// === שלב 1: פונקציות בסיס לניתוח צריכה ===
+
+		/**
+		 * מנתח את היסטוריית הצריכה של מוצר ספציפי
+		 * @param {string} productName - שם המוצר
+		 * @param {number} daysBack - כמה ימים אחורה לנתח (ברירת מחדל: 90)
+		 * @returns {Object} אובייקט עם נתוני ניתוח מפורטים
+		 */
+		function analyzeProductConsumption(productName, daysBack = 90) {
+			const endDate = new Date();
+			const startDate = new Date();
+			startDate.setDate(startDate.getDate() - daysBack);
+			
+			// סנן רק תנועות הוצאה של המוצר בטווח הזמן
+			const productMovements = movements.filter(m => 
+				m.product === productName && 
+				m.type === 'הוצאה' &&
+				m.date && 
+				parseHebrewDate(m.date) >= startDate
+			);
+			
+			if (productMovements.length === 0) {
+				return {
+					productName,
+					hasData: false,
+					message: 'אין נתוני צריכה בתקופה המבוקשת'
+				};
+			}
+			
+			// חשב סטטיסטיקות בסיסיות
+			const stats = calculateConsumptionStats(productMovements, startDate, endDate);
+			
+			// זהה דפוסי צריכה
+			const patterns = identifyConsumptionPatterns(productMovements);
+			
+			// חשב מגמות
+			const trends = calculateTrends(productMovements, startDate);
+			
+			return {
+				productName,
+				hasData: true,
+				period: {
+					start: startDate,
+					end: endDate,
+					days: daysBack
+				},
+				stats,
+				patterns,
+				trends,
+				movements: productMovements
+			};
+		}
+
+		/**
+		 * חישוב סטטיסטיקות צריכה בסיסיות
+		 */
+		function calculateConsumptionStats(movements, startDate, endDate) {
+			// חשב סך צריכה
+			const totalPacks = movements.reduce((sum, m) => sum + (m.quantityPacks || 0), 0);
+			const totalUnits = movements.reduce((sum, m) => sum + (m.quantityUnits || 0), 0);
+			
+			// חשב מספר ימים בפועל (לא כולל ימים ללא פעילות)
+			const activeDays = new Set(movements.map(m => m.date)).size;
+			const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+			
+			// חשב ממוצעים
+			const avgPacksPerDay = totalPacks / totalDays;
+			const avgPacksPerActiveDay = totalPacks / activeDays;
+			
+			// מצא מינימום ומקסימום יומי
+			const dailyConsumption = groupMovementsByDay(movements);
+			const dailyAmounts = Object.values(dailyConsumption).map(d => d.packs);
+			
+			return {
+				total: {
+					packs: totalPacks,
+					units: totalUnits
+				},
+				average: {
+					packsPerDay: parseFloat(avgPacksPerDay.toFixed(2)),
+					packsPerActiveDay: parseFloat(avgPacksPerActiveDay.toFixed(2))
+				},
+				days: {
+					total: totalDays,
+					active: activeDays,
+					activePercentage: parseFloat(((activeDays / totalDays) * 100).toFixed(1))
+				},
+				range: {
+					min: Math.min(...dailyAmounts, 0),
+					max: Math.max(...dailyAmounts, 0),
+					variance: calculateVariance(dailyAmounts)
+				}
+			};
+		}
+
+		/**
+		 * זיהוי דפוסי צריכה (ימי שבוע, סופי שבוע, חגים)
+		 */
+		function identifyConsumptionPatterns(movements) {
+			const patterns = {
+				byDayOfWeek: {
+					0: { name: 'ראשון', total: 0, count: 0 },
+					1: { name: 'שני', total: 0, count: 0 },
+					2: { name: 'שלישי', total: 0, count: 0 },
+					3: { name: 'רביעי', total: 0, count: 0 },
+					4: { name: 'חמישי', total: 0, count: 0 },
+					5: { name: 'שישי', total: 0, count: 0 },
+					6: { name: 'שבת', total: 0, count: 0 }
+				},
+				byTimeOfDay: {
+					morning: { range: '06:00-12:00', total: 0, count: 0 },
+					afternoon: { range: '12:00-18:00', total: 0, count: 0 },
+					evening: { range: '18:00-23:00', total: 0, count: 0 },
+					night: { range: '23:00-06:00', total: 0, count: 0 }
+				},
+				weekendVsWeekday: {
+					weekend: { total: 0, days: 0 },
+					weekday: { total: 0, days: 0 }
+				}
+			};
+			
+			// קבץ תנועות לפי יום
+			const dailyData = groupMovementsByDay(movements);
+			
+			// נתח כל יום
+			Object.entries(dailyData).forEach(([dateStr, dayData]) => {
+				const date = parseHebrewDate(dateStr);
+				if (!date) return;
+				
+				const dayOfWeek = date.getDay();
+				const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+				
+				// עדכן סטטיסטיקות יום בשבוע
+				patterns.byDayOfWeek[dayOfWeek].total += dayData.packs;
+				patterns.byDayOfWeek[dayOfWeek].count += 1;
+				
+				// עדכן סוף שבוע מול אמצע שבוע
+				if (isWeekend) {
+					patterns.weekendVsWeekday.weekend.total += dayData.packs;
+					patterns.weekendVsWeekday.weekend.days += 1;
+				} else {
+					patterns.weekendVsWeekday.weekday.total += dayData.packs;
+					patterns.weekendVsWeekday.weekday.days += 1;
+				}
+			});
+			
+			// חשב ממוצעים לכל דפוס
+			Object.values(patterns.byDayOfWeek).forEach(day => {
+				day.average = day.count > 0 ? parseFloat((day.total / day.count).toFixed(2)) : 0;
+			});
+			
+			patterns.weekendVsWeekday.weekend.average = 
+				patterns.weekendVsWeekday.weekend.days > 0 
+				? parseFloat((patterns.weekendVsWeekday.weekend.total / patterns.weekendVsWeekday.weekend.days).toFixed(2))
+				: 0;
+				
+			patterns.weekendVsWeekday.weekday.average = 
+				patterns.weekendVsWeekday.weekday.days > 0
+				? parseFloat((patterns.weekendVsWeekday.weekday.total / patterns.weekendVsWeekday.weekday.days).toFixed(2))
+				: 0;
+			
+			return patterns;
+		}
+
+		/**
+		 * חישוב מגמות (עלייה/ירידה בצריכה)
+		 */
+		function calculateTrends(movements, startDate) {
+			const weeklyData = groupMovementsByWeek(movements, startDate);
+			
+			if (weeklyData.length < 2) {
+				return {
+					hasEnoughData: false,
+					message: 'אין מספיק נתונים לחישוב מגמה'
+				};
+			}
+			
+			// חשב ממוצע נע
+			const movingAverage = calculateMovingAverage(weeklyData.map(w => w.total), 3);
+			
+			// חשב שיפוע המגמה
+			const trendSlope = calculateTrendSlope(weeklyData.map(w => w.total));
+			
+			// זהה מגמה
+			let trendDirection;
+			if (Math.abs(trendSlope) < 0.1) {
+				trendDirection = 'stable';
+			} else if (trendSlope > 0) {
+				trendDirection = 'increasing';
+			} else {
+				trendDirection = 'decreasing';
+			}
+			
+			// חשב אחוז שינוי בין תחילת לסוף התקופה
+			const firstWeekAvg = weeklyData.slice(0, 2).reduce((sum, w) => sum + w.total, 0) / 2;
+			const lastWeekAvg = weeklyData.slice(-2).reduce((sum, w) => sum + w.total, 0) / 2;
+			const changePercentage = ((lastWeekAvg - firstWeekAvg) / firstWeekAvg) * 100;
+			
+			return {
+				hasEnoughData: true,
+				direction: trendDirection,
+				slope: parseFloat(trendSlope.toFixed(3)),
+				changePercentage: parseFloat(changePercentage.toFixed(1)),
+				weeklyData,
+				movingAverage
+			};
+		}
+
+		// === פונקציות עזר ===
+
+		/**
+		 * קיבוץ תנועות לפי יום
+		 */
+		function groupMovementsByDay(movements) {
+			const grouped = {};
+			
+			movements.forEach(m => {
+				if (!m.date) return;
+				
+				if (!grouped[m.date]) {
+					grouped[m.date] = {
+						date: m.date,
+						packs: 0,
+						units: 0,
+						count: 0
+					};
+				}
+				
+				grouped[m.date].packs += m.quantityPacks || 0;
+				grouped[m.date].units += m.quantityUnits || 0;
+				grouped[m.date].count += 1;
+			});
+			
+			return grouped;
+		}
+
+		/**
+		 * קיבוץ תנועות לפי שבוע
+		 */
+		function groupMovementsByWeek(movements, startDate) {
+			const weeks = [];
+			const weekMap = new Map();
+			
+			movements.forEach(m => {
+				const date = parseHebrewDate(m.date);
+				if (!date) return;
+				
+				const weekNumber = getWeekNumber(date, startDate);
+				
+				if (!weekMap.has(weekNumber)) {
+					weekMap.set(weekNumber, {
+						week: weekNumber,
+						total: 0,
+						count: 0,
+						movements: []
+					});
+				}
+				
+				const week = weekMap.get(weekNumber);
+				week.total += m.quantityPacks || 0;
+				week.count += 1;
+				week.movements.push(m);
+			});
+			
+			// המר למערך ומיין
+			return Array.from(weekMap.values()).sort((a, b) => a.week - b.week);
+		}
+
+		/**
+		 * חישוב מספר שבוע יחסי
+		 */
+		function getWeekNumber(date, startDate) {
+			const diffTime = Math.abs(date - startDate);
+			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+			return Math.floor(diffDays / 7);
+		}
+
+		/**
+		 * חישוב שונות
+		 */
+		function calculateVariance(values) {
+			if (values.length === 0) return 0;
+			
+			const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+			const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+			const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+			
+			return parseFloat(Math.sqrt(variance).toFixed(2));
+		}
+
+		/**
+		 * חישוב ממוצע נע
+		 */
+		function calculateMovingAverage(values, period) {
+			const result = [];
+			
+			for (let i = 0; i < values.length; i++) {
+				const start = Math.max(0, i - period + 1);
+				const subset = values.slice(start, i + 1);
+				const avg = subset.reduce((sum, val) => sum + val, 0) / subset.length;
+				result.push(parseFloat(avg.toFixed(2)));
+			}
+			
+			return result;
+		}
+
+		/**
+		 * חישוב שיפוע מגמה (linear regression)
+		 */
+		function calculateTrendSlope(values) {
+			const n = values.length;
+			if (n < 2) return 0;
+			
+			let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+			
+			for (let i = 0; i < n; i++) {
+				sumX += i;
+				sumY += values[i];
+				sumXY += i * values[i];
+				sumX2 += i * i;
+			}
+			
+			const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+			return slope;
+		}
+
+		// === פונקציה לבדיקה ===
+		function testConsumptionAnalysis() {
+			// בדוק שהנתונים טעונים
+			if (typeof movements === 'undefined' || !Array.isArray(movements)) {
+				console.error('משתנה movements לא נמצא. וודא שאתה מחובר למערכת ושהנתונים נטענו.');
+				console.log('נסה להריץ קודם: await loadAllData()');
+				return;
+			}
+			
+			if (typeof inventory === 'undefined' || !Array.isArray(inventory)) {
+				console.error('משתנה inventory לא נמצא. וודא שאתה מחובר למערכת.');
+				return;
+			}
+			
+			console.log(`נמצאו ${movements.length} תנועות ו-${inventory.length} מוצרים`);
+			
+			// בחר מוצר פופולרי לבדיקה
+			const popularProducts = inventory
+				.filter(item => {
+					const itemMovements = movements.filter(m => 
+						m.product === item.name && m.type === 'הוצאה'
+					);
+					return itemMovements.length > 5; // הורדתי ל-5 תנועות לפחות
+				})
+				.map(item => ({
+					name: item.name,
+					movementCount: movements.filter(m => 
+						m.product === item.name && m.type === 'הוצאה'
+					).length
+				}))
+				.sort((a, b) => b.movementCount - a.movementCount);
+			
+			if (popularProducts.length === 0) {
+				console.log('אין מוצרים עם מספיק תנועות הוצאה.');
+				console.log('מוצרים עם תנועות הוצאה:');
+				inventory.forEach(item => {
+					const count = movements.filter(m => 
+						m.product === item.name && m.type === 'הוצאה'
+					).length;
+					if (count > 0) {
+						console.log(`- ${item.name}: ${count} תנועות`);
+					}
+				});
+				return;
+			}
+			
+			console.log('מוצרים פופולריים:');
+			popularProducts.slice(0, 5).forEach(p => {
+				console.log(`- ${p.name}: ${p.movementCount} תנועות`);
+			});
+			
+			const testProduct = popularProducts[0].name;
+			console.log(`\nמנתח צריכה עבור: ${testProduct}`);
+			
+			const analysis = analyzeProductConsumption(testProduct, 90);
+			
+			// הצג תוצאות בצורה ידידותית
+			if (analysis.hasData) {
+				console.log('\n📊 סיכום ניתוח:');
+				console.log(`תקופה: ${analysis.period.days} ימים`);
+				console.log(`סה"כ נצרך: ${analysis.stats.total.packs} חבילות`);
+				console.log(`ממוצע יומי: ${analysis.stats.average.packsPerDay} חבילות`);
+				console.log(`ימים פעילים: ${analysis.stats.days.active} מתוך ${analysis.stats.days.total} (${analysis.stats.days.activePercentage}%)`);
+				
+				if (analysis.patterns) {
+					console.log('\n📅 דפוסי צריכה לפי יום:');
+					Object.values(analysis.patterns.byDayOfWeek).forEach(day => {
+						if (day.count > 0) {
+							console.log(`${day.name}: ${day.average} חבילות בממוצע`);
+						}
+					});
+					
+					console.log('\n🎯 השוואת סוף שבוע:');
+					console.log(`אמצע שבוע: ${analysis.patterns.weekendVsWeekday.weekday.average} חבילות בממוצע`);
+					console.log(`סוף שבוע: ${analysis.patterns.weekendVsWeekday.weekend.average} חבילות בממוצע`);
+				}
+				
+				if (analysis.trends && analysis.trends.hasEnoughData) {
+					console.log('\n📈 מגמות:');
+					console.log(`כיוון: ${analysis.trends.direction === 'increasing' ? '⬆️ עלייה' : 
+										analysis.trends.direction === 'decreasing' ? '⬇️ ירידה' : '➡️ יציב'}`);
+					console.log(`שינוי: ${analysis.trends.changePercentage}%`);
+				}
+			}
+			
+			return analysis;
+		}
+
+		// פונקציה נוספת לבדיקה מהירה
+		function quickAnalyzeProduct(productName) {
+			if (!productName) {
+				console.log('שימוש: quickAnalyzeProduct("שם המוצר")');
+				return;
+			}
+			
+			const analysis = analyzeProductConsumption(productName, 30);
+			if (!analysis.hasData) {
+				console.log(`לא נמצאו נתוני צריכה עבור "${productName}"`);
+				return;
+			}
+			
+			console.log(`ניתוח מהיר ל-${productName}:`);
+			console.log(`- צריכה יומית ממוצעת: ${analysis.stats.average.packsPerDay} חבילות`);
+			console.log(`- סה"כ ב-30 ימים: ${analysis.stats.total.packs} חבילות`);
+			
+			return analysis;
+		}
+		// === שלב 2: מודל חיזוי צריכה חכם ===
+
+		/**
+		 * מנוע החיזוי הראשי
+		 * @param {string} productName - שם המוצר
+		 * @param {number} daysToPredict - כמה ימים קדימה לחזות (ברירת מחדל: 30)
+		 * @param {Object} options - אפשרויות נוספות לחיזוי
+		 * @returns {Object} תחזית מפורטת
+		 */
+		function predictConsumption(productName, daysToPredict = 30, options = {}) {
+			// ברירות מחדל לאפשרויות
+			const settings = {
+				analysisHistory: 90,        // כמה ימים אחורה לנתח
+				confidenceLevel: 0.95,      // רמת הביטחון לחיזוי
+				includeSeasonality: true,   // כלול עונתיות
+				includeEvents: true,        // כלול אירועים מיוחדים
+				safetyFactor: 1.2,         // מקדם ביטחון (20% נוסף)
+				...options
+			};
+			
+			// שלב 1: נתח היסטוריה
+			const analysis = analyzeProductConsumption(productName, settings.analysisHistory);
+			
+			if (!analysis.hasData) {
+				return {
+					success: false,
+					message: 'אין מספיק נתונים היסטוריים לחיזוי',
+					productName
+				};
+			}
+			
+			// שלב 2: זהה גורמים משפיעים
+			const factors = identifyInfluencingFactors(analysis, productName);
+			
+			// שלב 3: בנה מודל חיזוי
+			const model = buildPredictionModel(analysis, factors, settings);
+			
+			// שלב 4: חשב תחזית
+			const forecast = calculateForecast(model, daysToPredict, settings);
+			
+			// שלב 5: הוסף המלצות
+			const recommendations = generateRecommendations(forecast, analysis, productName);
+			
+			return {
+				success: true,
+				productName,
+				analysis: {
+					period: analysis.period,
+					averageDaily: analysis.stats.average.packsPerDay,
+					trend: analysis.trends
+				},
+				factors,
+				forecast,
+				recommendations,
+				confidence: calculateConfidenceScore(analysis, model)
+			};
+		}
+
+		/**
+		 * זיהוי גורמים משפיעים על הצריכה
+		 */
+		function identifyInfluencingFactors(analysis, productName) {
+			const factors = {
+				dayOfWeek: {},
+				seasonality: {},
+				events: [],
+				correlation: {}
+			};
+			
+			// 1. השפעת יום בשבוע
+			if (analysis.patterns && analysis.patterns.byDayOfWeek) {
+				const avgDaily = analysis.stats.average.packsPerDay;
+				
+				Object.entries(analysis.patterns.byDayOfWeek).forEach(([day, data]) => {
+					if (data.count > 0) {
+						factors.dayOfWeek[day] = {
+							name: data.name,
+							multiplier: data.average / avgDaily,
+							confidence: Math.min(data.count / 4, 1) // צריך לפחות 4 שבועות
+						};
+					}
+				});
+			}
+			
+			// 2. זיהוי עונתיות (קיץ/חורף)
+			factors.seasonality = detectSeasonality(analysis.movements);
+			
+			// 3. זיהוי אירועים מיוחדים (חגים, חופשות)
+			factors.events = detectSpecialEvents(analysis.movements);
+			
+			// 4. מתאם עם מוצרים אחרים (למשל: פופקורן עם משקאות)
+			factors.correlation = findProductCorrelations(productName, analysis.movements);
+			
+			return factors;
+		}
+
+		/**
+		 * בניית מודל החיזוי
+		 */
+		function buildPredictionModel(analysis, factors, settings) {
+			const model = {
+				baseline: analysis.stats.average.packsPerDay,
+				trend: {
+					slope: analysis.trends.slope || 0,
+					confidence: analysis.trends.hasEnoughData ? 0.8 : 0.3
+				},
+				seasonality: factors.seasonality,
+				dayOfWeekMultipliers: factors.dayOfWeek,
+				variance: analysis.stats.range.variance,
+				method: determinebestMethod(analysis)
+			};
+			
+			// התאם את המודל בהתאם לכמות ואיכות הנתונים
+			if (analysis.stats.days.active < 30) {
+				model.method = 'simple_average';
+				model.confidence = 0.5;
+			} else if (analysis.stats.days.active < 60) {
+				model.method = 'weighted_average';
+				model.confidence = 0.7;
+			} else {
+				model.method = 'advanced_prediction';
+				model.confidence = 0.9;
+			}
+			
+			return model;
+		}
+
+		/**
+		 * חישוב התחזית
+		 */
+		function calculateForecast(model, daysToPredict, settings) {
+			const forecast = {
+				daily: [],
+				weekly: [],
+				total: 0,
+				range: { min: 0, max: 0 }
+			};
+			
+			const today = new Date();
+			let runningTotal = 0;
+			let weeklyTotal = 0;
+			let currentWeek = [];
+			
+			for (let i = 0; i < daysToPredict; i++) {
+				const forecastDate = new Date(today);
+				forecastDate.setDate(today.getDate() + i);
+				
+				// חישוב צריכה צפויה ליום
+				let predictedAmount = model.baseline;
+				
+				// החל מכפיל יום בשבוע
+				const dayOfWeek = forecastDate.getDay();
+				if (model.dayOfWeekMultipliers[dayOfWeek]) {
+					predictedAmount *= model.dayOfWeekMultipliers[dayOfWeek].multiplier;
+				}
+				
+				// החל מגמה
+				if (model.trend.slope !== 0) {
+					predictedAmount += model.trend.slope * (i / 7); // שינוי שבועי
+				}
+				
+				// החל עונתיות
+				const month = forecastDate.getMonth();
+				if (model.seasonality[month]) {
+					predictedAmount *= model.seasonality[month].multiplier;
+				}
+				
+				// הוסף שונות אקראית (מבוססת על השונות ההיסטורית)
+				if (model.variance > 0) {
+					const randomFactor = 1 + (Math.random() - 0.5) * (model.variance / model.baseline);
+					predictedAmount *= randomFactor;
+				}
+				
+				// החל מקדם ביטחון
+				predictedAmount *= settings.safetyFactor;
+				
+				// עיגול למספר שלם
+				predictedAmount = Math.round(predictedAmount);
+				
+				const dailyForecast = {
+					date: forecastDate.toISOString().split('T')[0],
+					dayName: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][dayOfWeek],
+					predicted: predictedAmount,
+					confidence: model.confidence
+				};
+				
+				forecast.daily.push(dailyForecast);
+				runningTotal += predictedAmount;
+				weeklyTotal += predictedAmount;
+				currentWeek.push(dailyForecast);
+				
+				// סיכום שבועי
+				if ((i + 1) % 7 === 0 || i === daysToPredict - 1) {
+					forecast.weekly.push({
+						weekNumber: Math.floor(i / 7) + 1,
+						total: weeklyTotal,
+						average: weeklyTotal / currentWeek.length,
+						days: [...currentWeek]
+					});
+					weeklyTotal = 0;
+					currentWeek = [];
+				}
+			}
+			
+			forecast.total = runningTotal;
+			forecast.range.min = Math.round(runningTotal * 0.8); // 20% פחות
+			forecast.range.max = Math.round(runningTotal * 1.2); // 20% יותר
+			
+			return forecast;
+		}
+
+		/**
+		 * יצירת המלצות חכמות
+		 */
+		function generateRecommendations(forecast, analysis, productName) {
+			const recommendations = [];
+			const product = inventory.find(p => p.name === productName);
+			
+			if (!product) return recommendations;
+			
+			// 1. המלצת כמות להזמנה
+			const currentStock = totalPacksAndUnits(product)[0];
+			const daysOfStock = currentStock / analysis.stats.average.packsPerDay;
+			
+			if (daysOfStock < 7) {
+				recommendations.push({
+					type: 'urgent',
+					title: 'דרושה הזמנה דחופה!',
+					description: `נותר מלאי ל-${Math.floor(daysOfStock)} ימים בלבד`,
+					suggestedOrder: Math.ceil(forecast.weekly[0].total * 4) // מלאי ל-4 שבועות
+				});
+			} else if (daysOfStock < 14) {
+				recommendations.push({
+					type: 'warning',
+					title: 'מומלץ להזמין בקרוב',
+					description: `המלאי יספיק לכ-${Math.floor(daysOfStock)} ימים`,
+					suggestedOrder: Math.ceil(forecast.total)
+				});
+			}
+			
+			// 2. התראה על מגמות
+			if (analysis.trends.direction === 'increasing' && analysis.trends.changePercentage > 20) {
+				recommendations.push({
+					type: 'trend',
+					title: 'מגמת עלייה בצריכה',
+					description: `הצריכה עלתה ב-${analysis.trends.changePercentage}% - שקול להגדיל מלאי מינימום`
+				});
+			}
+			
+			// 3. המלצות לימים ספציפיים
+			const highDemandDays = forecast.daily
+				.filter(day => day.predicted > analysis.stats.average.packsPerDay * 1.5)
+				.slice(0, 3);
+			
+			if (highDemandDays.length > 0) {
+				recommendations.push({
+					type: 'planning',
+					title: 'ימים עם צריכה גבוהה צפויה',
+					description: highDemandDays.map(d => `${d.dayName} ${d.date}: ${d.predicted} חבילות`).join(', ')
+				});
+			}
+			
+			// 4. המלצת אופטימיזציה
+			if (analysis.stats.range.variance > analysis.stats.average.packsPerDay * 0.5) {
+				recommendations.push({
+					type: 'optimization',
+					title: 'שונות גבוהה בצריכה',
+					description: 'שקול לבדוק סיבות לתנודות החריגות ולשפר את דיוק התחזית'
+				});
+			}
+			
+			return recommendations;
+		}
+
+		// === פונקציות עזר נוספות ===
+
+		/**
+		 * זיהוי עונתיות
+		 */
+		function detectSeasonality(movements) {
+			const monthlyData = {};
+			
+			// אתחל חודשים
+			for (let i = 0; i < 12; i++) {
+				monthlyData[i] = { total: 0, days: 0 };
+			}
+			
+			// אסוף נתונים לפי חודש
+			const dailyGroups = groupMovementsByDay(movements);
+			
+			Object.entries(dailyGroups).forEach(([dateStr, data]) => {
+				const date = parseHebrewDate(dateStr);
+				if (date) {
+					const month = date.getMonth();
+					monthlyData[month].total += data.packs;
+					monthlyData[month].days += 1;
+				}
+			});
+			
+			// חשב ממוצעים ומכפילים
+			let totalAverage = 0;
+			let monthsWithData = 0;
+			
+			Object.values(monthlyData).forEach(data => {
+				if (data.days > 0) {
+					data.average = data.total / data.days;
+					totalAverage += data.average;
+					monthsWithData++;
+				}
+			});
+			
+			if (monthsWithData > 0) {
+				totalAverage /= monthsWithData;
+			}
+			
+			// חשב מכפילים
+			const seasonality = {};
+			Object.entries(monthlyData).forEach(([month, data]) => {
+				if (data.days > 0) {
+					seasonality[month] = {
+						multiplier: totalAverage > 0 ? data.average / totalAverage : 1,
+						confidence: Math.min(data.days / 10, 1)
+					};
+				}
+			});
+			
+			return seasonality;
+		}
+
+		/**
+		 * זיהוי אירועים מיוחדים
+		 */
+		function detectSpecialEvents(movements) {
+			// כאן אפשר להוסיף לוגיקה לזיהוי חגים, חופשות, אירועים מיוחדים
+			// לדוגמה: בדיקה של תאריכים עבריים לחגים
+			const events = [];
+			
+			// דוגמה: זיהוי ימים עם צריכה חריגה
+			const dailyData = groupMovementsByDay(movements);
+			const avgDaily = Object.values(dailyData).reduce((sum, d) => sum + d.packs, 0) / Object.keys(dailyData).length;
+			
+			Object.entries(dailyData).forEach(([date, data]) => {
+				if (data.packs > avgDaily * 2) {
+					events.push({
+						date: date,
+						type: 'high_demand',
+						multiplier: data.packs / avgDaily
+					});
+				}
+			});
+			
+			return events;
+		}
+
+		/**
+		 * מציאת מתאמים בין מוצרים
+		 */
+		function findProductCorrelations(productName, productMovements) {
+			// פונקציה פשוטה למציאת מוצרים שנצרכים יחד
+			const correlations = {};
+			
+			// כאן אפשר להוסיף לוגיקה מורכבת יותר
+			// לדוגמה: אם פופקורן - בדוק מתאם עם משקאות
+			
+			return correlations;
+		}
+
+		/**
+		 * קביעת שיטת החיזוי הטובה ביותר
+		 */
+		function determinebestMethod(analysis) {
+			if (analysis.stats.days.active < 30) {
+				return 'simple_average';
+			} else if (analysis.stats.range.variance > analysis.stats.average.packsPerDay) {
+				return 'adaptive_smoothing';
+			} else if (analysis.trends.hasEnoughData && Math.abs(analysis.trends.slope) > 0.1) {
+				return 'trend_projection';
+			} else {
+				return 'weighted_moving_average';
+			}
+		}
+
+		/**
+		 * חישוב ציון אמינות
+		 */
+		function calculateConfidenceScore(analysis, model) {
+			let score = 0.5; // בסיס
+			
+			// יותר נתונים = יותר אמינות
+			if (analysis.stats.days.active > 60) score += 0.2;
+			else if (analysis.stats.days.active > 30) score += 0.1;
+			
+			// שונות נמוכה = יותר אמינות
+			if (analysis.stats.range.variance < analysis.stats.average.packsPerDay * 0.3) score += 0.1;
+			
+			// מגמה ברורה = יותר אמינות
+			if (analysis.trends.hasEnoughData && Math.abs(analysis.trends.slope) < 0.5) score += 0.1;
+			
+			// עגל ל-2 ספרות
+			return Math.min(parseFloat(score.toFixed(2)), 0.95);
+		}
+
+		// === פונקציה לבדיקת החיזוי ===
+		function testPrediction(productName = null) {
+			// בדיקת זמינות נתונים
+			if (typeof movements === 'undefined' || !Array.isArray(movements)) {
+				console.error('נתוני movements לא זמינים. וודא שאתה מחובר למערכת.');
+				return;
+			}
+			
+			if (typeof inventory === 'undefined' || !Array.isArray(inventory)) {
+				console.error('נתוני inventory לא זמינים. וודא שאתה מחובר למערכת.');
+				return;
+			}
+			
+			// אם לא נבחר מוצר, בחר אוטומטית
+			if (!productName) {
+				const testProduct = inventory.find(item => {
+					const count = movements.filter(m => 
+						m.product === item.name && m.type === 'הוצאה'
+					).length;
+					return count > 10; // הורדתי את הסף ל-10 תנועות
+				});
+				
+				if (!testProduct) {
+					console.log('לא נמצא מוצר עם מספיק נתונים לחיזוי');
+					console.log('מוצרים זמינים עם תנועות:');
+					inventory.forEach(item => {
+						const count = movements.filter(m => 
+							m.product === item.name && m.type === 'הוצאה'
+						).length;
+						if (count > 0) {
+							console.log(`- ${item.name}: ${count} תנועות הוצאה`);
+						}
+					});
+					return;
+				}
+				
+				productName = testProduct.name;
+			}
+			
+			console.log(`🔮 מחשב חיזוי עבור: ${productName}`);
+			
+			const prediction = predictConsumption(productName, 30);
+			
+			if (!prediction.success) {
+				console.error(prediction.message);
+				return;
+			}
+			
+			// הצג תוצאות
+			console.log('\n📊 סיכום חיזוי:');
+			console.log(`צריכה יומית ממוצעת: ${prediction.analysis.averageDaily.toFixed(1)} חבילות`);
+			console.log(`צפי ל-30 ימים: ${prediction.forecast.total} חבילות`);
+			console.log(`טווח: ${prediction.forecast.range.min}-${prediction.forecast.range.max} חבילות`);
+			console.log(`רמת ביטחון: ${(prediction.confidence * 100).toFixed(0)}%`);
+			
+			console.log('\n📅 חיזוי שבועי:');
+			prediction.forecast.weekly.forEach(week => {
+				console.log(`שבוע ${week.weekNumber}: ${week.total} חבילות (ממוצע יומי: ${week.average.toFixed(1)})`);
+			});
+			
+			if (prediction.recommendations.length > 0) {
+				console.log('\n💡 המלצות:');
+				prediction.recommendations.forEach(rec => {
+					console.log(`[${rec.type}] ${rec.title}`);
+					console.log(`   ${rec.description}`);
+					if (rec.suggestedOrder) {
+						console.log(`   כמות מומלצת להזמנה: ${rec.suggestedOrder} חבילות`);
+					}
+				});
+			}
+			
+			return prediction;
+		}
+		// === שלב 3: אינטגרציה בממשק המערכת ===
+
+		/**
+		 * הוספת טאב חיזוי צריכה למערכת
+		 */
+		function addPredictionTab() {
+			// הוסף טאב חדש לתפריט
+			const tabsContainer = document.querySelector('.tabs');
+			if (!tabsContainer) return;
+			
+			// בדוק אם הטאב כבר קיים
+			if (document.querySelector('[data-tab="predictions"]')) return;
+			
+			// צור טאב חדש
+			const predictionTab = document.createElement('div');
+			predictionTab.className = 'tab';
+			predictionTab.setAttribute('data-tab', 'predictions');
+			predictionTab.setAttribute('data-permission', 'view_reports'); // משתמש באותה הרשאה כמו דוחות
+			predictionTab.textContent = '📊 חיזוי צריכה';
+			predictionTab.onclick = function(e) { showTab(e, 'predictions'); };
+			
+			// הוסף את הטאב לפני "דוחות"
+			const reportsTab = document.querySelector('[data-tab="reports"]');
+			if (reportsTab) {
+				tabsContainer.insertBefore(predictionTab, reportsTab);
+			} else {
+				tabsContainer.appendChild(predictionTab);
+			}
+			
+			// צור את תוכן הטאב
+			const tabContent = document.createElement('div');
+			tabContent.id = 'predictions';
+			tabContent.className = 'tab-content';
+			tabContent.innerHTML = `
+				<h2>חיזוי צריכה וניהול מלאי חכם</h2>
+				
+				<div class="prediction-controls" style="margin-bottom: 20px;">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="predictionProduct">בחר מוצר לחיזוי</label>
+							<select id="predictionProduct" onchange="updatePrediction()">
+								<option value="">בחר מוצר...</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="predictionDays">תקופת חיזוי (ימים)</label>
+							<select id="predictionDays" onchange="updatePrediction()">
+								<option value="7">שבוע</option>
+								<option value="14">שבועיים</option>
+								<option value="30" selected>חודש</option>
+								<option value="60">חודשיים</option>
+								<option value="90">3 חודשים</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="safetyFactor">מקדם ביטחון</label>
+							<select id="safetyFactor" onchange="updatePrediction()">
+								<option value="1">ללא (100%)</option>
+								<option value="1.1">נמוך (110%)</option>
+								<option value="1.2" selected>רגיל (120%)</option>
+								<option value="1.3">גבוה (130%)</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				
+				<div id="predictionAlerts" style="margin-bottom: 20px;"></div>
+				
+				<div id="predictionResults" style="display: none;">
+					<!-- סיכום ראשי -->
+					<div class="stats" style="margin-bottom: 30px;">
+						<div class="stat-card">
+							<h3>צריכה יומית ממוצעת</h3>
+							<div class="value" id="avgDailyConsumption">-</div>
+						</div>
+						<div class="stat-card">
+							<h3>צפי צריכה כולל</h3>
+							<div class="value" id="totalPredicted">-</div>
+						</div>
+						<div class="stat-card">
+							<h3>מלאי נוכחי</h3>
+							<div class="value" id="currentStock">-</div>
+						</div>
+						<div class="stat-card">
+							<h3>ימים עד גמר המלאי</h3>
+							<div class="value" id="daysUntilEmpty">-</div>
+						</div>
+					</div>
+					
+					<!-- גרף חיזוי -->
+					<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+						<h3>גרף חיזוי צריכה</h3>
+						<canvas id="predictionChart" height="100"></canvas>
+					</div>
+					
+					<!-- המלצות -->
+					<div id="predictionRecommendations" style="margin-bottom: 20px;"></div>
+					
+					<!-- טבלת חיזוי מפורט -->
+					<div style="background: white; padding: 20px; border-radius: 8px;">
+						<h3>פירוט חיזוי לפי שבועות</h3>
+						<div id="weeklyPredictionTable"></div>
+					</div>
+				</div>
+				
+				<!-- כפתורי פעולה -->
+				<div style="margin-top: 30px; text-align: center;">
+					<button onclick="exportPrediction()" class="btn-small" style="margin-right: 10px;">📥 ייצוא לאקסל</button>
+					<button onclick="createOrderFromPrediction()" class="btn-small btn-edit">🛒 צור רשימת הזמנה</button>
+					<button onclick="showAllProductsPredictions()" class="btn-small">📊 חיזוי לכל המוצרים</button>
+				</div>
+			`;
+			
+			// הוסף את התוכן למיכל הראשי
+			const mainContainer = document.querySelector('.container');
+			const existingPredictions = document.getElementById('predictions');
+			if (existingPredictions) {
+				existingPredictions.remove();
+			}
+			mainContainer.appendChild(tabContent);
+			
+			console.log('✅ טאב חיזוי צריכה נוסף בהצלחה!');
+		}
+
+		/**
+		 * אתחול רשימת המוצרים בטאב החיזוי
+		 */
+		function initializePredictionProducts() {
+			const select = document.getElementById('predictionProduct');
+			if (!select || !inventory) return;
+			
+			// נקה את הרשימה
+			select.innerHTML = '<option value="">בחר מוצר...</option>';
+			
+			// הוסף מוצרים עם תנועות
+			const productsWithMovements = inventory
+				.map(item => ({
+					name: item.name,
+					category: item.category,
+					movements: movements.filter(m => m.product === item.name && m.type === 'הוצאה').length
+				}))
+				.filter(p => p.movements > 0)
+				.sort((a, b) => b.movements - a.movements);
+			
+			productsWithMovements.forEach(product => {
+				const option = document.createElement('option');
+				option.value = product.name;
+				option.textContent = `${product.name} (${product.category}) - ${product.movements} תנועות`;
+				select.appendChild(option);
+			});
+		}
+
+		/**
+		 * עדכון החיזוי בהתאם לבחירת המשתמש
+		 */
+		window.updatePrediction = function() {
+			const productName = document.getElementById('predictionProduct').value;
+			if (!productName) {
+				document.getElementById('predictionResults').style.display = 'none';
+				return;
+			}
+			
+			const days = parseInt(document.getElementById('predictionDays').value);
+			const safetyFactor = parseFloat(document.getElementById('safetyFactor').value);
+			
+			// הצג אינדיקטור טעינה
+			document.getElementById('predictionResults').style.display = 'block';
+			document.getElementById('predictionResults').style.opacity = '0.5';
+			
+			try {
+				// חשב חיזוי
+				const prediction = predictConsumption(productName, days, { safetyFactor });
+				
+				if (!prediction.success) {
+					showPredictionError(prediction.message);
+					return;
+				}
+				
+				// עדכן את התצוגה
+				displayPredictionResults(prediction);
+				
+				// צור גרף
+				createPredictionChart(prediction);
+				
+				// הצג המלצות
+				displayRecommendations(prediction.recommendations);
+				
+				// הצג את התוצאות
+				document.getElementById('predictionResults').style.opacity = '1';
+				
+			} catch (error) {
+				console.error('Error in prediction:', error);
+				showPredictionError('שגיאה בחישוב החיזוי');
+			}
+		};
+
+		/**
+		 * הצגת תוצאות החיזוי
+		 */
+		function displayPredictionResults(prediction) {
+			const product = inventory.find(p => p.name === prediction.productName);
+			const [currentPacks, currentUnits] = product ? totalPacksAndUnits(product) : [0, 0];
+			
+			// עדכן כרטיסי סטטיסטיקה
+			document.getElementById('avgDailyConsumption').textContent = 
+				`${prediction.analysis.averageDaily.toFixed(1)} חבילות`;
+			
+			document.getElementById('totalPredicted').textContent = 
+				`${prediction.forecast.total} חבילות`;
+			
+			document.getElementById('currentStock').textContent = 
+				`${currentPacks} חבילות`;
+			
+			const daysUntilEmpty = currentPacks > 0 ? 
+				Math.floor(currentPacks / prediction.analysis.averageDaily) : 0;
+			
+			const daysElement = document.getElementById('daysUntilEmpty');
+			daysElement.textContent = daysUntilEmpty + ' ימים';
+			
+			// צבע לפי מצב
+			if (daysUntilEmpty < 7) {
+				daysElement.style.color = '#e74c3c';
+			} else if (daysUntilEmpty < 14) {
+				daysElement.style.color = '#f39c12';
+			} else {
+				daysElement.style.color = '#27ae60';
+			}
+			
+			// טבלת חיזוי שבועי
+			displayWeeklyPrediction(prediction.forecast.weekly);
+		}
+
+		/**
+		 * יצירת גרף חיזוי
+		 */
+		function createPredictionChart(prediction) {
+			const canvas = document.getElementById('predictionChart');
+			const ctx = canvas.getContext('2d');
+			
+			// נקה גרף קודם אם קיים
+			if (window.predictionChartInstance) {
+				window.predictionChartInstance.destroy();
+			}
+			
+			// הכן נתונים לגרף
+			const labels = prediction.forecast.daily.slice(0, 30).map(d => {
+				const date = new Date(d.date);
+				return `${date.getDate()}/${date.getMonth() + 1}`;
+			});
+			
+			const data = prediction.forecast.daily.slice(0, 30).map(d => d.predicted);
+			
+			// צור גרף
+			window.predictionChartInstance = new Chart(ctx, {
+				type: 'line',
+				data: {
+					labels: labels,
+					datasets: [{
+						label: 'צריכה צפויה (חבילות)',
+						data: data,
+						borderColor: '#3498db',
+						backgroundColor: 'rgba(52, 152, 219, 0.1)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 3,
+						pointHoverRadius: 5
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: true,
+					plugins: {
+						title: {
+							display: false
+						},
+						legend: {
+							display: false
+						},
+						tooltip: {
+							callbacks: {
+								label: function(context) {
+									const dayIndex = context.dataIndex;
+									const dayData = prediction.forecast.daily[dayIndex];
+									return [
+										`${dayData.dayName}`,
+										`צפי: ${context.parsed.y} חבילות`
+									];
+								}
+							}
+						}
+					},
+					scales: {
+						y: {
+							beginAtZero: true,
+							title: {
+								display: true,
+								text: 'חבילות'
+							}
+						},
+						x: {
+							title: {
+								display: true,
+								text: 'תאריך'
+							}
+						}
+					}
+				}
+			});
+		}
+
+		/**
+		 * הצגת המלצות
+		 */
+		function displayRecommendations(recommendations) {
+			const container = document.getElementById('predictionRecommendations');
+			if (!recommendations || recommendations.length === 0) {
+				container.innerHTML = '';
+				return;
+			}
+			
+			let html = '<div class="recommendations-container">';
+			
+			recommendations.forEach(rec => {
+				let alertClass = 'alert-info';
+				if (rec.type === 'urgent') alertClass = 'alert-danger';
+				else if (rec.type === 'warning') alertClass = 'alert-warning';
+				else if (rec.type === 'trend') alertClass = 'alert-info';
+				
+				html += `
+					<div class="alert ${alertClass}" style="margin-bottom: 10px;">
+						<strong>${rec.title}</strong><br>
+						${rec.description}
+						${rec.suggestedOrder ? `<br><strong>כמות מומלצת להזמנה: ${rec.suggestedOrder} חבילות</strong>` : ''}
+					</div>
+				`;
+			});
+			
+			html += '</div>';
+			container.innerHTML = html;
+		}
+
+		/**
+		 * הצגת טבלת חיזוי שבועי
+		 */
+		function displayWeeklyPrediction(weeklyData) {
+			const container = document.getElementById('weeklyPredictionTable');
+			
+			let html = `
+				<table style="width: 100%; margin-top: 10px;">
+					<thead>
+						<tr>
+							<th>שבוע</th>
+							<th>תאריכים</th>
+							<th>סה"כ צפוי</th>
+							<th>ממוצע יומי</th>
+							<th>יום שיא</th>
+						</tr>
+					</thead>
+					<tbody>
+			`;
+			
+			weeklyData.forEach(week => {
+				const startDate = new Date(week.days[0].date);
+				const endDate = new Date(week.days[week.days.length - 1].date);
+				const dateRange = `${startDate.getDate()}/${startDate.getMonth() + 1} - ${endDate.getDate()}/${endDate.getMonth() + 1}`;
+				
+				const peakDay = week.days.reduce((max, day) => 
+					day.predicted > max.predicted ? day : max
+				);
+				
+				html += `
+					<tr>
+						<td>שבוע ${week.weekNumber}</td>
+						<td>${dateRange}</td>
+						<td><strong>${week.total} חבילות</strong></td>
+						<td>${week.average.toFixed(1)} חבילות</td>
+						<td>${peakDay.dayName} (${peakDay.predicted} חבילות)</td>
+					</tr>
+				`;
+			});
+			
+			html += '</tbody></table>';
+			container.innerHTML = html;
+		}
+
+		/**
+		 * הצגת שגיאה
+		 */
+		function showPredictionError(message) {
+			const alertsContainer = document.getElementById('predictionAlerts');
+			alertsContainer.innerHTML = `
+				<div class="alert alert-danger">
+					<strong>שגיאה:</strong> ${message}
+				</div>
+			`;
+			document.getElementById('predictionResults').style.display = 'none';
+		}
+
+		/**
+		 * יצירת רשימת הזמנה מהחיזוי
+		 */
+		window.createOrderFromPrediction = function() {
+			const productName = document.getElementById('predictionProduct').value;
+			if (!productName) {
+				alert('יש לבחור מוצר תחילה');
+				return;
+			}
+			
+			const days = parseInt(document.getElementById('predictionDays').value);
+			const prediction = predictConsumption(productName, days);
+			
+			if (!prediction.success) return;
+			
+			const product = inventory.find(p => p.name === productName);
+			const [currentStock] = totalPacksAndUnits(product);
+			
+			const suggestedOrder = Math.max(0, prediction.forecast.total - currentStock);
+			
+			if (confirm(`להוסיף ${suggestedOrder} חבילות של ${productName} לרשימת הזמנה?`)) {
+				// כאן אפשר להוסיף לוגיקה לשמירת ההזמנה
+				showToast(`נוספו ${suggestedOrder} חבילות של ${productName} לרשימת ההזמנה`, 'success');
+			}
+		};
+
+		/**
+		 * חיזוי לכל המוצרים
+		 */
+		window.showAllProductsPredictions = function() {
+			// פונקציה זו תיצור דוח חיזוי מקיף לכל המוצרים
+			alert('פונקציה זו תהיה זמינה בקרוב');
+		};
+
+		/**
+		 * ייצוא חיזוי לאקסל
+		 */
+		window.exportPrediction = function() {
+			const productName = document.getElementById('predictionProduct').value;
+			if (!productName) {
+				alert('יש לבחור מוצר תחילה');
+				return;
+			}
+			
+			// כאן אפשר להוסיף לוגיקה לייצוא
+			alert('ייצוא לאקסל יהיה זמין בקרוב');
+		};
+
+		// === הוספה אוטומטית בעת טעינת המערכת ===
+		// הוסף את השורות הבאות לפונקציה showMainScreen או לאחר הטעינה הראשונית:
+		if (document.querySelector('.tabs')) {
+			addPredictionTab();
+		}
+
+		// הוסף טיפול בטאב החדש בפונקציה showTab
+		const originalShowTab = window.showTab;
+		window.showTab = async function(e, tabName) {
+			// קרא לפונקציה המקורית
+			if (originalShowTab) {
+				await originalShowTab(e, tabName);
+			}
+			
+			// אם זה הטאב שלנו, אתחל אותו
+			if (tabName === 'predictions') {
+				initializePredictionProducts();
+			}
+		};
+
     </script>
 
     <footer style="text-align:center; padding:20px 0; color:#666; background:transparent; font-size:14px;">
