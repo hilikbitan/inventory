@@ -1806,12 +1806,38 @@
 			modals.forEach(modal => {
 				let startY = 0;
 				let currentY = 0;
+				let startTime = 0;
 				let isDragging = false;
+				let modalElement = modal.closest('.modal');
+				
+				// הוסף אינדיקטור ויזואלי לגרירה
+				const swipeIndicator = document.createElement('div');
+				swipeIndicator.style.cssText = `
+					position: absolute;
+					top: 10px;
+					left: 50%;
+					transform: translateX(-50%);
+					width: 40px;
+					height: 4px;
+					background: #ccc;
+					border-radius: 2px;
+					opacity: 0.5;
+				`;
+				modal.insertBefore(swipeIndicator, modal.firstChild);
 				
 				modal.addEventListener('touchstart', (e) => {
-					startY = e.touches[0].clientY;
-					isDragging = true;
-				});
+					// בדוק אם נגענו בחלק העליון של המודאל
+					const rect = modal.getBoundingClientRect();
+					const touchY = e.touches[0].clientY;
+					
+					// התחל גרירה רק אם נגענו ב-50 פיקסלים העליונים
+					if (touchY - rect.top < 50) {
+						startY = e.touches[0].clientY;
+						startTime = Date.now();
+						isDragging = true;
+						modal.style.transition = 'none';
+					}
+				}, { passive: true });
 				
 				modal.addEventListener('touchmove', (e) => {
 					if (!isDragging) return;
@@ -1819,32 +1845,108 @@
 					currentY = e.touches[0].clientY;
 					const deltaY = currentY - startY;
 					
-					// אם גוללים למטה מהחלק העליון
-					if (deltaY > 0 && modal.scrollTop === 0) {
-						e.preventDefault();
-						modal.style.transform = `translateY(${deltaY}px)`;
-						modal.style.opacity = 1 - (deltaY / 300);
+					// אפשר גרירה רק למטה
+					if (deltaY > 0) {
+						// בדוק אם המודאל בחלק העליון שלו
+						if (modal.scrollTop === 0) {
+							// החל טרנספורמציה רק אם גוררים למטה
+							modal.style.transform = `translateY(${Math.min(deltaY, 300)}px)`;
+							modal.style.opacity = Math.max(0.3, 1 - (deltaY / 300));
+							
+							// מנע גלילה של הדף מאחורי המודאל
+							if (deltaY > 20) {
+								document.body.style.overflow = 'hidden';
+							}
+						} else {
+							// אם יש גלילה במודאל, בטל את הגרירה
+							isDragging = false;
+							modal.style.transform = '';
+							modal.style.opacity = '';
+						}
 					}
-				});
+				}, { passive: true });
 				
-				modal.addEventListener('touchend', () => {
+				modal.addEventListener('touchend', (e) => {
 					if (!isDragging) return;
 					
 					const deltaY = currentY - startY;
+					const deltaTime = Date.now() - startTime;
+					const velocity = deltaY / deltaTime;
 					
-					// אם גררו יותר מ-100 פיקסלים, סגור את המודאל
-					if (deltaY > 100) {
-						const modalElement = modal.closest('.modal');
-						if (modalElement) {
-							modalElement.style.display = 'none';
-						}
+					// אפשר טרנזישן חזרה
+					modal.style.transition = 'all 0.3s ease';
+					
+					// סגור אם גררו מספיק או במהירות גבוהה
+					if (deltaY > 100 || velocity > 0.5) {
+						modal.style.transform = 'translateY(100%)';
+						modal.style.opacity = '0';
+						
+						setTimeout(() => {
+							if (modalElement) {
+								modalElement.style.display = 'none';
+								// איפוס הסגנונות
+								modal.style.transform = '';
+								modal.style.opacity = '';
+								modal.style.transition = '';
+							}
+						}, 300);
+					} else {
+						// החזר למקום
+						modal.style.transform = '';
+						modal.style.opacity = '';
 					}
 					
-					// החזר למקום
-					modal.style.transform = '';
-					modal.style.opacity = '';
+					// החזר את הגלילה
+					document.body.style.overflow = '';
 					isDragging = false;
+					startY = 0;
+					currentY = 0;
+				}, { passive: true });
+				
+				// בטל גרירה אם יצאנו מהאזור
+				modal.addEventListener('touchcancel', () => {
+					if (isDragging) {
+						modal.style.transition = 'all 0.3s ease';
+						modal.style.transform = '';
+						modal.style.opacity = '';
+						document.body.style.overflow = '';
+						isDragging = false;
+					}
+				}, { passive: true });
+			});
+		}
+		// פונקציה משופרת לטיפול בגלילה במודאלים
+		function improveModalScrolling() {
+			if (!isMobile) return;
+			
+			const modals = document.querySelectorAll('.modal');
+			
+			modals.forEach(modal => {
+				// מנע גלילה של הרקע כשהמודאל פתוח
+				const observer = new MutationObserver((mutations) => {
+					mutations.forEach(mutation => {
+						if (mutation.attributeName === 'style') {
+							const isVisible = modal.style.display !== 'none';
+							if (isVisible) {
+								// שמור את מיקום הגלילה
+								const scrollY = window.scrollY;
+								document.body.dataset.scrollY = scrollY;
+								document.body.style.position = 'fixed';
+								document.body.style.top = `-${scrollY}px`;
+								document.body.style.width = '100%';
+							} else {
+								// החזר את הגלילה
+								const scrollY = parseInt(document.body.dataset.scrollY || '0');
+								document.body.style.position = '';
+								document.body.style.top = '';
+								document.body.style.width = '';
+								window.scrollTo(0, scrollY);
+							}
+						}
+					});
 				});
+				
+				observer.observe(modal, { attributes: true });
 			});
 		}
 		document.addEventListener('DOMContentLoaded', () => {
@@ -1909,8 +2011,60 @@
 			deferredElements.forEach(el => observer.observe(el));
 		}
 
-		// הפעל אופטימיזציות
-		document.addEventListener('DOMContentLoaded', optimizePerformance);
+		const swipeStyles = document.createElement('style');
+		swipeStyles.textContent = `
+			/* אנימציה לאינדיקטור */
+			.modal-content {
+				position: relative;
+			}
+			
+			/* מנע בחירת טקסט בזמן גרירה */
+			.modal-content.dragging {
+				user-select: none;
+				-webkit-user-select: none;
+			}
+			
+			/* שיפור ביצועים */
+			.modal-content {
+				will-change: transform, opacity;
+			}
+			
+			/* אינדיקטור ויזואלי למובייל */
+			@media (max-width: 768px) {
+				.modal-content::before {
+					content: '';
+					position: absolute;
+					top: 10px;
+					left: 50%;
+					transform: translateX(-50%);
+					width: 40px;
+					height: 4px;
+					background: #ccc;
+					border-radius: 2px;
+					opacity: 0.5;
+					z-index: 1;
+				}
+			}
+		`;
+		document.head.appendChild(swipeStyles);
+
+		// הפעל בטעינת הדף
+		document.addEventListener('DOMContentLoaded', () => {
+			addSwipeToCloseModals();
+			improveModalScrolling();
+		});
+
+		// תיקון נוסף: וודא שאירועי touch לא מתנגשים עם גלילה רגילה
+		document.addEventListener('DOMContentLoaded', () => {
+			// הוסף passive: true לכל מאזיני ה-touch שלא צריכים preventDefault
+			const touchElements = document.querySelectorAll('.table-wrapper, .tab-content, .container');
+			
+			touchElements.forEach(element => {
+				element.addEventListener('touchstart', () => {}, { passive: true });
+				element.addEventListener('touchmove', () => {}, { passive: true });
+				element.addEventListener('touchend', () => {}, { passive: true });
+			});
+		});
 
 
 		async function refreshData() {
