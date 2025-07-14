@@ -874,57 +874,30 @@
 			}
 			
 			/* טבלת מלאי - תצוגת כרטיסים */
-			@media (max-width: 600px) {
+			@media (max-width: 768px) {
+				/* הקטנת גודל הטבלה */
 				#inventoryTable {
-					display: block;
+					font-size: 0.85rem;
 				}
 				
-				#inventoryTable thead {
+				#inventoryTable th,
+				#inventoryTable td {
+					padding: 6px 4px !important;
+					font-size: 0.85rem;
+				}
+				
+				/* הסתרת עמודת הסטטוס הטקסטי */
+				#inventoryTable th:nth-child(7),
+				#inventoryTable td:nth-child(7) {
 					display: none;
 				}
 				
-				#inventoryTable tbody {
-					display: block;
-				}
-				
-				#inventoryTable tr {
-					display: block;
-					margin-bottom: 15px;
-					background: white;
-					border: 1px solid #ddd;
-					border-radius: 8px;
-					padding: 15px;
-					box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-				}
-				
-				#inventoryTable td {
-					display: block;
-					border: none !important;
-					padding: 5px 0 !important;
-				}
-				
-				/* שם מוצר בולט */
-				#inventoryTable td:nth-child(2) {
-					font-size: 1.1rem;
-					font-weight: bold;
-					color: #2c3e50;
-					margin-bottom: 10px;
-				}
-				
-				/* כפתורי פעולה */
-				#inventoryTable td:last-child {
-					display: flex;
-					flex-wrap: wrap;
-					gap: 5px;
-					margin-top: 10px;
-				}
-				
+				/* כפתורים קטנים יותר */
 				#inventoryTable .btn-small {
-					flex: 1;
-					min-width: calc(33% - 5px);
+					padding: 4px 8px;
+					font-size: 0.8rem;
 				}
 			}
-		}
 
 		/* === טבלת תנועות במובייל === */
 		@media (max-width: 768px) {
@@ -1022,6 +995,71 @@
 			.toast {
 				-webkit-transition: all 0.3s ease !important;
 				transition: all 0.3s ease !important;
+			}
+		}
+		@media (max-width: 768px) {
+			/* טבלאות כלליות */
+			table {
+				font-size: 0.85rem !important;
+			}
+			
+			th, td {
+				padding: 6px 4px !important;
+				font-size: 0.85rem !important;
+			}
+			
+			/* כותרות טבלה */
+			th {
+				font-size: 0.9rem !important;
+				font-weight: 600 !important;
+				white-space: nowrap;
+			}
+			
+			/* התאמות ספציפיות לטבלת מלאי */
+			#inventoryTable th:nth-child(1),
+			#inventoryTable td:nth-child(1) {
+				width: 30px; /* כפתור הרחבה */
+			}
+			
+			#inventoryTable th:nth-child(2) {
+				min-width: 100px; /* שם מוצר */
+			}
+			
+			/* הסתר עמודות פחות חשובות במובייל */
+			#inventoryTable th:nth-child(3), /* קטגוריה */
+			#inventoryTable td:nth-child(3),
+			#inventoryTable th:nth-child(5), /* מינימום */
+			#inventoryTable td:nth-child(5) {
+				display: none;
+			}
+			
+			/* טבלת תנועות - הסתרת עמודות */
+			#movementsTable th:nth-child(2), /* שעה */
+			#movementsTable td:nth-child(2),
+			#movementsTable th:nth-child(6), /* מיקום */
+			#movementsTable td:nth-child(6) {
+				display: none;
+			}
+			
+			/* כפתורי פעולה קטנים יותר */
+			.btn-small {
+				padding: 4px 8px !important;
+				font-size: 0.8rem !important;
+			}
+			
+			/* קיצור טקסטים ארוכים */
+			td {
+				max-width: 150px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			
+			/* הצגת מידע קריטי בשורה נפרדת */
+			.mobile-extra-info {
+				font-size: 0.75rem;
+				color: #666;
+				margin-top: 2px;
 			}
 		}
     </style>
@@ -2761,97 +2799,94 @@
 
         // --- תצוגת מלאי ---
         function displayInventory() {
-            const tbody = document.getElementById('inventoryBody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
+			const tbody = document.getElementById('inventoryBody');
+			if (!tbody) return;
+			
+			tbody.innerHTML = '';
 
-            let filtered = [...inventory];
+			let filtered = [...inventory];
 
-            // סינון לפי חיפוש
-            if (inventorySearch) {
-                filtered = filtered.filter(item => 
-                    item.name.toLowerCase().includes(inventorySearch.toLowerCase())
-                );
-            }
-            
-            // סינון לפי קטגוריה
-            if (categoryFilter) {
-                filtered = filtered.filter(item => item.category === categoryFilter);
-            }
+			// סינון לפי חיפוש
+			if (inventorySearch) {
+				filtered = filtered.filter(item => 
+					item.name.toLowerCase().includes(inventorySearch.toLowerCase())
+				);
+			}
+			
+			// סינון לפי קטגוריה
+			if (categoryFilter) {
+				filtered = filtered.filter(item => item.category === categoryFilter);
+			}
 
-            // מיון
-            if (inventorySort.by) {
-                filtered.sort((a, b) => {
-                    let av, bv;
-                    switch (inventorySort.by) {
-                        case 'name': 
-                            av = a.name; 
-                            bv = b.name; 
-                            break;
-                        case 'category': 
-                            av = a.category; 
-                            bv = b.category; 
-                            break;
-                        case 'quantity': {
-                            const [ap] = totalPacksAndUnits(a);
-                            const [bp] = totalPacksAndUnits(b);
-                            av = ap;
-                            bv = bp;
-                        } break;
-                        case 'min': 
-                            av = a.minPacks || 0; 
-                            bv = b.minPacks || 0; 
-                            break;
-                        case 'expiry': {
-                            const ae = getEarliestExpiry(a);
-                            const be = getEarliestExpiry(b);
-                            av = ae ? new Date(ae) : new Date(3000,1,1);
-                            bv = be ? new Date(be) : new Date(3000,1,1);
-                        } break;
-                        default: 
-                            av = a.name; 
-                            bv = b.name;
-                    }
-                    
-                    if (typeof av === "string") {
-                        return inventorySort.dir * av.localeCompare(bv);
-                    } else {
-                        return inventorySort.dir * ((av > bv) - (av < bv));
-                    }
-                });
-            }
+			// מיון
+			if (inventorySort.by) {
+				filtered.sort((a, b) => {
+					let av, bv;
+					switch (inventorySort.by) {
+						case 'name': 
+							av = a.name; 
+							bv = b.name; 
+							break;
+						case 'category': 
+							av = a.category; 
+							bv = b.category; 
+							break;
+						case 'quantity': {
+							const [ap] = totalPacksAndUnits(a);
+							const [bp] = totalPacksAndUnits(b);
+							av = ap;
+							bv = bp;
+						} break;
+						case 'min': 
+							av = a.minPacks || 0; 
+							bv = b.minPacks || 0; 
+							break;
+						case 'expiry': {
+							const ae = getEarliestExpiry(a);
+							const be = getEarliestExpiry(b);
+							av = ae ? new Date(ae) : new Date(3000,1,1);
+							bv = be ? new Date(be) : new Date(3000,1,1);
+						} break;
+						default: 
+							av = a.name; 
+							bv = b.name;
+					}
+					
+					if (typeof av === "string") {
+						return inventorySort.dir * av.localeCompare(bv);
+					} else {
+						return inventorySort.dir * ((av > bv) - (av < bv));
+					}
+				});
+			}
 
-            filtered.forEach(item => {
-                const [totalPacks, looseUnits] = totalPacksAndUnits(item);
-                const earliestExpiry = getEarliestExpiry(item);
-                
-                const row = tbody.insertRow();
-                row.classList.add('summary-row');
-                row.innerHTML = `
-                    <td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
+			filtered.forEach(item => {
+				const [totalPacks, looseUnits] = totalPacksAndUnits(item);
+				const earliestExpiry = getEarliestExpiry(item);
+				
+				const row = tbody.insertRow();
+				row.classList.add('summary-row');
+				row.innerHTML = `
+					<td><button class="expand-btn" onclick="toggleVariants(this)">+</button></td>
+					<td>${item.name}</td>
+					<td>${item.category}</td>
 					<td>
-						${isMobile ? `<strong>${item.name}</strong><br><small>${item.category}</small>` : item.name}
+						${totalPacks} ${getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
+						${looseUnits > 0 ? `+ ${looseUnits} ${getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
 					</td>
-					<td>${isMobile ? item.category : item.category}</td>
-                    <td>${item.category}</td>
-                    <td>
-						${totalPacks} ${isMobile ? 'חב\'' : getUnitLabel(totalPacks, item.packUnitSingular, item.packUnitPlural)}
-						${looseUnits > 0 ? `${isMobile ? '<br>' : '+ '}${looseUnits} ${isMobile ? 'יח\'' : getUnitLabel(looseUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
+					<td>${item.minPacks || 0} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
+					<td>${earliestExpiry ? formatDate(earliestExpiry) : '-'}</td>
+					<td>${getGlobalStatus(totalPacks, item.minPacks || 0, earliestExpiry)}</td>
+					<td>
+						${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
+						? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
+						   <button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">➕ הוסף</button>
+						   <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
+						: ''}
 					</td>
-                    <td>${item.minPacks || 0} ${getUnitLabel(item.minPacks, item.packUnitSingular, item.packUnitPlural)}</td>
-                    <td>${earliestExpiry ? formatDate(earliestExpiry) : '-'}</td>
-                    <td>${getGlobalStatus(totalPacks, item.minPacks || 0, earliestExpiry)}</td>
-                    <td>
-                        ${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת')
-                        ? `<button class="btn-small btn-edit" onclick="editProduct('${item.name}')">ערוך</button>
-                           <button class="btn-small btn-edit" onclick="openAddVariantModal('${item.name}')">➕ הוסף</button>
-                           <button class="btn-small btn-danger" onclick="deleteProduct('${item.name}')">מחק</button>`
-                        : ''}
-                    </td>
-                `;
+				`;
 
-                // הוספת שורות וריאנטים
+				// הוספת שורות וריאנטים
 				let variantRowIndex = 0;
 				(item.variants || []).forEach((variant, index) => {
 					const variantRow = tbody.insertRow();
@@ -2879,25 +2914,26 @@
 
 					variantRow.innerHTML = `
 						<td></td>
-						<td colspan="2">${variant.location}</td>
+						<td ${!isMobile ? 'colspan="2"' : ''} style="padding-right: 20px;">${variant.location}</td>
+						${isMobile ? '<td></td>' : ''}
 						<td>
 							${variant.quantityPacks || 0} ${getUnitLabel(variant.quantityPacks, item.packUnitSingular, item.packUnitPlural)}
 							${variant.quantityUnits > 0 ? `+ ${variant.quantityUnits} ${getUnitLabel(variant.quantityUnits, item.baseUnitSingular, item.baseUnitPlural)}` : ""}
 						</td>
 						<td>-</td>
 						<td>${formatDate(variant.expiry) || '-'}</td>
-						<td>${expiryStatus}</td>
+						${!isMobile ? '<td>' + expiryStatus + '</td>' : ''}
 						<td>
 							${(currentUser.permissions.includes('add_item') || currentUser.role === 'מנהל מערכת') 
 								? `<button class="btn-small btn-edit" onclick="editVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">ערוך</button>
-								   <button class="btn-small btn-danger" onclick="deleteVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">מחק</button>`
+								   ${!isMobile ? `<button class="btn-small btn-danger" onclick="deleteVariantByIdentifier('${item.name}', '${variant.location}', '${variant.expiry || ''}', ${relativeIndex})">מחק</button>` : ''}`
 								: ''}
 						</td>
 					`;
 					variantRowIndex++;
 				});
-            });
-        }
+			});
+		}
 
         function toggleVariants(button) {
             const row = button.closest('tr');
@@ -3136,47 +3172,87 @@
 
         // --- הוספת שורת תנועה ---
         function addTransactionRow() {
-            const container = document.getElementById('multiTransactionRows');
-            if (!container) return;
+			const container = document.getElementById('multiTransactionRows');
+			if (!container) return;
 
-            const row = document.createElement('div');
-            row.className = 'form-row';
-            row.innerHTML = `
-                <div class="form-group">
-                    <label>מוצר</label>
-                    <select class="transProductSelect" required>
-                        <option value="">בחר מוצר</option>
-                        ${inventory.map(item => 
-                            `<option value="${item.name}">${item.name} (${item.category})</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>סוג פעולה</label>
-                    <select class="transTypeSelect" required>
-                        <option value="">בחר פעולה</option>
-                        <option value="הוצאה">הוצאה מהמלאי</option>
-                        <option value="הכנסה">הכנסה למלאי</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>כמות חבילות</label>
-                    <input type="number" class="transQuantityPacksInput" min="0" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label>כמות יחידות</label>
-                    <input type="number" class="transQuantityUnitsInput" min="0" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label>הערות</label>
-                    <input type="text" class="transNotesInput" placeholder="הערות">
-                </div>
-                <div class="form-group">
-                    <button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger" style="${isMobile ? 'width: 100%; margin-top: 10px;' : ''}">❌ הסר</button>
-                </div>
-            `;
-            container.appendChild(row);
-        }
+			const row = document.createElement('div');
+			row.className = 'form-row';
+			
+			if (isMobile) {
+				row.style.cssText = 'position: relative; padding-top: 15px;';
+				row.innerHTML = `
+					<button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger" style="position: absolute; top: -5px; left: 10px; width: auto; padding: 5px 10px; font-size: 0.9rem; z-index: 10;">✕</button>
+					<div class="form-group">
+						<label>מוצר</label>
+						<select class="transProductSelect" required>
+							<option value="">בחר מוצר</option>
+							${inventory.map(item => 
+								`<option value="${item.name}">${item.name} (${item.category})</option>`
+							).join('')}
+						</select>
+					</div>
+					<div class="form-group">
+						<label>סוג פעולה</label>
+						<select class="transTypeSelect" required>
+							<option value="">בחר פעולה</option>
+							<option value="הוצאה">הוצאה מהמלאי</option>
+							<option value="הכנסה">הכנסה למלאי</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>כמות חבילות</label>
+						<input type="number" class="transQuantityPacksInput" min="0" value="0" required>
+					</div>
+					<div class="form-group">
+						<label>כמות יחידות</label>
+						<input type="number" class="transQuantityUnitsInput" min="0" value="0" required>
+					</div>
+					<div class="form-group">
+						<label>הערות</label>
+						<input type="text" class="transNotesInput" placeholder="הערות">
+					</div>
+				`;
+			} else {
+				// דסקטופ - כפתור ההסרה ללא label
+				row.innerHTML = `
+					<div class="form-group">
+						<label>מוצר</label>
+						<select class="transProductSelect" required>
+							<option value="">בחר מוצר</option>
+							${inventory.map(item => 
+								`<option value="${item.name}">${item.name} (${item.category})</option>`
+							).join('')}
+						</select>
+					</div>
+					<div class="form-group">
+						<label>סוג פעולה</label>
+						<select class="transTypeSelect" required>
+							<option value="">בחר פעולה</option>
+							<option value="הוצאה">הוצאה מהמלאי</option>
+							<option value="הכנסה">הכנסה למלאי</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>כמות חבילות</label>
+						<input type="number" class="transQuantityPacksInput" min="0" value="0" required>
+					</div>
+					<div class="form-group">
+						<label>כמות יחידות</label>
+						<input type="number" class="transQuantityUnitsInput" min="0" value="0" required>
+					</div>
+					<div class="form-group">
+						<label>הערות</label>
+						<input type="text" class="transNotesInput" placeholder="הערות">
+					</div>
+					<div class="form-group">
+						<label style="visibility: hidden;">פעולה</label>
+						<button type="button" onclick="this.closest('.form-row').remove()" class="btn-small btn-danger">❌ הסר</button>
+					</div>
+				`;
+			}
+			
+			container.appendChild(row);
+		}
 
         // --- הוספת וריאנט ---
         function addVariant() {
