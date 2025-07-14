@@ -145,6 +145,7 @@
             overflow-y: auto;
             margin-bottom: 18px;
         }
+	
         
         .modal-content .btn-main {
             min-width: 120px;
@@ -170,6 +171,276 @@
             margin: 0 auto 10px auto;
             min-width: 0;
         }
+		
+		/* === Dark Mode Support - גישה פשוטה ונקייה === */
+		/* Light mode - ברירת מחדל */
+		body {
+			background-color: #f5f5f5;
+			color: #333;
+		}
+
+		.main-container {
+			background-color: #f5f5f5;
+		}
+
+		.tab-content {
+			background: white;
+			color: #333;
+		}
+
+		.stat-card {
+			background: white;
+			color: #333;
+		}
+
+		.modal-content {
+			background: white;
+			color: #333;
+		}
+
+		input, select, textarea {
+			background: white;
+			color: #333;
+			border-color: #ddd;
+		}
+
+		table {
+			background: white;
+		}
+
+		th {
+			background: #34495e;
+			color: white;
+		}
+
+		td {
+			background: white;
+			color: #333;
+		}
+
+		/* Dark Mode */
+		@media (prefers-color-scheme: dark) {
+			body {
+				background-color: #1a1a1a !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.main-container {
+				background-color: #1a1a1a !important;
+			}
+			
+			.container {
+				color: #e0e0e0 !important;
+			}
+			
+			.tab-content {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.stat-card {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.stat-card h3 {
+				color: #a0a0a0 !important;
+			}
+			
+			.stat-card .value {
+				color: #e0e0e0 !important;
+			}
+			
+			.modal-content {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.modal-header h2 {
+				color: #e0e0e0 !important;
+			}
+			
+			input, select, textarea {
+				background: #1a1a1a !important;
+				color: #e0e0e0 !important;
+				border-color: #404040 !important;
+			}
+			
+			label {
+				color: #e0e0e0 !important;
+			}
+			
+			table {
+				background: #2d2d2d !important;
+			}
+			
+			th {
+				background: #1a1a1a !important;
+				color: #e0e0e0 !important;
+			}
+			
+			td {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+				border-color: #404040 !important;
+			}
+			
+			tr:nth-child(even) {
+				background: #252525 !important;
+			}
+			
+			tr:hover {
+				background: #333 !important;
+			}
+			
+			.tab {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+				border-color: #404040 !important;
+			}
+			
+			.tab:hover {
+				background: #333 !important;
+			}
+			
+			.tab.active {
+				background: #4fc3f7 !important;
+				color: white !important;
+			}
+			
+			.expand-btn {
+				background: #333 !important;
+				border-color: #404040 !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.user-card {
+				background: #333 !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.close {
+				color: #a0a0a0 !important;
+			}
+			
+			.close:hover {
+				color: #e0e0e0 !important;
+			}
+			
+			/* Alerts in dark mode */
+			.alert-warning {
+				background: rgba(255, 152, 0, 0.2) !important;
+				color: #ffb74d !important;
+				border-color: #ff9800 !important;
+			}
+			
+			.alert-danger {
+				background: rgba(244, 67, 54, 0.2) !important;
+				color: #ff8a80 !important;
+				border-color: #f44336 !important;
+			}
+			
+			.alert-success {
+				background: rgba(76, 175, 80, 0.2) !important;
+				color: #81c784 !important;
+				border-color: #4caf50 !important;
+			}
+			
+			/* Bottom nav */
+			.bottom-nav {
+				background: #2d2d2d !important;
+				border-top-color: #404040 !important;
+			}
+			
+			.bottom-nav-item {
+				color: #a0a0a0 !important;
+			}
+			
+			.bottom-nav-item.active {
+				color: #4fc3f7 !important;
+			}
+			
+			/* Empty state */
+			.empty-state {
+				color: #a0a0a0 !important;
+			}
+			
+			/* Report content */
+			#reportContent {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+			}
+			
+			/* Picking tables */
+			.picking-table {
+				background: #2d2d2d !important;
+			}
+			
+			.picking-table th {
+				background: #1a1a1a !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.picking-table td {
+				color: #e0e0e0 !important;
+				border-color: #404040 !important;
+			}
+			
+			/* Skeleton loaders */
+			.skeleton-loader {
+				background: linear-gradient(90deg, #2d2d2d 25%, #404040 50%, #2d2d2d 75%) !important;
+			}
+			
+			.skeleton-stat-card {
+				background: #2d2d2d !important;
+			}
+			
+			/* Login box */
+			.login-box {
+				background: #2d2d2d !important;
+				color: #e0e0e0 !important;
+			}
+			
+			.login-box h1 {
+				color: #e0e0e0 !important;
+			}
+			
+			/* Footer */
+			footer {
+				background: transparent !important;
+				color: #a0a0a0 !important;
+			}
+		}
+
+		/* Smooth transition when switching themes */
+		* {
+			transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+		}
+		
+		/* Manual theme overrides */
+		[data-theme="dark"] {
+			--bg-primary: #1a1a1a;
+			--bg-secondary: #2d2d2d;
+			--bg-nav: #1a1a1a;
+			--text-primary: #e0e0e0;
+			--text-secondary: #a0a0a0;
+			--border-color: #404040;
+			--accent: #4fc3f7;
+			--accent-hover: #29b6f6;
+			--shadow: rgba(0, 0, 0, 0.3);
+		}
+
+		[data-theme="light"] {
+			--bg-primary: #f5f5f5;
+			--bg-secondary: #ffffff;
+			--bg-nav: #2c3e50;
+			--text-primary: #333333;
+			--text-secondary: #666666;
+			--border-color: #dddddd;
+			--accent: #3498db;
+			--accent-hover: #2980b9;
+			--shadow: rgba(0, 0, 0, 0.1);
+		}
 
         .toast {
             position: fixed;
@@ -1687,6 +1958,9 @@
                     <span id="currentUserName"></span>
                     <span class="user-role" id="currentUserRole"></span>
                 </div>
+				<button id="themeToggle" onclick="toggleTheme()" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; margin-left: 10px; border-radius: 4px; cursor: pointer; color: white; font-size: 14px;">
+					<span id="themeIcon">🌙</span>
+				</button>
                 <button class="logout-btn" onclick="logout()">יציאה</button>
             </div>
         </nav>
@@ -6744,6 +7018,46 @@
 				statsInterval = null;
 			}
 		}
+		
+		// Theme Toggle Function
+		function toggleTheme() {
+			const root = document.documentElement;
+			const currentTheme = localStorage.getItem('theme') || 'auto';
+			let newTheme;
+			
+			if (currentTheme === 'auto') {
+				newTheme = 'dark';
+			} else if (currentTheme === 'dark') {
+				newTheme = 'light';
+			} else {
+				newTheme = 'auto';
+			}
+			
+			localStorage.setItem('theme', newTheme);
+			applyTheme(newTheme);
+		}
+
+		function applyTheme(theme) {
+			const root = document.documentElement;
+			const icon = document.getElementById('themeIcon');
+			
+			if (theme === 'dark') {
+				root.setAttribute('data-theme', 'dark');
+				icon.textContent = '☀️';
+			} else if (theme === 'light') {
+				root.setAttribute('data-theme', 'light');
+				icon.textContent = '🌙';
+			} else {
+				root.removeAttribute('data-theme');
+				icon.textContent = '🌓';
+			}
+		}
+
+		// Apply saved theme on load
+		window.addEventListener('DOMContentLoaded', () => {
+			const savedTheme = localStorage.getItem('theme') || 'auto';
+			applyTheme(savedTheme);
+		});
 
 		// עדכן את showMainScreen להפעיל רענון אוטומטי
 		const originalShowMainScreen = showMainScreen;
