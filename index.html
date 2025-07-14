@@ -1080,6 +1080,140 @@
 				text-align: center;
 			}
 		}
+		/* Collapsible Alerts Styles */
+		.alerts-wrapper {
+			margin-bottom: 20px;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			background: #f9f9f9;
+			overflow: hidden;
+		}
+
+		.alerts-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 12px 15px;
+			background: #f0f0f0;
+			border-bottom: 1px solid #ddd;
+		}
+
+		.alerts-title {
+			font-size: 16px;
+			color: #333;
+		}
+
+		.alerts-toggle-btn {
+			background: #3498db;
+			color: white;
+			border: none;
+			padding: 6px 15px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			transition: background 0.3s;
+		}
+
+		.alerts-toggle-btn:hover {
+			background: #2980b9;
+		}
+
+		.toggle-icon {
+			font-size: 12px;
+			transition: transform 0.3s;
+		}
+
+		.alerts-list {
+			max-height: 600px;
+			overflow-y: auto;
+		}
+
+		.alerts-list .alert {
+			margin: 0;
+			border-radius: 0;
+			border-bottom: 1px solid #eee;
+		}
+
+		.alerts-list .alert:last-child {
+			border-bottom: none;
+		}
+
+		.alerts-hidden {
+			animation: slideDown 0.3s ease-out;
+		}
+
+		@keyframes slideDown {
+			from {
+				opacity: 0;
+				transform: translateY(-10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		/* Mobile optimization for alerts */
+		@media (max-width: 768px) {
+			.alerts-header {
+				flex-direction: column;
+				gap: 10px;
+				text-align: center;
+			}
+			
+			.alerts-toggle-btn {
+				width: 100%;
+				justify-content: center;
+			}
+			
+			.alerts-list {
+				max-height: 400px;
+			}
+		}
+		/* Alert badges */
+		.alerts-summary {
+			display: inline-flex;
+			gap: 8px;
+			margin-right: 10px;
+		}
+
+		.badge {
+			padding: 2px 8px;
+			border-radius: 12px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+
+		.badge-danger {
+			background: #e74c3c;
+			color: white;
+		}
+
+		.badge-warning {
+			background: #f39c12;
+			color: white;
+		}
+
+		/* Smooth transitions */
+		.alerts-hidden {
+			transition: all 0.3s ease-out;
+		}
+
+		/* Alert type indicators */
+		.alert-danger {
+			border-right: 4px solid #e74c3c;
+		}
+
+		.alert-warning {
+			border-right: 4px solid #f39c12;
+		}
+
+		.alert-info {
+			border-right: 4px solid #3498db;
+		}
     </style>
 </head>
 <body>
@@ -2549,6 +2683,15 @@
 			const alertsContainer = document.getElementById('alerts');
 			if (!alertsContainer) return;
 			
+			// בדוק אם למשתמש יש הרשאה לראות התראות
+			if (!currentUser || (currentUser.role !== 'מנהל מערכת' && currentUser.role !== 'מנהל מתחם')) {
+				alertsContainer.innerHTML = '';
+				alertsContainer.style.display = 'none';
+				return;
+			}
+			
+			// הצג את מיכל ההתראות
+			alertsContainer.style.display = 'block';
 			alertsContainer.innerHTML = '';
 			const alerts = [];
 			
@@ -2597,29 +2740,83 @@
 				});
 			});
 			
-			// הגבל ל-5 התראות הכי חשובות
+			// מיון התראות - קריטיות קודם
 			alerts.sort((a, b) => {
 				if (a.type === 'danger' && b.type !== 'danger') return -1;
 				if (a.type !== 'danger' && b.type === 'danger') return 1;
 				return 0;
 			});
 			
-			const topAlerts = alerts.slice(0, 5);
+			if (alerts.length === 0) return;
 			
-			if (topAlerts.length > 0) {
-				topAlerts.forEach(alert => {
-					const alertDiv = document.createElement('div');
-					alertDiv.className = `alert alert-${alert.type}`;
-					alertDiv.innerHTML = `<strong>⚠️</strong> ${alert.text}`;
-					alertsContainer.appendChild(alertDiv);
-				});
-				
-				if (alerts.length > 5) {
-					const moreDiv = document.createElement('div');
-					moreDiv.className = 'alert alert-info';
-					moreDiv.innerHTML = `ועוד ${alerts.length - 5} התראות נוספות...`;
-					alertsContainer.appendChild(moreDiv);
-				}
+			// צור מיכל עם כותרת וכפתור
+			const alertsWrapper = document.createElement('div');
+			alertsWrapper.className = 'alerts-wrapper';
+			
+			// כותרת עם כפתור הרחבה
+			const alertsHeader = document.createElement('div');
+			alertsHeader.className = 'alerts-header';
+			
+			// ספירת סוגי התראות
+			const dangerCount = alerts.filter(a => a.type === 'danger').length;
+			const warningCount = alerts.filter(a => a.type === 'warning').length;
+			
+			alertsHeader.innerHTML = `
+				<span class="alerts-title">
+					<strong>⚠️ התראות (${alerts.length})</strong>
+					<span class="alerts-summary">
+						${dangerCount > 0 ? `<span class="badge badge-danger">${dangerCount} קריטיות</span>` : ''}
+						${warningCount > 0 ? `<span class="badge badge-warning">${warningCount} אזהרות</span>` : ''}
+					</span>
+				</span>
+				<button class="alerts-toggle-btn" onclick="toggleAlerts()" id="alertsToggleBtn">
+					<span class="toggle-icon">▼</span> הצג התראות
+				</button>
+			`;
+			
+			// מיכל להתראות - מוסתר כברירת מחדל
+			const alertsList = document.createElement('div');
+			alertsList.className = 'alerts-list';
+			alertsList.id = 'alertsList';
+			alertsList.style.display = 'none';
+			
+			// הוסף את כל ההתראות למיכל המוסתר
+			alerts.forEach(alert => {
+				const alertDiv = document.createElement('div');
+				alertDiv.className = `alert alert-${alert.type}`;
+				alertDiv.innerHTML = `<strong>⚠️</strong> ${alert.text}`;
+				alertsList.appendChild(alertDiv);
+			});
+			
+			alertsWrapper.appendChild(alertsHeader);
+			alertsWrapper.appendChild(alertsList);
+			alertsContainer.appendChild(alertsWrapper);
+			
+			// שחזר מצב הרחבה מ-localStorage
+			const wasExpanded = localStorage.getItem('alertsExpanded') === 'true';
+			if (wasExpanded) {
+				toggleAlerts(); // פתח אוטומטית אם היה פתוח קודם
+			}
+		}	
+		// פונקציה להרחבה/כיווץ התראות
+		function toggleAlerts() {
+			const alertsList = document.getElementById('alertsList');
+			const toggleBtn = document.getElementById('alertsToggleBtn');
+			
+			if (!alertsList || !toggleBtn) return;
+			
+			const isExpanded = alertsList.style.display !== 'none';
+			
+			if (isExpanded) {
+				// כווץ
+				alertsList.style.display = 'none';
+				toggleBtn.innerHTML = '<span class="toggle-icon">▼</span> הצג התראות';
+				localStorage.setItem('alertsExpanded', 'false');
+			} else {
+				// הרחב
+				alertsList.style.display = 'block';
+				toggleBtn.innerHTML = '<span class="toggle-icon">▲</span> הסתר התראות';
+				localStorage.setItem('alertsExpanded', 'true');
 			}
 		}
         // --- LOGIN & BOOT ---
