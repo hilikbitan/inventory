@@ -1214,12 +1214,225 @@
 		.alert-info {
 			border-right: 4px solid #3498db;
 		}
+		/* Dark Mode Support */
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg-primary: #1a1a1a;
+				--bg-secondary: #2d2d2d;
+				--text-primary: #e0e0e0;
+				--accent: #4fc3f7;
+			}
+		}
+
+		/* Animations */
+		.card-enter {
+			animation: slideIn 0.3s ease-out;
+		}
+
+		@keyframes slideIn {
+			from {
+				opacity: 0;
+				transform: translateY(20px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		/* Skeleton Loading Styles */
+		.skeleton-loader {
+			background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+			background-size: 200% 100%;
+			animation: skeleton-loading 1.5s infinite;
+			border-radius: 4px;
+		}
+
+		@keyframes skeleton-loading {
+			0% {
+				background-position: 200% 0;
+			}
+			100% {
+				background-position: -200% 0;
+			}
+		}
+
+		/* Skeleton Components */
+		.skeleton-table {
+			width: 100%;
+			margin-top: 20px;
+		}
+
+		.skeleton-row {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 10px;
+			padding: 10px;
+		}
+
+		.skeleton-cell {
+			height: 20px;
+			flex: 1;
+		}
+
+		.skeleton-cell.small {
+			flex: 0.5;
+		}
+
+		.skeleton-cell.large {
+			flex: 2;
+		}
+
+		.skeleton-stat-card {
+			height: 100px;
+			margin-bottom: 15px;
+			padding: 20px;
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+		}
+
+		.skeleton-stat-value {
+			height: 40px;
+			width: 60%;
+			margin: 10px 0;
+		}
+
+		.skeleton-stat-label {
+			height: 16px;
+			width: 40%;
+		}
+
+		/* Fade in animation for content */
+		.fade-in {
+			animation: fadeIn 0.3s ease-in-out;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+		/* Tab Transitions */
+		.tab {
+			position: relative;
+			overflow: hidden;
+			transition: all 0.3s ease;
+		}
+
+		.tab::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 50%;
+			width: 0;
+			height: 3px;
+			background: #3498db;
+			transition: all 0.3s ease;
+			transform: translateX(-50%);
+		}
+
+		.tab.active::after {
+			width: 100%;
+		}
+
+		.tab:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+		}
+
+		/* Tab Content Animations */
+		.tab-content {
+			opacity: 0;
+			transform: translateX(20px);
+			transition: all 0.3s ease;
+		}
+
+		.tab-content.active {
+			opacity: 1;
+			transform: translateX(0);
+			animation: slideIn 0.3s ease-out;
+		}
+
+		@keyframes slideIn {
+			from {
+				opacity: 0;
+				transform: translateX(20px);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		/* Stat Cards Animations */
+		.stat-card {
+			transition: all 0.3s ease;
+			transform: translateY(0);
+		}
+
+		.stat-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+		}
+
+		.stat-card .value {
+			transition: all 0.3s ease;
+		}
+
+		.stat-card:hover .value {
+			transform: scale(1.05);
+			color: #3498db;
+		}
+
+		/* Stagger animation for cards */
+		.stats-enter {
+			animation: statsEnter 0.5s ease-out forwards;
+			opacity: 0;
+		}
+
+		.stats-enter:nth-child(1) { animation-delay: 0.1s; }
+		.stats-enter:nth-child(2) { animation-delay: 0.2s; }
+		.stats-enter:nth-child(3) { animation-delay: 0.3s; }
+		.stats-enter:nth-child(4) { animation-delay: 0.4s; }
+
+		@keyframes statsEnter {
+			from {
+				opacity: 0;
+				transform: translateY(20px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		/* Number Counter Animation */
+		@keyframes countUp {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.counter-animate {
+			animation: countUp 0.5s ease-out;
+		}
     </style>
 </head>
 <body>
 	<!-- Pull to refresh indicator -->
 	<div class="pull-to-refresh" id="pullToRefresh">↻</div>
-    <div class="loading" id="loadingSpinner">טוען נתונים...</div>
+    <div id="loadingSpinner" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000;"></div>
     
     <div class="login-container" id="loginScreen">
         <div class="login-box">
@@ -2318,6 +2531,26 @@
         let baseUnitsPluralList = ['יחידות', 'פחיות', 'בקבוקים', 'כוסות', 'כיסים', 'גרם'];
         let packUnitsSingularList = ['קרטון', 'מארז', 'שקית', 'קופסה', 'ליטר'];
         let packUnitsPluralList = ['קרטונים', 'מארזים', 'שקיות', 'קופסאות', 'ליטרים'];
+		let statsAnimated = false;
+		
+		function showToast(message, type = 'info') {
+			const toast = document.getElementById('toast');
+			if (!toast) {
+				console.log(message);
+				return;
+			}
+			
+			toast.textContent = message;
+			toast.className = 'toast show';
+			
+			if (type === 'error') toast.style.background = '#e74c3c';
+			else if (type === 'success') toast.style.background = '#27ae60';
+			else toast.style.background = '#333';
+			
+			setTimeout(() => {
+				toast.classList.remove('show');
+			}, 3000);
+		}
         
         // טעינת נתונים מ-localStorage אם קיימים
         const savedBaseUnitsSingular = JSON.parse(localStorage.getItem('baseUnitsSingularList') || '[]');
@@ -2337,7 +2570,7 @@
 
         // --- פונקציות Firebase ---
         async function loadAllData() {
-            showLoading(true);
+            showLoading(true, 'stats');
             try {
                 // טען משתמשים
                 users = [];
@@ -2531,31 +2764,89 @@
         }
 
         // --- פונקציות עזר ---
-        function showLoading(show) {
-            const loading = document.getElementById('loadingSpinner');
-            if (loading) {
-                loading.style.display = show ? 'block' : 'none';
-            }
-        }
+        function showLoading(show, type = 'general') {
+			const loading = document.getElementById('loadingSpinner');
+			if (!loading) return;
+			
+			if (show) {
+				// צור skeleton loader בהתאם לסוג התוכן
+				let skeletonHTML = '';
+				
+				switch(type) {
+					case 'inventory':
+						skeletonHTML = createInventorySkeletonHTML();
+						break;
+					case 'stats':
+						skeletonHTML = createStatsSkeletonHTML();
+						break;
+					case 'movements':
+						skeletonHTML = createMovementsSkeletonHTML();
+						break;
+					default:
+						skeletonHTML = '<div class="skeleton-loader" style="height: 200px; width: 100%;"></div>';
+				}
+				
+				loading.innerHTML = skeletonHTML;
+				loading.style.display = 'block';
+			} else {
+				// הוסף fade out animation
+				loading.style.opacity = '0';
+				setTimeout(() => {
+					loading.style.display = 'none';
+					loading.style.opacity = '1';
+					loading.innerHTML = '';
+				}, 300);
+			}
+		}
 
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            if (!toast) {
-                console.log(message);
-                return;
-            }
-            
-            toast.textContent = message;
-            toast.className = 'toast show';
-            
-            if (type === 'error') toast.style.background = '#e74c3c';
-            else if (type === 'success') toast.style.background = '#27ae60';
-            else toast.style.background = '#333';
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
+		// פונקציות עזר ליצירת Skeleton HTML
+		function createInventorySkeletonHTML() {
+			let html = '<div class="skeleton-table">';
+			for (let i = 0; i < 5; i++) {
+				html += `
+					<div class="skeleton-row">
+						<div class="skeleton-loader skeleton-cell small"></div>
+						<div class="skeleton-loader skeleton-cell large"></div>
+						<div class="skeleton-loader skeleton-cell"></div>
+						<div class="skeleton-loader skeleton-cell"></div>
+						<div class="skeleton-loader skeleton-cell small"></div>
+					</div>
+				`;
+			}
+			html += '</div>';
+			return html;
+		}
+
+		function createStatsSkeletonHTML() {
+			let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+			for (let i = 0; i < 4; i++) {
+				html += `
+					<div class="skeleton-stat-card">
+						<div class="skeleton-loader skeleton-stat-label"></div>
+						<div class="skeleton-loader skeleton-stat-value"></div>
+					</div>
+				`;
+			}
+			html += '</div>';
+			return html;
+		}
+
+		function createMovementsSkeletonHTML() {
+			let html = '<div class="skeleton-table">';
+			for (let i = 0; i < 8; i++) {
+				html += `
+					<div class="skeleton-row">
+						<div class="skeleton-loader skeleton-cell"></div>
+						<div class="skeleton-loader skeleton-cell small"></div>
+						<div class="skeleton-loader skeleton-cell large"></div>
+						<div class="skeleton-loader skeleton-cell"></div>
+						<div class="skeleton-loader skeleton-cell"></div>
+					</div>
+				`;
+			}
+			html += '</div>';
+			return html;
+		}
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
@@ -2612,24 +2903,30 @@
 
         function updateStats() {
 			try {
+				// הוסף אנימציה לכרטיסי הסטטיסטיקות
+				const statCards = document.querySelectorAll('.stat-card');
+				statCards.forEach((card, index) => {
+					card.classList.remove('stats-enter');
+					void card.offsetWidth; // Force reflow
+					card.classList.add('stats-enter');
+				});
+				
 				// סה"כ מוצרים
-				document.getElementById('totalProducts').textContent = inventory.length;
+				const totalProductsCount = inventory.length;
 				
 				// ספירת מוצרים במלאי נמוך ותפוגות קרובות
 				let lowStockCount = 0;
 				let expiringCount = 0;
 				const today = new Date();
-				today.setHours(0, 0, 0, 0); // איפוס לתחילת היום
+				today.setHours(0, 0, 0, 0);
 				
 				inventory.forEach(item => {
 					const [totalPacks, totalUnits] = totalPacksAndUnits(item);
 					
-					// בדיקת מלאי נמוך
 					if (totalPacks < (item.minPacks || 0)) {
 						lowStockCount++;
 					}
-
-					// בדיקת תפוגות קרובות (14 ימים)
+					
 					let hasExpiring = false;
 					for (const variant of (item.variants || [])) {
 						if (variant.expiry) {
@@ -2637,24 +2934,19 @@
 							expiryDate.setHours(0, 0, 0, 0);
 							const daysToExpiry = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
 							
-							// ספור רק תפוגות בטווח של 0-14 ימים (לא כולל תפוגות שעברו)
 							if (daysToExpiry >= 0 && daysToExpiry <= 14) {
-								// ספור רק אם יש מלאי בפועל
 								if ((variant.quantityPacks || 0) > 0 || (variant.quantityUnits || 0) > 0) {
 									expiringCount++;
 									hasExpiring = true;
-									break; // ספור כל מוצר רק פעם אחת
+									break;
 								}
 							}
 						}
 					}
 				});
 				
-				document.getElementById('lowStockCount').textContent = lowStockCount;
-				document.getElementById('expiringCount').textContent = expiringCount;
-				
 				// ספירת תנועות היום
-				const todayStr = getFormattedDate(); // פורמט אחיד: DD/MM/YYYY
+				const todayStr = getFormattedDate();
 				let todayMovements = 0;
 				
 				movements.forEach(m => {
@@ -2663,19 +2955,101 @@
 					}
 				});
 				
-				document.getElementById('todayMovements').textContent = todayMovements;
+				// עדכן את הערכים עם אנימציה רק אם זו הפעם הראשונה או אם הערכים השתנו
+				if (!statsAnimated) {
+					// פעם ראשונה - אנימציה מ-0
+					animateValue('totalProducts', 0, totalProductsCount, 500);
+					animateValue('lowStockCount', 0, lowStockCount, 600);
+					animateValue('expiringCount', 0, expiringCount, 700);
+					animateValue('todayMovements', 0, todayMovements, 800);
+					statsAnimated = true;
+				} else {
+					// עדכונים - אנימציה מהערך הנוכחי לערך החדש
+					updateValueWithAnimation('totalProducts', totalProductsCount, 300);
+					updateValueWithAnimation('lowStockCount', lowStockCount, 300);
+					updateValueWithAnimation('expiringCount', expiringCount, 300);
+					updateValueWithAnimation('todayMovements', todayMovements, 300);
+				}
 				
 				// הוסף עדכון של תצוגת התראות
 				updateAlerts();
 				
 			} catch (error) {
 				console.error('Error updating stats:', error);
-				// במקרה של שגיאה, הצג 0 במקום להשאיר ערכים ישנים
 				document.getElementById('totalProducts').textContent = '0';
 				document.getElementById('lowStockCount').textContent = '0';
 				document.getElementById('expiringCount').textContent = '0';
 				document.getElementById('todayMovements').textContent = '0';
 			}
+		}
+
+		// פונקציה חדשה לעדכון ערך עם אנימציה מהערך הנוכחי
+		function updateValueWithAnimation(elementId, newValue, duration) {
+			const element = document.getElementById(elementId);
+			if (!element) return;
+			
+			const currentValue = parseInt(element.textContent) || 0;
+			
+			// אם אין שינוי, אל תעשה כלום
+			if (currentValue === newValue) {
+				return;
+			}
+			
+			const range = newValue - currentValue;
+			const startTime = performance.now();
+			
+			function updateValue(currentTime) {
+				const elapsed = currentTime - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				
+				// Easing function
+				const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+				
+				const value = Math.floor(currentValue + (range * easeOutQuart));
+				element.textContent = value;
+				
+				if (progress < 1) {
+					requestAnimationFrame(updateValue);
+				} else {
+					element.textContent = newValue;
+				}
+			}
+			
+		}
+		
+		function animateValue(elementId, start, end, duration) {
+			const element = document.getElementById(elementId);
+			if (!element) return;
+			
+			// אם אין הבדל, פשוט הצג את הערך
+			if (start === end) {
+				element.textContent = end;
+				return;
+			}
+			
+			element.classList.add('counter-animate');
+			
+			const range = end - start;
+			const startTime = performance.now();
+			
+			function updateValue(currentTime) {
+				const elapsed = currentTime - startTime;
+				const progress = Math.min(elapsed / duration, 1);
+				
+				// Easing function
+				const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+				
+				const currentValue = Math.floor(start + (range * easeOutQuart));
+				element.textContent = currentValue;
+				
+				if (progress < 1) {
+					requestAnimationFrame(updateValue);
+				} else {
+					element.textContent = end;
+				}
+			}
+			
+			requestAnimationFrame(updateValue);
 		}
 
 		// פונקציה חדשה להצגת התראות
@@ -2938,10 +3312,11 @@
         // --- TAB HANDLERS ---
         window.showTab = async function(e, tabName) {
 			if (isMobile) {
-				window.scrollTo(0, 0); // גלול למעלה בכל מעבר טאב
+				window.scrollTo(0, 0);
 			}
+			
 			let tabElement = null;
-
+			
 			// טיפול נכון בפרמטרים
 			if (typeof e === 'string') {
 				tabName = e;
@@ -2953,7 +3328,7 @@
 				tabName = e;
 				e = null;
 			}
-
+			
 			// בדיקת הרשאות
 			if (tabElement) {
 				const permission = tabElement.getAttribute('data-permission');
@@ -2962,9 +3337,19 @@
 					return;
 				}
 			}
-
+			
+			// הוסף אנימציה של fade out לתוכן הנוכחי
+			const currentActiveContent = document.querySelector('.tab-content.active');
+			if (currentActiveContent) {
+				currentActiveContent.style.opacity = '0';
+				currentActiveContent.style.transform = 'translateX(-20px)';
+			}
+			
 			// הצג אינדיקטור טעינה
-			showLoading(true);
+			const loadingType = tabName === 'inventory' ? 'inventory' : 
+							   tabName === 'movements' ? 'movements' : 
+							   'general';
+			showLoading(true, loadingType);
 			
 			try {
 				// רענן נתונים מ-Firebase
@@ -2983,7 +3368,12 @@
 				}
 
 				const tabContent = document.getElementById(tabName);
-				if (tabContent) tabContent.classList.add('active');
+				if (tabContent) {
+					tabContent.classList.add('active');
+					// אפס את הסגנונות לאנימציה החדשה
+					tabContent.style.opacity = '';
+					tabContent.style.transform = '';
+				}
 
 				// טעינת תוכן דינמי
 				if (tabName === 'inventory') displayInventory();
@@ -3017,6 +3407,7 @@
 			const tbody = document.getElementById('inventoryBody');
 			if (!tbody) return;
 			
+			tbody.classList.add('fade-in');
 			tbody.innerHTML = '';
 
 			let filtered = [...inventory];
